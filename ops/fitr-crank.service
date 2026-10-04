@@ -1,0 +1,20 @@
+# /etc/systemd/system/fitr-crank.service (installed by ops/setup-vps.sh; run by fitr-crank.timer)
+# Calls the crank endpoint (finalize / close / sweep). Contract: POST /api/crank with
+# "Authorization: Bearer <CRON_SECRET>"; any non-2xx response fails the unit (see journalctl).
+[Unit]
+Description=Fitr crank (POST https://fitr.day/api/crank)
+After=network-online.target fitr.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=fitr
+Group=fitr
+EnvironmentFile=/etc/fitr/fitr.env
+# The secret goes to curl on stdin (-H @-), so it never appears in the process list.
+# ($$ and %% are systemd escapes for a literal $ and %; sh expands $CRON_SECRET itself.)
+ExecStart=/bin/sh -c 'test -n "$$CRON_SECRET" || { echo "CRON_SECRET is not set in /etc/fitr/fitr.env" >&2; exit 1; }; printf "Authorization: Bearer %%s\\n" "$$CRON_SECRET" | /usr/bin/curl -fsS --max-time 120 -X POST -H @- -H "Content-Type: application/json" --data "{}" https://fitr.day/api/crank'
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

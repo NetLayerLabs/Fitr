@@ -1,0 +1,36 @@
+# /etc/systemd/system/fitr.service (installed by ops/setup-vps.sh)
+[Unit]
+Description=Fitr web app (Next.js, next start on 127.0.0.1:3000)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=fitr
+Group=fitr
+# ops/deploy.sh points this symlink at the newest release, then restarts the service.
+WorkingDirectory=/srv/fitr/current
+EnvironmentFile=/etc/fitr/fitr.env
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStart=/usr/bin/node /srv/fitr/current/node_modules/next/dist/bin/next start -p 3000 -H 127.0.0.1
+Restart=always
+RestartSec=3
+# Graceful shutdown: Next finishes in-flight requests and pending after() callbacks on SIGTERM.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/fitr
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

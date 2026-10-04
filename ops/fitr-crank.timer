@@ -1,0 +1,11 @@
+# /etc/systemd/system/fitr-crank.timer: run fitr-crank.service every 10 minutes.
+[Unit]
+Description=Run the Fitr crank every 10 minutes
+
+[Timer]
+OnCalendar=*:0/10
+Persistent=true
+AccuracySec=15s
+
+[Install]
+WantedBy=timers.target

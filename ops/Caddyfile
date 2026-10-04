@@ -1,0 +1,41 @@
+# /etc/caddy/Caddyfile for https://fitr.day (installed by ops/setup-vps.sh).
+# Caddy obtains and renews the TLS certificates automatically once DNS points here and
+# ports 80 + 443 are open. Validate after edits: caddy validate --config /etc/caddy/Caddyfile
+
+{
+	# Optional: an address for Let's Encrypt expiry notices.
+	# email you@example.com
+}
+
+www.fitr.day {
+	redir https://fitr.day{uri} permanent
+}
+
+fitr.day {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	# Long cache ONLY for content-hashed build assets. Everything else keeps the
+	# Cache-Control that Next.js sends (pages, /sw.js no-store, /mediapipe revalidate, ...).
+	@nextStatic path /_next/static/*
+	header @nextStatic {
+		Cache-Control "public, max-age=31536000, immutable"
+		defer
+	}
+
+	reverse_proxy 127.0.0.1:3000 {
+		# Do not buffer: keeps App Router streaming / Suspense responses flowing.
+		flush_interval -1
+	}
+
+	log {
+		output file /var/log/caddy/fitr.access.log {
+			roll_size 20MiB
+			roll_keep 5
+		}
+	}
+}
