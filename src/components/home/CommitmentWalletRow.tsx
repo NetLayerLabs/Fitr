@@ -9,6 +9,7 @@ import { useSeekerStatus, useSelectedWallet, useSkrBalance } from "@/components/
 import { solanaConfig } from "@/lib/solana/config";
 import { formatSkr, shortenAddress } from "@/lib/solana/format";
 import styles from "./CommitmentWalletRow.module.css";
+import { SkrText } from "@/components/brand/SkrAmount";
 
 function ConnectedRow({ owner }: { owner: Address }) {
   const skr = useSkrBalance(owner);
@@ -21,7 +22,7 @@ function ConnectedRow({ owner }: { owner: Address }) {
       <span className={styles.body}>
         <span className={styles.primary}>
           {skr.data
-            ? formatSkr(skr.data.amount, { maxFractionDigits: 2 })
+            ? <SkrText text={formatSkr(skr.data.amount, { maxFractionDigits: 2 })} />
             : skr.status === "error"
               ? "Balance unavailable"
               : "Loading balance…"}

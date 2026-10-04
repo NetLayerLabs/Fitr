@@ -3,6 +3,7 @@ import { ChainIcon, EyeOffIcon, PercentIcon } from "./LandingIcons";
 import { LANDING_LINKS } from "./links";
 import section from "./section.module.css";
 import styles from "./Trust.module.css";
+import { SkrAmount, SkrLogo } from "@/components/brand/SkrAmount";
 
 /** Example day for the settlement panel: equal stakes, so the pro-rata share is an even split. */
 const EXAMPLE = { people: 10, stake: 100, showed: 7, feeBps: 500 } as const;
@@ -103,7 +104,7 @@ export default function Trust() {
 
             <figure className={styles.example}>
               <figcaption className={styles.exampleCap}>
-                Example day: {EXAMPLE.people} people stake {EXAMPLE.stake} SKR. {EXAMPLE.showed} show
+                Example day: {EXAMPLE.people} people stake <SkrAmount value={String(EXAMPLE.stake)} />. {EXAMPLE.showed} show
                 up.
               </figcaption>
               <div className={styles.dots} aria-hidden="true">
@@ -114,20 +115,20 @@ export default function Trust() {
               <dl className={styles.rows}>
                 <div>
                   <dt>Forfeited by no-shows</dt>
-                  <dd>{forfeited} SKR</dd>
+                  <dd><SkrAmount value={String(forfeited)} /></dd>
                 </div>
                 <div>
                   <dt>Fitr fee (5%)</dt>
-                  <dd>{fee} SKR</dd>
+                  <dd><SkrAmount value={String(fee)} /></dd>
                 </div>
                 <div>
                   <dt>Shared by the {EXAMPLE.showed} who showed up</dt>
-                  <dd>{shared} SKR</dd>
+                  <dd><SkrAmount value={String(shared)} /></dd>
                 </div>
                 <div className={styles.total}>
                   <dt>Each finisher claims</dt>
                   <dd>
-                    {EXAMPLE.stake} <span>+{bonus}</span> SKR
+                    {EXAMPLE.stake} <span>+{bonus}</span> <SkrLogo />
                   </dd>
                 </div>
               </dl>

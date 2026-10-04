@@ -30,6 +30,7 @@ import { formatHold } from "./form";
 import { commitTargetDay, liveToday, pickSettlement, viewEntries } from "./plan";
 import { isBusy, useVaultTx } from "./useVaultTx";
 import styles from "./stake.module.css";
+import { SkrText } from "@/components/brand/SkrAmount";
 
 const fmt = (a: bigint) => formatSkr(a, { maxFractionDigits: 2 });
 
@@ -349,7 +350,7 @@ function Connected({ account, owner, snapshot, vault, seeker, nowMs }: Connected
           }
         >
           <p className={styles.momentLine}>
-            {info.name} · {fmt(last.amount)} staked · finish before {formatLocalDeadline(finishBy)}
+            {info.name} · <SkrText text={fmt(last.amount)} /> staked · finish before {formatLocalDeadline(finishBy)}
           </p>
           {did.settled?.kind === "claim" ? (
             <p className={styles.momentLine}>

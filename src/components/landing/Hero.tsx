@@ -7,6 +7,7 @@ import PhoneMock from "./PhoneMock";
 import { APK_NOTE, LANDING_LINKS } from "./links";
 import section from "./section.module.css";
 import styles from "./Hero.module.css";
+import { SkrLogo } from "@/components/brand/SkrAmount";
 
 /** Hero: the promise, the two ways in, and a phone mid-workout in front of the athlete. */
 export default function Hero() {
@@ -87,7 +88,7 @@ export default function Hero() {
           <div className={`${styles.float} ${styles.floatBottom}`} aria-hidden="true">
             <span className={styles.floatLabel}>Settled</span>
             <span className={styles.floatValue}>
-              100 <span className={styles.floatPlus}>+40.7</span> SKR
+              100 <span className={styles.floatPlus}>+40.7</span> <SkrLogo />
             </span>
           </div>
         </div>

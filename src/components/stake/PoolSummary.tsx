@@ -3,6 +3,7 @@ import StatTile from "@/components/ui/StatTile";
 import { formatTokenAmount } from "@/lib/solana/format";
 import type { DayState } from "@/lib/solana/vault/generated";
 import styles from "./stake.module.css";
+import { SkrAmount } from "@/components/brand/SkrAmount";
 
 export interface PoolSummaryProps {
   dayState: Pick<DayState, "committedCount" | "completedCount" | "totalStaked"> | null;
@@ -32,8 +33,12 @@ export default function PoolSummary({ dayState, decimals, label, yourStatus }: P
         <StatTile label="Committed" value={committed.toLocaleString("en-US")} unit={committed === 1 ? "person" : "people"} />
         <StatTile
           label="At stake"
-          value={formatTokenAmount(staked, decimals, { maxFractionDigits: staked >= 10n ** BigInt(decimals + 3) ? 0 : 2 })}
-          unit={label}
+          value={
+            <SkrAmount
+              value={formatTokenAmount(staked, decimals, { maxFractionDigits: staked >= 10n ** BigInt(decimals + 3) ? 0 : 2 })}
+              label={label}
+            />
+          }
         />
         <StatTile label="Verified" value={verified.toLocaleString("en-US")} unit="so far" />
       </div>

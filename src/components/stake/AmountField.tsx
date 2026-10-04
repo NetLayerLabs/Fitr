@@ -6,6 +6,7 @@ import { formatTokenAmount } from "@/lib/solana/format";
 import type { Pool } from "@/lib/solana/vault/generated";
 import { amountErrorMessage, amountToInput, checkAmount, quickPicks } from "./form";
 import styles from "./stake.module.css";
+import { SkrAmount, SkrText } from "@/components/brand/SkrAmount";
 
 export interface AmountFieldProps {
   text: string;
@@ -54,13 +55,16 @@ export default function AmountField({ text, onText, pool, balance, decimals, lab
             disabled={p.disabled}
             onClick={() => onText(amountToInput(p.amount, decimals))}
           >
-            {fmt(p.amount)}
+            <SkrAmount value={fmt(p.amount)} label={label} />
           </Chip>
         ))}
       </ChipRow>
       <p id={`${id}-help`} className={styles.hint}>
-        {`Min ${fmt(pool.minStake)} · max ${fmt(pool.maxStake)} ${label}`}
-        {balance !== null ? ` · balance ${fmt(balance)}` : ""}
+        <SkrText
+          text={`Min ${fmt(pool.minStake)} ${label} · max ${fmt(pool.maxStake)} ${label}${
+            balance !== null ? ` · balance ${fmt(balance)} ${label}` : ""
+          }`}
+        />
       </p>
       {error ? (
         <p id={`${id}-error`} className={styles.fieldError} role="alert">

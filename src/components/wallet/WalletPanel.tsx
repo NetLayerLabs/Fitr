@@ -19,6 +19,7 @@ import {
 } from "./hooks";
 import { WalletIcon } from "./WalletIcon";
 import styles from "./Wallet.module.css";
+import { SkrText } from "@/components/brand/SkrAmount";
 
 function TestModeBanner() {
   if (!solanaConfig.isTestToken) return null;
@@ -127,7 +128,7 @@ function ConnectedWallet({ account, wallet, owner }: { account: UiWalletAccount;
           </button>
         </div>
         <p className={styles.balance} aria-live="polite" aria-busy={skr.status === "loading" || undefined}>
-          {skr.data ? formatSkr(skr.data.amount) : skr.status === "loading" ? "Loading…" : "—"}
+          {skr.data ? <SkrText text={formatSkr(skr.data.amount)} /> : skr.status === "loading" ? "Loading…" : "—"}
         </p>
         {skr.status === "error" ? (
           <p className={styles.error} role="alert">

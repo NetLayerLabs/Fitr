@@ -117,7 +117,7 @@ describe("CommitScreen staking", () => {
     expect(screen.getByRole("heading", { name: "Today's pool" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "At stake" }).textContent).toMatch(/300/);
     fireEvent.change(screen.getByLabelText("Stake"), { target: { value: "25" } });
-    fireEvent.click(screen.getByRole("button", { name: /^Commit 25 SKR/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Commit 25\s*SKR/ }));
     expect(mocks.run).toHaveBeenCalledWith({
       plan: { settle: null, commit: true },
       commit: { dayIndex: D0, amount: 25_000_000n, exercise: 0, goalTarget: 20 },
@@ -142,7 +142,7 @@ describe("CommitScreen staking", () => {
     };
     mocks.vault = vaultReady(snapshot([y]));
     render(<CommitScreen />);
-    expect(screen.getByRole("heading", { name: "147.5 SKR" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /^147\.5\s*SKR$/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     expect(mocks.run).toHaveBeenLastCalledWith({
       plan: { settle: { day: D0 - 1, kind: "claim", needsFinalize: false }, commit: false },
@@ -151,7 +151,7 @@ describe("CommitScreen staking", () => {
       registerDevice: false,
     });
     fireEvent.change(screen.getByLabelText("Stake"), { target: { value: "5" } });
-    fireEvent.click(screen.getByRole("button", { name: /^Claim & commit 5 SKR/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Claim & commit 5\s*SKR/ }));
     expect(mocks.run.mock.calls.at(-1)?.[0]).toMatchObject({
       plan: { settle: { day: D0 - 1, kind: "claim" }, commit: true },
     });
@@ -169,11 +169,11 @@ describe("CommitScreen staking", () => {
     mocks.txState = { phase: "idle", did: null, signature: null, error: null, unconfirmed: false };
     rerender(<CommitScreen />);
     fireEvent.change(screen.getByLabelText("Stake"), { target: { value: "10" } });
-    fireEvent.click(screen.getByRole("button", { name: /^Commit 10 SKR/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Commit 10\s*SKR/ }));
     mocks.txState = { phase: "done", did: { committed: true, settled: null }, signature: "5sig", error: null, unconfirmed: false };
     rerender(<CommitScreen />);
     expect(screen.getByRole("heading", { name: "You're in." })).toBeTruthy();
-    expect(screen.getByText(/10 SKR staked/)).toBeTruthy();
+    expect(document.body.textContent).toMatch(/10 SKR staked/);
     expect(screen.getByRole("link", { name: /View on Solana Explorer/ }).getAttribute("href")).toContain("/tx/5sig");
   });
 });

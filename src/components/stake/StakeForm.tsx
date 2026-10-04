@@ -12,6 +12,7 @@ import ExercisePicker from "./ExercisePicker";
 import GoalStepper from "./GoalStepper";
 import { checkAmount, clampInt, defaultGoal, formatGoal, goalBounds } from "./form";
 import styles from "./stake.module.css";
+import { SkrText } from "@/components/brand/SkrAmount";
 
 export interface StakeSubmit {
   exercise: ExerciseKind;
@@ -144,7 +145,7 @@ export default function StakeForm(p: StakeFormProps) {
       ) : null}
       {p.bundledClaim ? (
         <p className={styles.hint}>
-          The same signature also claims <strong>{p.bundledClaim}</strong> waiting from an earlier day.
+          The same signature also claims <strong><SkrText text={p.bundledClaim} /></strong> waiting from an earlier day.
         </p>
       ) : null}
 
@@ -157,9 +158,11 @@ export default function StakeForm(p: StakeFormProps) {
         disabled={p.busy || Boolean(p.solShortfall) || (touched && !check.ok)}
         aria-describedby="stake-rules-title"
       >
-        {p.busy
-          ? "Working…"
-          : `${p.bundledClaim ? "Claim & commit" : "Commit"}${amountLabel ? ` ${amountLabel}` : ""}`}
+        <SkrText
+          text={
+            p.busy ? "Working…" : `${p.bundledClaim ? "Claim & commit" : "Commit"}${amountLabel ? ` ${amountLabel}` : ""}`
+          }
+        />
       </Button>
       <p className={styles.fine}>
         {EXERCISES[kind].name} · one signature in your wallet · network fee under 0.001 SOL plus refundable

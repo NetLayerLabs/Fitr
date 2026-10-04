@@ -12,6 +12,7 @@ import type { EntryView } from "./plan";
 import { formatHold, goalUnitLabel } from "./form";
 import { formatLocalDeadline } from "./StakeForm";
 import styles from "./stake.module.css";
+import { SkrText } from "@/components/brand/SkrAmount";
 
 export function formatDayLabel(day: number, cfg: DayConfig, locales?: string | string[]): string {
   // Midday of the pool day, so short offsets never tip it into the neighbouring local date.
@@ -61,17 +62,17 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
           <h2 id="claim-title" className={styles.claimTitle}>
             <span className={`numeral ${styles.claimBig}`}>
               {claimPayout.exact ? "" : "≈ "}
-              {fmt(claimPayout.principal + claimPayout.bonus)}
+              <SkrText text={fmt(claimPayout.principal + claimPayout.bonus)} />
             </span>
           </h2>
           <p className={styles.claimBody}>
-            {claim.dayState?.voided
+            <SkrText text={claim.dayState?.voided
               ? "That day was cancelled, so your full stake comes back."
               : claim.commitment?.status === CommitmentStatus.Revoked
-                ? `Your verification was withdrawn after review, so your ${fmt(claimPayout.principal)} stake comes back with no bonus.`
+                ? `Your verification was withdrawn after review, so your $<SkrText text={fmt(claimPayout.principal)} /> stake comes back with no bonus.`
                 : claimPayout.bonus > 0n
-                ? `Your ${fmt(claimPayout.principal)} stake plus ${fmt(claimPayout.bonus)} from people who missed.`
-                : `Your ${fmt(claimPayout.principal)} stake back. Everyone showed up, so there is no bonus this time.`}
+                ? `Your $<SkrText text={fmt(claimPayout.principal)} /> stake plus $<SkrText text={fmt(claimPayout.bonus)} /> from people who missed.`
+                : `Your $<SkrText text={fmt(claimPayout.principal)} /> stake back. Everyone showed up, so there is no bonus this time.`} />
           </p>
           <Button variant="primary" size="lg" block disabled={busy} onClick={() => onSettle(settlement)}>
             {busy ? "Working…" : "Claim"}
@@ -95,7 +96,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
                 <GoalLine code={c.exercise} goal={c.goalTarget} />
               </p>
               <p className={styles.hint}>
-                Fitr&apos;s review withdrew this verification. Your {fmt(c.amount)} stake is not forfeited and comes back
+                Fitr&apos;s review withdrew this verification. Your <SkrText text={fmt(c.amount)} /> stake is not forfeited and comes back
                 with no bonus. Claim opens {e.status === "claimable" ? "now" : <>after {formatLocalDeadline(claimAt)}</>}.
               </p>
             </Card>
@@ -111,7 +112,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
                 <GoalLine code={c.exercise} goal={c.goalTarget} />
               </p>
               <p className={styles.hint}>
-                {fmt(c.amount)} comes back with your share of forfeits. Claim opens{" "}
+                <SkrText text={fmt(c.amount)} /> comes back with your share of forfeits. Claim opens{" "}
                 {e.status === "claimable" ? "now" : <>after {formatLocalDeadline(claimAt)}</>}.
               </p>
             </Card>
@@ -125,7 +126,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
                 <GoalLine code={c.exercise} goal={c.goalTarget} />
               </p>
               <p className={styles.hint}>
-                {fmt(c.amount)} was forfeited to the people who showed up. Tomorrow is a new day.
+                <SkrText text={fmt(c.amount)} /> was forfeited to the people who showed up. Tomorrow is a new day.
               </p>
             </Card>
           );
@@ -137,7 +138,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
               <GoalLine code={c.exercise} goal={c.goalTarget} />
             </p>
             <p className={styles.hint}>
-              <strong className={styles.stakeStrong}>{fmt(c.amount)}</strong> at stake · finish before{" "}
+              <strong className={styles.stakeStrong}><SkrText text={fmt(c.amount)} /></strong> at stake · finish before{" "}
               {formatLocalDeadline(finishBy)}
             </p>
             {isToday && kind ? (
@@ -157,7 +158,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
 
       {missedPast.length > 0 && !mine.some((e) => e.status === "missed") ? (
         <p className={styles.hint}>
-          Missed {formatDayLabel(missedPast[0].day, cfg)}: {fmt(missedPast[0].commitment!.amount)} was forfeited. Your
+          Missed {formatDayLabel(missedPast[0].day, cfg)}: <SkrText text={fmt(missedPast[0].commitment!.amount)} /> was forfeited. Your
           next commit also closes it out and returns the account rent.
         </p>
       ) : null}

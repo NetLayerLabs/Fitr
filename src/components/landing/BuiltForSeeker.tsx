@@ -3,6 +3,7 @@ import { CoinIcon } from "@/components/icons/Icons";
 import { KeyIcon, PhoneIcon } from "./LandingIcons";
 import section from "./section.module.css";
 import styles from "./BuiltForSeeker.module.css";
+import { SkrAmount } from "@/components/brand/SkrAmount";
 
 const POINTS = [
   {
@@ -74,7 +75,7 @@ export default function BuiltForSeeker() {
               </div>
               <div>
                 <dt>Stake</dt>
-                <dd className={styles.amount}>250 SKR</dd>
+                <dd className={styles.amount}><SkrAmount value="250" /></dd>
               </div>
               <div>
                 <dt>Network</dt>

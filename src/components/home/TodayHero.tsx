@@ -13,6 +13,7 @@ import { EXERCISES } from "@/lib/exercises";
 import { isExerciseKind } from "@/lib/pose/types";
 import { formatTimeLeft, goalNoun, normalizeTodayState, spokenTimeLeft, type TodayState } from "./today";
 import styles from "./TodayHero.module.css";
+import { SkrText } from "@/components/brand/SkrAmount";
 
 type Tone = "default" | "lime";
 
@@ -127,7 +128,7 @@ export default function TodayHero() {
             ) : null}
             {commitment?.amountLabel ? (
               <li>
-                <strong className={styles.stake}>{commitment.amountLabel}</strong> at stake
+                <strong className={styles.stake}><SkrText text={commitment.amountLabel} /></strong> at stake
               </li>
             ) : null}
           </ul>
@@ -175,7 +176,7 @@ export default function TodayHero() {
           eyebrow="Ready to claim"
           title={
             commitment?.claimableLabel ? (
-              <span className={`numeral ${styles.big}`}>{commitment.claimableLabel}</span>
+              <span className={`numeral ${styles.big}`}><SkrText text={commitment.claimableLabel} /></span>
             ) : (
               "Your stake is back"
             )

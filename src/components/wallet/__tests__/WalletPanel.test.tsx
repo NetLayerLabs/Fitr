@@ -65,7 +65,7 @@ describe("WalletPanel", () => {
 
   it("shows SKR with 6-decimal formatting, SOL, Seeker status and explorer link", () => {
     render(<WalletPanel />);
-    expect(screen.getByText("1,234.56789 SKR")).toBeTruthy();
+    expect(document.body.textContent).toContain("1,234.56789 SKR");
     expect(screen.getByText(/SOL for network fees: 0.05 SOL/)).toBeTruthy();
     expect(screen.getByText("Seeker verified")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Use Installed Wallet" })).toBeTruthy();

@@ -79,7 +79,7 @@ describe("StakeForm", () => {
     cleanup();
     setup({ balance: 30n * SKR });
     picks = within(screen.getByRole("radiogroup", { name: "Quick amounts" })).getAllByRole("radio") as HTMLButtonElement[];
-    expect(picks.map((p) => p.textContent)).toEqual(["5", "10", "25"]);
+    expect(picks.map((p) => p.textContent)).toEqual(["5 SKR", "10 SKR", "25 SKR"]);
     fireEvent.click(picks[2]);
     expect(amountInput().value).toBe("25");
     expect(submit().textContent).toMatch(/Commit 25 SKR/);
@@ -101,7 +101,7 @@ describe("StakeForm", () => {
   it("blocks on a SOL shortfall and mentions a bundled claim", () => {
     setup({ solShortfall: "You need about 0.006 SOL", bundledClaim: "≈ 147.5 SKR" });
     expect(screen.getByRole("note").textContent).toMatch(/0.006 SOL/);
-    expect(screen.getByText(/≈ 147.5 SKR/)).toBeTruthy();
+    expect(document.body.textContent).toMatch(/≈ 147.5 SKR/);
     expect((submit() as HTMLButtonElement).disabled).toBe(true);
     expect(submit().textContent).toMatch(/^Claim & commit/);
   });

@@ -6,6 +6,7 @@ import type { ExerciseKind } from "@/lib/pose/types";
 import { formatSkr } from "@/lib/solana/format";
 import { formatGoal } from "./format";
 import styles from "./WorkoutScreen.module.css";
+import { SkrText } from "@/components/brand/SkrAmount";
 
 export interface StakeBannerProps {
   status: VerifiedStatus;
@@ -47,7 +48,7 @@ export default function StakeBanner({ status, commitment, otherExercise, error }
       </span>
       <div>
         <p className={styles.stakeTitle}>
-          Staked · {formatSkr(commitment.amount)} on {formatGoal(commitment.goalTarget, info.unit)}
+          Staked · <SkrText text={formatSkr(commitment.amount)} /> on {formatGoal(commitment.goalTarget, info.unit)}
         </p>
         <p className={styles.stakeText}>
           This workout is verified live. Watch for live checks on screen and keep going until they are done.

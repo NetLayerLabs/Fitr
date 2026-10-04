@@ -1,5 +1,6 @@
 import type { ExerciseArt } from "@/lib/exerciseArt";
 import styles from "./PhoneMock.module.css";
+import { SkrAmount } from "@/components/brand/SkrAmount";
 
 /**
  * Pose landmarks traced over the push-up photo (420 px square coordinates), drawn the way the
@@ -71,7 +72,7 @@ export default function PhoneMock({ art, className }: { art: ExerciseArt; classN
         </div>
         <div className={styles.stake}>
           <span>Today&apos;s stake</span>
-          <strong>100 SKR</strong>
+          <strong><SkrAmount value="100" /></strong>
         </div>
       </div>
     </div>

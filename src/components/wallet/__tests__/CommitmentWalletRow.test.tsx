@@ -33,7 +33,7 @@ describe("CommitmentWalletRow", () => {
   it("shows the truncated SKR balance, short address and Seeker check", () => {
     mocks.owner = OWNER;
     render(<CommitmentWalletRow />);
-    expect(screen.getByText("2,500.99 SKR")).toBeTruthy();
+    expect(document.body.textContent).toContain("2,500.99 SKR");
     expect(screen.getByText("9WzD…AWWM")).toBeTruthy();
     expect(screen.getByText("Checking Seeker…")).toBeTruthy();
   });
