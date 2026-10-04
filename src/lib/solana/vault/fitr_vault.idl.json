@@ -1,0 +1,3253 @@
+{
+  "address": "9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY",
+  "metadata": {
+    "name": "fitr_vault",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Fitr $SKR Anti-Sloth Commitment Vault"
+  },
+  "instructions": [
+    {
+      "name": "accept_authority",
+      "discriminator": [
+        107,
+        86,
+        198,
+        91,
+        33,
+        12,
+        107,
+        160
+      ],
+      "accounts": [
+        {
+          "name": "new_authority",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "attest_completion",
+      "docs": [
+        "Called by the off-chain attestor after it verified a workout session.",
+        "`reps` is reps for push-ups/squats and seconds for plank; it must meet the committed goal."
+      ],
+      "discriminator": [
+        232,
+        151,
+        75,
+        47,
+        250,
+        106,
+        125,
+        26
+      ],
+      "accounts": [
+        {
+          "name": "attestor",
+          "docs": [
+            "Must be the attestor snapshotted into this day's DayState (not the current pool.attestor),",
+            "so rotating the pool attestor never changes who can attest a live day."
+          ],
+          "signer": true
+        },
+        {
+          "name": "pool"
+        },
+        {
+          "name": "user"
+        },
+        {
+          "name": "day",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "commitment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "day_index",
+          "type": "u32"
+        },
+        {
+          "name": "reps",
+          "type": "u32"
+        },
+        {
+          "name": "session_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "session_started_at",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "claim",
+      "docs": [
+        "User only signer. Completed on a finalized day: principal + bonus. Revoked on a finalized",
+        "day: principal. Any status on a voided day: principal. Closes the Commitment (rent to user)",
+        "so it can never pay twice."
+      ],
+      "discriminator": [
+        62,
+        198,
+        214,
+        193,
+        213,
+        159,
+        108,
+        210
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "user_token",
+          "docs": [
+            "Any token account of the stake mint (payout destination), except the vault itself."
+          ],
+          "writable": true
+        },
+        {
+          "name": "day",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "commitment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "day_index",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "close_missed",
+      "docs": [
+        "Permissionless (the user may crank it themselves): close a missed commitment after",
+        "finalize. The stake was already counted as forfeited at finalize; this refunds rent only."
+      ],
+      "discriminator": [
+        56,
+        34,
+        17,
+        189,
+        161,
+        111,
+        194,
+        160
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "signer": true
+        },
+        {
+          "name": "pool"
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "relations": [
+            "commitment"
+          ]
+        },
+        {
+          "name": "day",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "commitment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "day_index",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "commit",
+      "docs": [
+        "Stake `amount` base units on doing `goal_target` reps (seconds for plank / wall sit) of `exercise`",
+        "during pool day `day_index` (today or tomorrow). User is the only signer and pays rent."
+      ],
+      "discriminator": [
+        223,
+        140,
+        142,
+        165,
+        229,
+        208,
+        156,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "user_token",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "day",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "commitment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sgt_token",
+          "docs": [
+            "Required iff pool.require_sgt. Validated in handler against `device`."
+          ],
+          "optional": true
+        },
+        {
+          "name": "device",
+          "docs": [
+            "Required iff pool.require_sgt. PDA [\"device\", pool, sgt_mint] created by register_device.",
+            "Owner + discriminator are checked by Account<>; DeviceLock accounts can only be created by",
+            "register_device at that PDA after assert_is_sgt, so the handler's `device.pool == pool` and",
+            "`sgt_token.mint == device.sgt_mint` checks bind it without re-deriving the address."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "day_index",
+          "type": "u32"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "exercise",
+          "type": {
+            "defined": {
+              "name": "Exercise"
+            }
+          }
+        },
+        {
+          "name": "goal_target",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "finalize_day",
+      "docs": [
+        "Permissionless crank once the day's review window is over: now > attest deadline (extended",
+        "by any pause) + finalize_delay_secs. Blocked while the pool is paused, so an incident pause",
+        "can never forfeit users whose attestation was pending; the authority voids or unpauses.",
+        "Fixes the day's bonus pool."
+      ],
+      "discriminator": [
+        88,
+        77,
+        250,
+        153,
+        57,
+        146,
+        161,
+        198
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true
+        },
+        {
+          "name": "day",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "day_index",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "fund_reserve",
+      "docs": [
+        "Anyone (sponsor) can top up the reserve. Only drawn via each day's sponsor_cap snapshot of",
+        "daily_sponsor_amount (0 by default, never above max_stake)."
+      ],
+      "discriminator": [
+        17,
+        82,
+        71,
+        222,
+        117,
+        210,
+        58,
+        12
+      ],
+      "accounts": [
+        {
+          "name": "funder",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "funder_token",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_pool",
+      "docs": [
+        "Upgrade-authority only. Creates the pool for `mint` and its vault token account."
+      ],
+      "discriminator": [
+        95,
+        180,
+        10,
+        172,
+        84,
+        174,
+        232,
+        40
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "Becomes pool.authority and pays rent. Must be the program's upgrade authority."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "program_data",
+          "docs": [
+            "This program's ProgramData account. Only the program's upgrade authority may create",
+            "a pool, so nobody can front-run the canonical [\"pool\", SKR] PDA after deploy.",
+            "(Anchor runs `init` before other constraints; a failed check reverts the whole tx.)"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  128,
+                  123,
+                  250,
+                  224,
+                  45,
+                  247,
+                  32,
+                  107,
+                  59,
+                  197,
+                  92,
+                  237,
+                  116,
+                  148,
+                  177,
+                  0,
+                  162,
+                  71,
+                  246,
+                  24,
+                  189,
+                  217,
+                  54,
+                  19,
+                  233,
+                  123,
+                  108,
+                  116,
+                  108,
+                  145,
+                  10,
+                  249
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                2,
+                168,
+                246,
+                145,
+                78,
+                136,
+                161,
+                176,
+                226,
+                16,
+                21,
+                62,
+                247,
+                99,
+                174,
+                43,
+                0,
+                194,
+                185,
+                61,
+                22,
+                193,
+                36,
+                210,
+                192,
+                83,
+                122,
+                16,
+                4,
+                128,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "p",
+          "type": {
+            "defined": {
+              "name": "InitPoolParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "propose_authority",
+      "docs": [
+        "Two-step authority transfer. Pass Pubkey::default() to cancel."
+      ],
+      "discriminator": [
+        20,
+        148,
+        236,
+        198,
+        76,
+        119,
+        99,
+        142
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "pool",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_authority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "register_device",
+      "docs": [
+        "One DeviceLock per Seeker Genesis Token mint (== per physical device). User signs and pays."
+      ],
+      "discriminator": [
+        210,
+        151,
+        56,
+        68,
+        22,
+        158,
+        90,
+        193
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pool"
+        },
+        {
+          "name": "sgt_mint",
+          "docs": [
+            "Must be a Token-2022 mint; SGT extension checks run in the handler."
+          ]
+        },
+        {
+          "name": "sgt_token"
+        },
+        {
+          "name": "device",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  118,
+                  105,
+                  99,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "sgt_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_2022_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "revoke_completion",
+      "docs": [
+        "Escape hatch for a bad attestation: the authority or the day's attestor can undo it while",
+        "the (pause-extended) attestation window is open. A revoked commitment is NEVER forfeited:",
+        "it becomes Revoked and its owner can only claim the principal back, without a bonus. So a",
+        "revocation can never turn anyone's stake into someone else's payout (audit SM-1 / AUD-AT-1).",
+        "The attestor cannot revoke while the pool is paused; the authority can."
+      ],
+      "discriminator": [
+        43,
+        141,
+        141,
+        100,
+        71,
+        178,
+        174,
+        53
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "docs": [
+            "The pool authority or the day's snapshotted attestor."
+          ],
+          "signer": true
+        },
+        {
+          "name": "pool"
+        },
+        {
+          "name": "user"
+        },
+        {
+          "name": "day",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "commitment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "day_index",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "sweep_day",
+      "docs": [
+        "Permissionless: once the day is over and every commitment is resolved, move rounding",
+        "dust to the reserve and close DayState (rent back to whoever created it)."
+      ],
+      "discriminator": [
+        12,
+        186,
+        25,
+        15,
+        233,
+        239,
+        89,
+        109
+      ],
+      "accounts": [
+        {
+          "name": "cranker",
+          "signer": true
+        },
+        {
+          "name": "pool",
+          "writable": true
+        },
+        {
+          "name": "rent_payer",
+          "writable": true
+        },
+        {
+          "name": "day",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "day_index",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "update_config",
+      "docs": [
+        "Authority only. Applies the given fields, then re-validates the whole config.",
+        "Days that already exist are unaffected: their fee, streak rules, attest deadline, attestor,",
+        "sponsor cap and finalize delay are snapshotted in DayState. Pausing extends the attest",
+        "window of existing days by the time spent paused and blocks finalize while paused."
+      ],
+      "discriminator": [
+        29,
+        158,
+        252,
+        191,
+        10,
+        83,
+        219,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "pool",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "p",
+          "type": {
+            "defined": {
+              "name": "UpdateConfigParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "void_day",
+      "docs": [
+        "Safety valve (attestor outage / compromise / incident pause): every committer gets principal",
+        "back, no slashing. Allowed until the day is finalized, i.e. through the whole review window."
+      ],
+      "discriminator": [
+        142,
+        138,
+        100,
+        116,
+        2,
+        59,
+        49,
+        24
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "pool"
+        },
+        {
+          "name": "day",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  97,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              },
+              {
+                "kind": "arg",
+                "path": "day_index"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "day_index",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_treasury",
+      "docs": [
+        "Authority can only ever withdraw accrued fees - never principal or the reserve directly."
+      ],
+      "discriminator": [
+        40,
+        63,
+        122,
+        158,
+        144,
+        216,
+        83,
+        96
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "pool"
+          ]
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Commitment",
+      "discriminator": [
+        61,
+        112,
+        129,
+        128,
+        24,
+        147,
+        77,
+        87
+      ]
+    },
+    {
+      "name": "DayState",
+      "discriminator": [
+        8,
+        233,
+        133,
+        188,
+        152,
+        146,
+        211,
+        247
+      ]
+    },
+    {
+      "name": "DeviceLock",
+      "discriminator": [
+        233,
+        182,
+        71,
+        99,
+        162,
+        53,
+        236,
+        214
+      ]
+    },
+    {
+      "name": "Pool",
+      "discriminator": [
+        241,
+        154,
+        109,
+        4,
+        17,
+        177,
+        109,
+        188
+      ]
+    },
+    {
+      "name": "UserProfile",
+      "discriminator": [
+        32,
+        37,
+        119,
+        205,
+        179,
+        180,
+        13,
+        194
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AuthorityProposed",
+      "discriminator": [
+        244,
+        117,
+        94,
+        112,
+        53,
+        151,
+        35,
+        89
+      ]
+    },
+    {
+      "name": "AuthorityTransferred",
+      "discriminator": [
+        245,
+        109,
+        179,
+        54,
+        135,
+        92,
+        22,
+        64
+      ]
+    },
+    {
+      "name": "Claimed",
+      "discriminator": [
+        217,
+        192,
+        123,
+        72,
+        108,
+        150,
+        248,
+        33
+      ]
+    },
+    {
+      "name": "Committed",
+      "discriminator": [
+        70,
+        158,
+        162,
+        86,
+        29,
+        111,
+        143,
+        226
+      ]
+    },
+    {
+      "name": "CompletionAttested",
+      "discriminator": [
+        114,
+        175,
+        183,
+        100,
+        0,
+        241,
+        15,
+        89
+      ]
+    },
+    {
+      "name": "CompletionRevoked",
+      "discriminator": [
+        34,
+        83,
+        135,
+        48,
+        133,
+        31,
+        30,
+        6
+      ]
+    },
+    {
+      "name": "ConfigUpdated",
+      "discriminator": [
+        40,
+        241,
+        230,
+        122,
+        11,
+        19,
+        198,
+        194
+      ]
+    },
+    {
+      "name": "DayFinalized",
+      "discriminator": [
+        245,
+        2,
+        219,
+        50,
+        55,
+        59,
+        12,
+        240
+      ]
+    },
+    {
+      "name": "DaySwept",
+      "discriminator": [
+        171,
+        125,
+        100,
+        79,
+        150,
+        7,
+        225,
+        101
+      ]
+    },
+    {
+      "name": "DayVoided",
+      "discriminator": [
+        215,
+        31,
+        177,
+        20,
+        185,
+        252,
+        136,
+        107
+      ]
+    },
+    {
+      "name": "DeviceRegistered",
+      "discriminator": [
+        221,
+        90,
+        2,
+        153,
+        72,
+        98,
+        71,
+        181
+      ]
+    },
+    {
+      "name": "MissedSettled",
+      "discriminator": [
+        143,
+        167,
+        38,
+        213,
+        165,
+        29,
+        9,
+        97
+      ]
+    },
+    {
+      "name": "PoolInitialized",
+      "discriminator": [
+        100,
+        118,
+        173,
+        87,
+        12,
+        198,
+        254,
+        229
+      ]
+    },
+    {
+      "name": "ReserveFunded",
+      "discriminator": [
+        15,
+        45,
+        175,
+        239,
+        65,
+        137,
+        203,
+        230
+      ]
+    },
+    {
+      "name": "TreasuryWithdrawn",
+      "discriminator": [
+        143,
+        181,
+        157,
+        169,
+        87,
+        155,
+        170,
+        46
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Paused",
+      "msg": "Pool is paused"
+    },
+    {
+      "code": 6001,
+      "name": "NotAuthority",
+      "msg": "Signer is not the pool authority"
+    },
+    {
+      "code": 6002,
+      "name": "NotAttestor",
+      "msg": "Signer is not the registered attestor"
+    },
+    {
+      "code": 6003,
+      "name": "NotPendingAuthority",
+      "msg": "Signer is not the pending authority"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidConfig",
+      "msg": "Config value out of bounds"
+    },
+    {
+      "code": 6005,
+      "name": "UnsupportedMintExtension",
+      "msg": "Mint has a Token-2022 extension this vault does not support"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidDay",
+      "msg": "Day index is not today or tomorrow"
+    },
+    {
+      "code": 6007,
+      "name": "CommitWindowClosed",
+      "msg": "Commit window for this day has closed"
+    },
+    {
+      "code": 6008,
+      "name": "AttestWindowClosed",
+      "msg": "Attestation window for this day has closed"
+    },
+    {
+      "code": 6009,
+      "name": "DayNotOver",
+      "msg": "Day cannot be finalized before the attestation deadline"
+    },
+    {
+      "code": 6010,
+      "name": "AlreadyFinalized",
+      "msg": "Day already finalized"
+    },
+    {
+      "code": 6011,
+      "name": "NotFinalized",
+      "msg": "Day not finalized yet"
+    },
+    {
+      "code": 6012,
+      "name": "DayVoided",
+      "msg": "Day has been voided"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidCommitmentState",
+      "msg": "Commitment is not in the required state"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidSessionTime",
+      "msg": "Session timestamp is outside the allowed window"
+    },
+    {
+      "code": 6015,
+      "name": "SgtRequired",
+      "msg": "Seeker Genesis Token required"
+    },
+    {
+      "code": 6016,
+      "name": "InvalidSgt",
+      "msg": "Not a valid Seeker Genesis Token"
+    },
+    {
+      "code": 6017,
+      "name": "DeviceAlreadyCommitted",
+      "msg": "Device already committed for this day"
+    },
+    {
+      "code": 6018,
+      "name": "DayNotResolved",
+      "msg": "Not all commitments for this day are resolved"
+    },
+    {
+      "code": 6019,
+      "name": "InsufficientFunds",
+      "msg": "Amount exceeds available balance"
+    },
+    {
+      "code": 6020,
+      "name": "InsolventVault",
+      "msg": "Vault solvency invariant violated"
+    },
+    {
+      "code": 6021,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6022,
+      "name": "ClockBeforeOffset",
+      "msg": "Clock value is before the pool day offset"
+    },
+    {
+      "code": 6023,
+      "name": "StakeOutOfBounds",
+      "msg": "Stake amount is outside the pool's min/max stake"
+    },
+    {
+      "code": 6024,
+      "name": "GoalOutOfBounds",
+      "msg": "Goal target is outside the pool's limits for this exercise"
+    },
+    {
+      "code": 6025,
+      "name": "GoalNotMet",
+      "msg": "Attested reps/seconds are below the committed goal"
+    },
+    {
+      "code": 6026,
+      "name": "UnsupportedMintDecimals",
+      "msg": "Stake mint has more decimals than supported"
+    },
+    {
+      "code": 6027,
+      "name": "NotUpgradeAuthority",
+      "msg": "Signer is not the program upgrade authority"
+    },
+    {
+      "code": 6028,
+      "name": "InvalidDestination",
+      "msg": "Destination token account must not be the vault"
+    }
+  ],
+  "types": [
+    {
+      "name": "AuthorityProposed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_authority",
+            "docs": [
+              "Pubkey::default() = proposal cancelled."
+            ],
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AuthorityTransferred",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "old_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "new_authority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Claimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "principal",
+            "type": "u64"
+          },
+          {
+            "name": "bonus",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Commitment",
+      "docs": [
+        "One stake for one day. PDA: [\"commitment\", pool, user, day_index_le].",
+        "",
+        "Byte layout (incl. the 8-byte discriminator) is FROZEN for getProgramAccounts memcmp:",
+        "0 discriminator | 8 bump | 9 status | 10 pool | 42 user | 74 day_index (u32 LE)",
+        "| 78 version | 79 exercise | 80 goal_target | 84 amount | ... (see SPEC.md §2.4)"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "CommitmentStatus"
+              }
+            }
+          },
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Layout version (placed after day_index so pool/user/day_index keep their offsets)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "exercise",
+            "type": {
+              "defined": {
+                "name": "Exercise"
+              }
+            }
+          },
+          {
+            "name": "goal_target",
+            "docs": [
+              "User-picked goal, locked at commit: reps, or seconds for timed holds (plank, wall sit)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Stake in base units, chosen by the user within [pool.min_stake, pool.max_stake]."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "weight",
+            "docs": [
+              "Bonus weight (amount * streak multiplier); set at attestation, 0 otherwise."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "committed_at",
+            "type": "i64"
+          },
+          {
+            "name": "attested_at",
+            "type": "i64"
+          },
+          {
+            "name": "session_started_at",
+            "type": "i64"
+          },
+          {
+            "name": "reps",
+            "docs": [
+              "Attested result: reps, or SECONDS held for timed holds (plank, wall sit). >= goal_target."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "session_hash",
+            "docs": [
+              "sha256 of the canonical session summary the attestor verified."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "device",
+            "docs": [
+              "SGT mint used for this commit, or Pubkey::default() when SGT not required."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommitmentStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Committed"
+          },
+          {
+            "name": "Completed"
+          },
+          {
+            "name": "Revoked"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Committed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "exercise",
+            "type": {
+              "defined": {
+                "name": "Exercise"
+              }
+            }
+          },
+          {
+            "name": "goal_target",
+            "docs": [
+              "Reps (push-ups/squats) or seconds (plank)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "device",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CompletionAttested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "exercise",
+            "type": {
+              "defined": {
+                "name": "Exercise"
+              }
+            }
+          },
+          {
+            "name": "goal_target",
+            "type": "u32"
+          },
+          {
+            "name": "reps",
+            "docs": [
+              "Reps (push-ups/squats) or seconds (plank); always >= goal_target."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "session_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "weight",
+            "type": "u64"
+          },
+          {
+            "name": "streak",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CompletionRevoked",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "by",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConfigUpdated",
+      "docs": [
+        "Emitted with the full post-update configuration."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "min_stake",
+            "type": "u64"
+          },
+          {
+            "name": "max_stake",
+            "type": "u64"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "streak_bonus_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_streak_bonus_bps",
+            "type": "u16"
+          },
+          {
+            "name": "commit_cutoff_secs",
+            "type": "i64"
+          },
+          {
+            "name": "attest_grace_secs",
+            "type": "i64"
+          },
+          {
+            "name": "goal_limits",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "GoalLimits"
+                  }
+                },
+                16
+              ]
+            }
+          },
+          {
+            "name": "daily_sponsor_amount",
+            "type": "u64"
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "name": "require_sgt",
+            "type": "bool"
+          },
+          {
+            "name": "finalize_delay_secs",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DayFinalized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "total_staked",
+            "type": "u64"
+          },
+          {
+            "name": "completed_stake",
+            "type": "u64"
+          },
+          {
+            "name": "revoked_stake",
+            "docs": [
+              "Stake of revoked commitments: refunded, never forfeited."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "slashed",
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "sponsor",
+            "type": "u64"
+          },
+          {
+            "name": "distributable",
+            "type": "u64"
+          },
+          {
+            "name": "to_reserve",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DayState",
+      "docs": [
+        "Per-day aggregate. PDA: [\"day\", pool, day_index_le]. Created by the day's first commit",
+        "(which pays its rent and gets it back at sweep_day)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "finalized",
+            "type": "bool"
+          },
+          {
+            "name": "voided",
+            "type": "bool"
+          },
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "rent_payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "streak_bonus_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_streak_bonus_bps",
+            "type": "u16"
+          },
+          {
+            "name": "attest_deadline",
+            "docs": [
+              "day_end(d) + attest_grace_secs at creation (the NOMINAL deadline). Attest/revoke while",
+              "now <= effective_attest_deadline (this + time the pool spent paused since the day was",
+              "created); finalize once now > that + finalize_delay_secs and the pool is not paused."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "committed_count",
+            "type": "u32"
+          },
+          {
+            "name": "completed_count",
+            "type": "u32"
+          },
+          {
+            "name": "resolved_count",
+            "docs": [
+              "Commitments closed via claim or close_missed."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "total_staked",
+            "type": "u64"
+          },
+          {
+            "name": "completed_stake",
+            "type": "u64"
+          },
+          {
+            "name": "completed_weight",
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "sponsor",
+            "type": "u64"
+          },
+          {
+            "name": "distributable",
+            "docs": [
+              "Bonus pool for completers: forfeited - fee + sponsor."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "principal_paid",
+            "type": "u64"
+          },
+          {
+            "name": "bonus_paid",
+            "type": "u64"
+          },
+          {
+            "name": "attestor",
+            "docs": [
+              "Pool attestor when the day was created: the only key that may attest (or, besides the",
+              "authority, revoke) on this day."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "sponsor_cap",
+            "docs": [
+              "pool.daily_sponsor_amount at creation: the most finalize may draw from the reserve."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "finalize_delay_secs",
+            "docs": [
+              "Pool finalize_delay_secs at creation."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "paused_secs_base",
+            "docs": [
+              "Pool total paused seconds at creation; pauses after this extend the attest window."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "revoked_count",
+            "docs": [
+              "Revoked commitments: never forfeited, claim refunds principal only."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "revoked_stake",
+            "type": "u64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "DaySwept",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "dust",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DayVoided",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeviceLock",
+      "docs": [
+        "One per Seeker device (SGT mint). PDA: [\"device\", pool, sgt_mint]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "sgt_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "last_wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "commit_count",
+            "docs": [
+              "Number of commitments made with this device."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "recent_days",
+            "docs": [
+              "The two highest day indices committed with this device, recent_days[0] >= recent_days[1].",
+              "Only the first min(commit_count, 2) entries are meaningful."
+            ],
+            "type": {
+              "array": [
+                "u32",
+                2
+              ]
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeviceRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "sgt_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Exercise",
+      "docs": [
+        "Exercise a commitment is for. Borsh-encoded as one byte (the variant index).",
+        "The order is FROZEN: codes are stored on-chain in Commitment.exercise and index",
+        "Pool.goal_limits. New exercises are only ever appended."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pushup"
+          },
+          {
+            "name": "Squat"
+          },
+          {
+            "name": "Plank"
+          },
+          {
+            "name": "Lunge"
+          },
+          {
+            "name": "Situp"
+          },
+          {
+            "name": "LegRaise"
+          },
+          {
+            "name": "GluteBridge"
+          },
+          {
+            "name": "WallSit"
+          },
+          {
+            "name": "PikePushup"
+          },
+          {
+            "name": "JumpSquat"
+          },
+          {
+            "name": "Pullup"
+          },
+          {
+            "name": "Dip"
+          },
+          {
+            "name": "Burpee"
+          },
+          {
+            "name": "MountainClimber"
+          },
+          {
+            "name": "JumpingJack"
+          },
+          {
+            "name": "HighKnees"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GoalLimits",
+      "docs": [
+        "Inclusive goal bounds for one exercise (reps, or seconds for plank / wall sit)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "min",
+            "type": "u32"
+          },
+          {
+            "name": "max",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitPoolParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "min_stake",
+            "docs": [
+              "Inclusive per-commitment stake bounds in base units (0 < min <= max <= ceiling)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "max_stake",
+            "type": "u64"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "streak_bonus_bps",
+            "type": "u16"
+          },
+          {
+            "name": "max_streak_bonus_bps",
+            "type": "u16"
+          },
+          {
+            "name": "day_length_secs",
+            "docs": [
+              "300..=86_400. IMMUTABLE after init (86_400 on mainnet)."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "day_offset_secs",
+            "docs": [
+              "0 <= offset < day_length_secs. IMMUTABLE after init."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "commit_cutoff_secs",
+            "type": "i64"
+          },
+          {
+            "name": "attest_grace_secs",
+            "type": "i64"
+          },
+          {
+            "name": "goal_limits",
+            "docs": [
+              "Goal bounds indexed by Exercise code (0..EXERCISE_COUNT, enum order)."
+            ],
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "GoalLimits"
+                  }
+                },
+                16
+              ]
+            }
+          },
+          {
+            "name": "daily_sponsor_amount",
+            "docs": [
+              "<= max_stake."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "require_sgt",
+            "type": "bool"
+          },
+          {
+            "name": "finalize_delay_secs",
+            "docs": [
+              "Review window between a day's attest deadline and finalize: 0..=min(12 h, day length)."
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MissedSettled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "day_index",
+            "type": "u32"
+          },
+          {
+            "name": "slashed",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pool",
+      "docs": [
+        "Global config + accounting. PDA: [\"pool\", mint]. One pool per stake mint."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "docs": [
+              "Layout version (ACCOUNT_VERSION)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          },
+          {
+            "name": "paused",
+            "docs": [
+              "Blocks commit, attest_completion, finalize_day and attestor-signed revoke_completion.",
+              "Never blocks claim / close_missed / sweep. Time spent paused extends the attest window of",
+              "every day that existed during the pause (see `paused_secs_total`)."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "require_sgt",
+            "docs": [
+              "Require a Seeker Genesis Token (one commitment per device per day). true on mainnet."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "mint_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_authority",
+            "docs": [
+              "Pubkey::default() when no transfer is pending."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor",
+            "docs": [
+              "Off-chain verifier key, snapshotted into each DayState when the day is created. Only the",
+              "day's snapshot may attest/revoke for that day, so rotating it never affects live days.",
+              "Never equal to `authority`."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "vault",
+            "docs": [
+              "Token account PDA [\"vault\", pool], authority = pool."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "day_length_secs",
+            "docs": [
+              "Length of one pool day in seconds (300..=86_400). IMMUTABLE after init."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "day_offset_secs",
+            "docs": [
+              "Day d starts at d * day_length_secs + day_offset_secs (0 <= offset < length). IMMUTABLE."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "commit_cutoff_secs",
+            "docs": [
+              "Commits for day d accepted while now < day_start(d) + commit_cutoff_secs."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "attest_grace_secs",
+            "docs": [
+              "Attestations for day d accepted while now <= day_end(d) + attest_grace_secs",
+              "(snapshotted into DayState.attest_deadline when the day is created)."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "min_stake",
+            "docs": [
+              "Inclusive per-commitment stake bounds, base units. 0 < min <= max <= ceiling."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "max_stake",
+            "type": "u64"
+          },
+          {
+            "name": "fee_bps",
+            "docs": [
+              "Protocol cut of forfeited stake, bps (snapshotted per day)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "streak_bonus_bps",
+            "docs": [
+              "Extra bonus weight per consecutive completed day, bps (snapshotted per day)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "max_streak_bonus_bps",
+            "docs": [
+              "Cap on the streak weight boost, bps (snapshotted per day)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "goal_limits",
+            "docs": [
+              "Goal bounds indexed by `Exercise as u8` (all EXERCISE_COUNT variants, in enum order)."
+            ],
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "GoalLimits"
+                  }
+                },
+                16
+              ]
+            }
+          },
+          {
+            "name": "daily_sponsor_amount",
+            "docs": [
+              "Max amount drawn from `reserve` into each finalized day that has completers (snapshotted per",
+              "day as DayState.sponsor_cap). 0 by default; never above `max_stake`."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "reserve",
+            "docs": [
+              "Sponsor deposits + net forfeits of zero-completer days + rounding dust."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "treasury_accrued",
+            "docs": [
+              "Protocol fees; the ONLY balance the authority can withdraw."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "outstanding",
+            "docs": [
+              "Sum over live days of what is still owed to committers of that day."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "finalize_delay_secs",
+            "docs": [
+              "Review window after a day's (pause-extended) attest deadline before finalize_day is allowed",
+              "(snapshotted per day). 0..=min(MAX_FINALIZE_DELAY_SECS, day_length_secs)."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "paused_since",
+            "docs": [
+              "Unix time the current pause started; 0 while not paused."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "total_paused_secs",
+            "docs": [
+              "Total seconds of all completed pauses since the pool was created."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PoolInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "min_stake",
+            "type": "u64"
+          },
+          {
+            "name": "max_stake",
+            "type": "u64"
+          },
+          {
+            "name": "fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "day_length_secs",
+            "type": "i64"
+          },
+          {
+            "name": "day_offset_secs",
+            "type": "i64"
+          },
+          {
+            "name": "require_sgt",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReserveFunded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "funder",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TreasuryWithdrawn",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "to",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateConfigParams",
+      "docs": [
+        "Every field optional; day_length_secs and day_offset_secs are deliberately absent (immutable).",
+        "All bounds are re-validated on the resulting config."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "attestor",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "min_stake",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "max_stake",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "fee_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "streak_bonus_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "max_streak_bonus_bps",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "commit_cutoff_secs",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "attest_grace_secs",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "goal_limits",
+            "type": {
+              "option": {
+                "array": [
+                  {
+                    "defined": {
+                      "name": "GoalLimits"
+                    }
+                  },
+                  16
+                ]
+              }
+            }
+          },
+          {
+            "name": "daily_sponsor_amount",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "paused",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "require_sgt",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "finalize_delay_secs",
+            "type": {
+              "option": "i64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserProfile",
+      "docs": [
+        "Per-user stats. PDA: [\"profile\", pool, user]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "current_streak",
+            "type": "u16"
+          },
+          {
+            "name": "best_streak",
+            "type": "u16"
+          },
+          {
+            "name": "has_completed",
+            "type": "bool"
+          },
+          {
+            "name": "last_completed_day",
+            "type": "u32"
+          },
+          {
+            "name": "total_committed",
+            "type": "u32"
+          },
+          {
+            "name": "total_completed",
+            "type": "u32"
+          },
+          {
+            "name": "total_missed",
+            "type": "u32"
+          },
+          {
+            "name": "total_bonus_earned",
+            "type": "u64"
+          },
+          {
+            "name": "completed_days_mask",
+            "docs": [
+              "Bit i set <=> day (last_completed_day - i) is completed (attested, not revoked).",
+              "Makes the streak independent of the order in which the attestor submits days."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "streak_carry",
+            "docs": [
+              "Exact streak ending at day (last_completed_day - 64), i.e. just below the mask window."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "last_completed_amount",
+            "docs": [
+              "Stake of the commitment completed on last_completed_day: the most of today's stake the",
+              "streak boost applies to (the boost only covers stake that was also at risk the day before)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
