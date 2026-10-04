@@ -128,8 +128,7 @@ export default function FormGuide({ exercise, onContinue }: FormGuideProps) {
         <h2 id="guide-placement-heading" className={screen.cardTitle}>
           Where to put your phone
         </h2>
-        <PhonePlacement exercise={exercise} layout={guide.placement.layout} distance={guide.placement.distance} />
-        <p className={screen.cardText}>{guide.placement.caption}</p>
+        <PhonePlacement exercise={exercise} />
       </section>
 
       <label className={styles.dontShow}>

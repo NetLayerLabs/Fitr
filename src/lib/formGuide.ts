@@ -1,4 +1,5 @@
 import type { ExerciseKind } from "@/lib/pose/types";
+import { EXERCISES } from "@/lib/exercises";
 
 export type Demonstrator = "man" | "woman";
 
@@ -20,10 +21,14 @@ export interface FormGuideContent {
   /** Three short cues, in the order you do them. */
   cues: [string, string, string];
   placement: {
-    /** Where the phone goes; drives the diagram. */
+    /** Where the phone goes; drives the diagrams and the setup steps. */
     layout: "floor" | "standing";
+    /** e.g. "about 2 m". */
     distance: string;
-    caption: string;
+    /** For a raised phone: the height of the lens. */
+    height?: "knee" | "seat" | "hip" | "chest";
+    /** One extra, exercise-specific check. */
+    tip?: string;
   };
   /**
    * Verified demo clips (same camera view as the exercise, whole body, must pass Fitr's own engine before they are
@@ -42,8 +47,7 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "floor",
-      distance: "~2 m",
-      caption: "Phone on the floor about 2 m away, side-on, upright in portrait.",
+      distance: "about 2 m",
     },
     clips: {},
   },
@@ -56,8 +60,8 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~2.5 m",
-      caption: "Phone standing upright about 2.5 m away, side-on, around hip height.",
+      distance: "about 2.5 m",
+      height: "hip",
     },
     clips: {},
   },
@@ -70,8 +74,7 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "floor",
-      distance: "~2 m",
-      caption: "Phone on the floor about 2 m away, side-on, upright in portrait.",
+      distance: "about 2 m",
     },
     clips: {},
   },
@@ -84,8 +87,9 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~2.5 m",
-      caption: "Phone standing upright about 2.5 m away at hip height, side-on, room for your stride.",
+      distance: "about 2.5 m",
+      height: "hip",
+      tip: "Leave room for your stride in front and behind.",
     },
     clips: {},
   },
@@ -98,8 +102,7 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "floor",
-      distance: "~2 m",
-      caption: "Phone on the floor about 2 m away, side-on, upright in portrait.",
+      distance: "about 2 m",
     },
     clips: {},
   },
@@ -112,8 +115,8 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "floor",
-      distance: "~2 m",
-      caption: "Phone on the floor about 2 m away, side-on, tilted up so your raised feet stay in frame.",
+      distance: "about 2 m",
+      tip: "Tilt the phone back slightly so your raised feet stay in frame.",
     },
     clips: {},
   },
@@ -126,8 +129,7 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "floor",
-      distance: "~1.5–2 m",
-      caption: "Phone on the floor about 1.5–2 m away, side-on to your hips, upright in portrait.",
+      distance: "1.5–2 m",
     },
     clips: {},
   },
@@ -140,8 +142,9 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~2 m",
-      caption: "Phone standing upright about 2 m away at knee-to-hip height, side-on to the wall.",
+      distance: "about 2 m",
+      height: "knee",
+      tip: "The wall stays behind you and runs down the side of the frame.",
     },
     clips: {},
   },
@@ -154,8 +157,8 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "floor",
-      distance: "~2 m",
-      caption: "Phone on the floor about 2 m away, side-on, upright in portrait so your raised hips fit.",
+      distance: "about 2 m",
+      tip: "Your raised hips must fit inside the top of the frame.",
     },
     clips: {},
   },
@@ -168,8 +171,9 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~3 m",
-      caption: "Phone standing upright about 3 m away at hip height, side-on, headroom for the jump.",
+      distance: "about 3 m",
+      height: "hip",
+      tip: "Leave headroom: your hands must stay in frame at the top of the jump.",
     },
     clips: {},
   },
@@ -182,8 +186,9 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~2.5–3 m",
-      caption: "Phone standing upright 2.5–3 m in front of the bar, front-facing, tilted up to fit bar and feet.",
+      distance: "2.5–3 m",
+      height: "hip",
+      tip: "Tilt the phone up so the bar and your feet are both in frame.",
     },
     clips: {},
   },
@@ -196,8 +201,8 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~2 m",
-      caption: "Phone standing upright about 2 m away at seat height, side-on to you.",
+      distance: "about 2 m",
+      height: "seat",
     },
     clips: {},
   },
@@ -210,8 +215,9 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~3 m",
-      caption: "Phone standing upright about 3 m away at hip height, side-on, whole body in frame standing and lying.",
+      distance: "about 3 m",
+      height: "hip",
+      tip: "You must fit in frame both standing and down on the floor.",
     },
     clips: {},
   },
@@ -224,8 +230,7 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "floor",
-      distance: "~2 m",
-      caption: "Phone on the floor about 2 m away, side-on, upright in portrait.",
+      distance: "about 2 m",
     },
     clips: {},
   },
@@ -238,8 +243,9 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~2.5–3 m",
-      caption: "Phone standing upright 2.5–3 m in front of you at chest height, front-facing.",
+      distance: "2.5–3 m",
+      height: "chest",
+      tip: "Your hands must stay in frame at the top of each jump.",
     },
     clips: {},
   },
@@ -252,9 +258,34 @@ export const FORM_GUIDES: Record<ExerciseKind, FormGuideContent> = {
     ],
     placement: {
       layout: "standing",
-      distance: "~2.5–3 m",
-      caption: "Phone standing upright 2.5–3 m in front of you at hip height, front-facing.",
+      distance: "2.5–3 m",
+      height: "hip",
     },
     clips: {},
   },
 };
+const HEIGHT_LABEL: Record<NonNullable<FormGuideContent["placement"]["height"]>, string> = {
+  knee: "at knee height",
+  seat: "at seat height",
+  hip: "at hip height",
+  chest: "at chest height",
+};
+
+/** The phone set-up as short numbered steps, in the order you do them. */
+export function placementSteps(kind: ExerciseKind): string[] {
+  const { layout, distance, height, tip } = FORM_GUIDES[kind].placement;
+  const front = EXERCISES[kind].camera === "front";
+  const steps = [
+    layout === "floor"
+      ? "Stand your phone upright (portrait) on the floor, leaning on something."
+      : `Stand your phone upright (portrait) ${HEIGHT_LABEL[height ?? "hip"]}, on a chair, shelf or stand.`,
+    `Step back ${distance} from the phone.`,
+    front
+      ? "Face the phone straight on."
+      : layout === "floor"
+        ? "Get down side-on to the phone, so your body runs across the screen from side to side."
+        : "Turn side-on, so one shoulder points at the phone.",
+    "Check the preview: your whole body, head to feet, is in the frame.",
+  ];
+  return tip ? [...steps, tip] : steps;
+}

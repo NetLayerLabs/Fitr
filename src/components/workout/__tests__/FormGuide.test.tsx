@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FORM_GUIDES } from "@/lib/formGuide";
+import { FORM_GUIDES, placementSteps } from "@/lib/formGuide";
 import { DEFAULT_GUIDE_PREFS, getGuidePrefs, resetGuidePrefsCache } from "@/lib/storage/guidePrefs";
 import FormGuide from "../FormGuide";
 
@@ -30,7 +30,9 @@ describe("FormGuide", () => {
     render(<FormGuide exercise="pushup" onContinue={() => {}} />);
     expect(screen.getByRole("heading", { level: 1, name: FORM_GUIDES.pushup.title })).toBeDefined();
     for (const cue of FORM_GUIDES.pushup.cues) expect(screen.getByText(cue)).toBeDefined();
-    expect(screen.getByText(FORM_GUIDES.pushup.placement.caption)).toBeDefined();
+    for (const step of placementSteps("pushup")) expect(screen.getByText(step)).toBeDefined();
+    expect(screen.getByText("From above")).toBeDefined();
+    expect(screen.getByText("What your phone sees")).toBeDefined();
     expect(screen.getByRole("img", { name: /demonstration of push-ups/i })).toBeDefined();
   });
 

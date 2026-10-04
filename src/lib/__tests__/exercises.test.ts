@@ -7,7 +7,7 @@ import {
   exerciseFromCode,
   exercisesByCategory,
 } from "@/lib/exercises";
-import { FORM_GUIDES } from "@/lib/formGuide";
+import { FORM_GUIDES, placementSteps } from "@/lib/formGuide";
 import { EXERCISE_KINDS, isExerciseKind } from "@/lib/pose/types";
 
 describe("exercise catalogue", () => {
@@ -86,7 +86,12 @@ describe("exercise catalogue", () => {
       const guide = FORM_GUIDES[kind];
       expect(guide.cues).toHaveLength(3);
       expect(guide.title.length).toBeGreaterThan(0);
-      if (EXERCISES[kind].camera === "front") expect(guide.placement.caption).toMatch(/front-facing/);
+      const steps = placementSteps(kind);
+      expect(steps.length).toBeGreaterThanOrEqual(4);
+      expect(steps[1]).toContain(guide.placement.distance);
+      if (EXERCISES[kind].camera === "front") expect(steps[2]).toMatch(/Face the phone/);
+      else expect(steps[2]).toMatch(/side-on/);
+      if (guide.placement.layout === "floor") expect(steps[0]).toMatch(/on the floor/);
     }
   });
 });
