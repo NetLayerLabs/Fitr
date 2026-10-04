@@ -1,0 +1,20 @@
+*.iml
+.gradle
+/local.properties
+.local/
+
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+
+.idea
+
+# Fitr: never commit signing material or build output
+*.keystore
+*.jks
+KEYSTORE.txt
+build/

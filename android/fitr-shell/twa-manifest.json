@@ -1,0 +1,13 @@
+{
+  "fallbackType": "webview",
+  "generatorApp": "solana-mobile",
+  "host": "fitr.day",
+  "launcherName": "Fitr",
+  "name": "Fitr",
+  "packageId": "day.fitr",
+  "startUrl": "/",
+  "signingKey": {
+    "alias": "fitr-release",
+    "path": "~/.fitr/keys/fitr-release.keystore"
+  }
+}

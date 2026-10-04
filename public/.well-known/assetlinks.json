@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "day.fitr",
+      "sha256_cert_fingerprints": [
+        "64:D0:83:FE:C3:CF:EC:9F:52:D6:0D:C8:72:F5:45:EA:7A:25:D8:F2:9A:10:91:66:E1:E7:35:D4:DF:53:5E:06"
+      ]
+    }
+  }
+]
