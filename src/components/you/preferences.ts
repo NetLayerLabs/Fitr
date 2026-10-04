@@ -1,14 +1,15 @@
 "use client";
 
 /**
- * App preferences set on the You tab (default camera, haptics), persisted in localStorage.
+ * App preferences set on the You tab (default camera, haptics, voice coach), persisted in localStorage.
  *
  * External store for useSyncExternalStore, same pattern as lib/storage/guidePrefs.ts:
  * getPreferences() returns a cached frozen object whose identity only changes with the data.
  * Storage failures (private mode, blocked site data, quota) degrade to an in-memory value.
  *
  * Consumers outside this tab (the workout screen) read them with getPreferences() or
- * usePreferences(): `camera` is the facingMode to open first, `haptics` gates navigator.vibrate.
+ * usePreferences(): `camera` is the facingMode to open first, `haptics` gates navigator.vibrate,
+ * `voiceCoach` gates spoken rep counts and cues (components/workout/voiceCoach.ts).
  */
 import { useSyncExternalStore } from "react";
 
@@ -19,11 +20,17 @@ export interface AppPreferences {
   camera: CameraFacing;
   /** Vibrate on counted reps and on reaching the goal. */
   haptics: boolean;
+  /** Speak rep counts, milestones, form cues and live checks during a workout. */
+  voiceCoach: boolean;
 }
 
 export const PREFERENCES_STORAGE_KEY = "fitr.prefs.v1";
 
-export const DEFAULT_PREFERENCES: Readonly<AppPreferences> = Object.freeze({ camera: "user", haptics: true });
+export const DEFAULT_PREFERENCES: Readonly<AppPreferences> = Object.freeze({
+  camera: "user",
+  haptics: true,
+  voiceCoach: true,
+});
 
 let cache: Readonly<AppPreferences> | null = null;
 const listeners = new Set<() => void>();
@@ -37,6 +44,7 @@ export function parsePreferences(raw: string | null): Readonly<AppPreferences> {
     return Object.freeze({
       camera: d.camera === "environment" || d.camera === "user" ? d.camera : DEFAULT_PREFERENCES.camera,
       haptics: typeof d.haptics === "boolean" ? d.haptics : DEFAULT_PREFERENCES.haptics,
+      voiceCoach: typeof d.voiceCoach === "boolean" ? d.voiceCoach : DEFAULT_PREFERENCES.voiceCoach,
     });
   } catch {
     return DEFAULT_PREFERENCES;

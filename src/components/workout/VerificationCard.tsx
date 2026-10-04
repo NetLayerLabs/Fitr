@@ -1,3 +1,4 @@
+import ShareVerifiedButton from "@/components/public/ShareVerifiedButton";
 import { AlertIcon, CheckIcon, RefreshIcon, ShieldIcon } from "@/components/icons/Icons";
 import type { GoalUnit } from "@/lib/exercises";
 import { verifyReasonCopy, type VerifiedStatus, type VerifyOutcome } from "@/hooks/useVerifiedSession";
@@ -12,10 +13,14 @@ export interface VerificationCardProps {
   unit: GoalUnit;
   /** Retry the on-chain submission (when the outcome is retryable). */
   onRetry?: () => void;
+  /** Pool day of the verified stake, for the Share link (looked up on tap when omitted). */
+  shareDayIndex?: number | null;
+  /** Crew of the verified stake (null / 0 = the global pool), so the share card reads the right pool. */
+  shareCrewId?: bigint | null;
 }
 
 /** Result of the staked verification on the finished screen. Renders nothing for unstaked workouts. */
-export default function VerificationCard({ status, outcome, error, unit, onRetry }: VerificationCardProps) {
+export default function VerificationCard({ status, outcome, error, unit, onRetry, shareDayIndex = null, shareCrewId = null }: VerificationCardProps) {
   if (status === "starting" || status === "recording" || status === "finishing") {
     return (
       <section className={styles.verifyCard} data-tone="pending" role="status" aria-label="Verification">
@@ -45,6 +50,7 @@ export default function VerificationCard({ status, outcome, error, unit, onRetry
               View transaction
             </a>
           ) : null}
+          <ShareVerifiedButton dayIndex={shareDayIndex} crewId={shareCrewId || null} label={formatGoal(outcome.count, unit)} />
         </div>
       </section>
     );

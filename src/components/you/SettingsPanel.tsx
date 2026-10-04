@@ -10,6 +10,7 @@ import {
   setGuideHidden,
   subscribeGuidePrefs,
 } from "@/lib/storage/guidePrefs";
+import { useNativeReminders } from "@/components/native/useNativeReminders";
 import { setPreference, usePreferences } from "./preferences";
 import styles from "./You.module.css";
 
@@ -17,7 +18,46 @@ function useGuidePrefs() {
   return useSyncExternalStore(subscribeGuidePrefs, getGuidePrefs, getServerGuidePrefs);
 }
 
-/** Default camera, haptics and form-guide settings. All stored on this device only. */
+function remindersHint(enabled: boolean, permission: string): string {
+  if (!enabled) return "Off. Fitr won't nudge you before a stake deadline.";
+  if (permission === "denied") return "Notifications are blocked for Fitr. Tap the switch to open Android settings.";
+  if (permission !== "granted") return "Allow notifications so Fitr can remind you before your deadline.";
+  return "A nudge 2 hours before your stake deadline, and a last call 30 minutes before.";
+}
+
+/** Clock-in reminders: only inside the Android app, where the native bridge can post notifications. */
+function RemindersSetting() {
+  const reminders = useNativeReminders();
+  if (!reminders.available) return null;
+  const { enabled, permission } = reminders;
+  // A switch that is on but cannot notify is shown as off, so tapping it fixes the permission.
+  const effective = enabled && permission === "granted";
+  return (
+    <div className={styles.setting} data-inline="">
+      <div className={styles.settingText}>
+        <p className={styles.settingTitle} id="setting-reminders">
+          Clock-in reminders
+        </p>
+        <p className={styles.settingHint} id="setting-reminders-hint" role="status">
+          {remindersHint(enabled, permission)}
+        </p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={effective}
+        aria-labelledby="setting-reminders"
+        aria-describedby="setting-reminders-hint"
+        className={styles.switch}
+        onClick={() => reminders.setEnabled(!effective)}
+      >
+        <span className={styles.switchThumb} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+/** Default camera, haptics, voice coach and form-guide settings. All stored on this device only. */
 export default function SettingsPanel() {
   const prefs = usePreferences();
   const guides = useGuidePrefs();
@@ -63,6 +103,30 @@ export default function SettingsPanel() {
           <span className={styles.switchThumb} aria-hidden="true" />
         </button>
       </div>
+
+      <div className={styles.setting} data-inline="">
+        <div className={styles.settingText}>
+          <p className={styles.settingTitle} id="setting-voice">
+            Voice coach
+          </p>
+          <p className={styles.settingHint} id="setting-voice-hint">
+            Counts your reps out loud and calls form cues and live checks, so you never need to read the screen.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={prefs.voiceCoach}
+          aria-labelledby="setting-voice"
+          aria-describedby="setting-voice-hint"
+          className={styles.switch}
+          onClick={() => setPreference("voiceCoach", !prefs.voiceCoach)}
+        >
+          <span className={styles.switchThumb} aria-hidden="true" />
+        </button>
+      </div>
+
+      <RemindersSetting />
 
       <div className={styles.setting}>
         <div className={styles.settingText}>

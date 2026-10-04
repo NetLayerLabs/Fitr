@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AlertIcon, CameraIcon, ShieldIcon } from "@/components/icons/Icons";
 import { useSelectedWallet } from "@/components/wallet/hooks";
-import { getPreferences, usePreferences } from "@/components/you/preferences";
+import { getPreferences, setPreference, usePreferences } from "@/components/you/preferences";
 import { useCamera } from "@/hooks/useCamera";
 import { useGuidePrefs } from "@/hooks/useGuidePrefs";
 import { useHydrated } from "@/hooks/useSessions";
@@ -16,6 +16,7 @@ import { EXERCISES } from "@/lib/exercises";
 import { createRepEngine } from "@/lib/pose/engine";
 import { gateFrameByOrientation } from "@/lib/pose/runtime/orientation";
 import type { ExerciseKind, PoseFrame, RepEngine, SessionSummary } from "@/lib/pose/types";
+import { speak, stopSpeaking } from "@/lib/native/bridge";
 import { createSessionId, saveSession } from "@/lib/storage/history";
 import ChallengePrompt from "./ChallengePrompt";
 import FormGuide from "./FormGuide";
@@ -30,6 +31,7 @@ import StakeBanner from "./StakeBanner";
 import StatusPanel from "./StatusPanel";
 import VerificationCard from "./VerificationCard";
 import { useWakeLock } from "./useWakeLock";
+import { ChallengeWatcher, VoiceCoach, type CoachLine } from "./voiceCoach";
 import styles from "./WorkoutScreen.module.css";
 
 type Stage = "setup" | "live" | "finished";
@@ -85,6 +87,12 @@ function vibrate(pattern: number | number[]): void {
   } catch {
     // Some browsers throw without a recent user gesture; haptics are optional.
   }
+}
+
+/** Hands lines from the voice coach to TTS, unless the coach is turned off on the You tab (read live). */
+function say(lines: readonly CoachLine[]): void {
+  if (lines.length === 0 || !getPreferences().voiceCoach) return;
+  for (const line of lines) speak(line.text, line.interrupt);
 }
 
 export interface WorkoutScreenProps {
@@ -162,6 +170,9 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
   const trackerRef = useRef<HudTracker | null>(null);
   const startClickedAtRef = useRef(0);
   const firstPoseAtRef = useRef(0);
+  // Voice coach for the running session (created on Start, so nothing is said before that).
+  const coachRef = useRef<VoiceCoach | null>(null);
+  const watcherRef = useRef<ChallengeWatcher | null>(null);
 
   const boxRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -253,6 +264,14 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
       if (out.vibrate !== null) vibrate(out.vibrate);
       if (out.hud) setHud(out.hud);
       if (out.announce) setAnnouncement(out.announce);
+
+      const coach = coachRef.current;
+      if (coach) {
+        const now = Date.now();
+        say(coach.update({ state, events, tilted }, now));
+        const passed = watcherRef.current?.push(input) ?? null;
+        if (passed) say(coach.challengePassed(passed, now));
+      }
     },
   });
 
@@ -262,6 +281,37 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
   useEffect(() => {
     if (canBegin) beginVerified();
   }, [canBegin, beginVerified]);
+
+  // Voice coach: the ready countdown ("3, 2, 1, go") and live checks.
+  useEffect(() => {
+    if (live) say(coachRef.current?.countdown(countdown, Date.now()) ?? []);
+  }, [live, countdown]);
+
+  const challenge = live ? verified.challenge : null;
+  useEffect(() => {
+    watcherRef.current?.watch(challenge ? { id: challenge.id, type: challenge.type } : null);
+    say(coachRef.current?.challenge(challenge, Date.now()) ?? []);
+  }, [challenge]);
+
+  // Quiet when the app goes to the background, and when this screen goes away.
+  useEffect(() => {
+    if (!live) return;
+    const onVisibility = () => {
+      if (document.visibilityState !== "hidden") return;
+      coachRef.current?.silence();
+      stopSpeaking();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [live]);
+  useEffect(
+    () => () => {
+      coachRef.current?.stop();
+      coachRef.current = null;
+      stopSpeaking();
+    },
+    [],
+  );
 
   // Tick the countdown; a short buzz on "go".
   useEffect(() => {
@@ -282,6 +332,11 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
     setCountdown(null);
     engineRef.current = createRepEngine(exercise);
     trackerRef.current = createHudTracker({ exercise, unit: info.unit, goal });
+    stopCoach();
+    coachRef.current = new VoiceCoach({ exerciseName: info.name, unit: info.unit, goal });
+    watcherRef.current = new ChallengeWatcher();
+    // Spoken inside the Start tap: browsers only allow speech after a user gesture.
+    say(coachRef.current.start(Date.now()));
     startClickedAtRef.current = Date.now();
     firstPoseAtRef.current = 0;
     setHud(INITIAL_HUD);
@@ -291,7 +346,17 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
     setStage("live");
   }
 
+  function stopCoach() {
+    if (coachRef.current) {
+      coachRef.current.stop();
+      stopSpeaking();
+    }
+    coachRef.current = null;
+    watcherRef.current = null;
+  }
+
   function endSession() {
+    stopCoach();
     const endedAt = Date.now();
     const summary = engineRef.current?.summary() ?? emptySummary(exercise);
     const value = info.unit === "seconds" ? summary.holdMs / 1000 : summary.reps;
@@ -316,6 +381,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
 
   /** Back to setup; also drops the back-button guard entry unless back already popped it. */
   function cancelToSetup(popGuard = true) {
+    stopCoach();
     engineRef.current = null;
     trackerRef.current = null;
     setCountdown(null);
@@ -460,6 +526,8 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
               error={verified.error}
               unit={info.unit}
               onRetry={verified.finish}
+              shareDayIndex={verified.commitment?.dayIndex ?? null}
+              shareCrewId={verified.commitment?.crewId ?? null}
             />
           ) : null
         }
@@ -669,6 +737,13 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
           goal={goal}
           verification={hudVerification}
           onToggleFit={() => setFit((f) => (f === "cover" ? "contain" : "cover"))}
+          voiceOn={prefs.voiceCoach}
+          onToggleVoice={() => {
+            const next = !prefs.voiceCoach;
+            setPreference("voiceCoach", next);
+            if (next) speak("Voice coach on", true);
+            else stopSpeaking();
+          }}
           onEnd={endSession}
         />
       )}

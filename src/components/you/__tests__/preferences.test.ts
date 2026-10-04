@@ -17,8 +17,8 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("preferences", () => {
-  it("defaults to the front camera with haptics on", () => {
-    expect(getPreferences()).toEqual({ camera: "user", haptics: true });
+  it("defaults to the front camera with haptics and the voice coach on", () => {
+    expect(getPreferences()).toEqual({ camera: "user", haptics: true, voiceCoach: true });
   });
 
   it("parses defensively", () => {
@@ -26,7 +26,13 @@ describe("preferences", () => {
     expect(parsePreferences("{oops")).toBe(DEFAULT_PREFERENCES);
     expect(parsePreferences("[]")).toBe(DEFAULT_PREFERENCES);
     expect(parsePreferences('{"camera":"sideways","haptics":"yes"}')).toEqual(DEFAULT_PREFERENCES);
-    expect(parsePreferences('{"camera":"environment","haptics":false}')).toEqual({ camera: "environment", haptics: false });
+    expect(parsePreferences('{"camera":"environment","haptics":false}')).toEqual({
+      camera: "environment",
+      haptics: false,
+      voiceCoach: true,
+    });
+    expect(parsePreferences('{"voiceCoach":"no"}')).toEqual(DEFAULT_PREFERENCES);
+    expect(parsePreferences('{"voiceCoach":false}')).toEqual({ camera: "user", haptics: true, voiceCoach: false });
   });
 
   it("persists, notifies and keeps identity when unchanged", () => {
@@ -39,7 +45,11 @@ describe("preferences", () => {
 
     setPreference("camera", "environment");
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(localStorage.getItem(PREFERENCES_STORAGE_KEY) ?? "{}")).toEqual({ camera: "environment", haptics: true });
+    expect(JSON.parse(localStorage.getItem(PREFERENCES_STORAGE_KEY) ?? "{}")).toEqual({
+      camera: "environment",
+      haptics: true,
+      voiceCoach: true,
+    });
     resetPreferencesCache();
     expect(getPreferences().camera).toBe("environment");
     unsubscribe();
@@ -60,7 +70,7 @@ describe("preferences", () => {
     localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify({ camera: "environment", haptics: false }));
     window.dispatchEvent(new StorageEvent("storage", { key: PREFERENCES_STORAGE_KEY }));
     expect(listener).toHaveBeenCalled();
-    expect(getPreferences()).toEqual({ camera: "environment", haptics: false });
+    expect(getPreferences()).toEqual({ camera: "environment", haptics: false, voiceCoach: true });
     unsubscribe();
   });
 });

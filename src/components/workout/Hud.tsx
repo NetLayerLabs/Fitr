@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { CameraIcon, ExpandIcon, ShieldIcon, ShrinkIcon, StopIcon, TrophyIcon } from "@/components/icons/Icons";
+import {
+  CameraIcon,
+  ExpandIcon,
+  ShieldIcon,
+  ShrinkIcon,
+  SpeakerIcon,
+  SpeakerOffIcon,
+  StopIcon,
+  TrophyIcon,
+} from "@/components/icons/Icons";
 import { EXERCISES } from "@/lib/exercises";
 import type { EnginePhase, ExerciseKind } from "@/lib/pose/types";
 import FormFeedback from "./FormFeedback";
@@ -78,6 +87,9 @@ export interface HudProps {
   /** Present on a verified (staked) run. */
   verification?: HudVerification | null;
   onToggleFit: () => void;
+  /** Voice coach on/off (the You-tab setting). The button shows only when a handler is given. */
+  voiceOn?: boolean;
+  onToggleVoice?: () => void;
   onEnd: () => void;
 }
 
@@ -92,6 +104,8 @@ export default function Hud({
   goal,
   verification = null,
   onToggleFit,
+  voiceOn = false,
+  onToggleVoice,
   onEnd,
 }: HudProps) {
   const info = EXERCISES[exercise];
@@ -121,6 +135,18 @@ export default function Hud({
         </p>
         <div className={styles.hudTopRight}>
           <TrackingIndicator level={hud.confidence} />
+          {onToggleVoice ? (
+            <button
+              type="button"
+              className={styles.iconButton}
+              onClick={onToggleVoice}
+              aria-pressed={voiceOn}
+              aria-label="Voice coach"
+              data-on={voiceOn ? "" : undefined}
+            >
+              {voiceOn ? <SpeakerIcon size={22} /> : <SpeakerOffIcon size={22} />}
+            </button>
+          ) : null}
           <button
             type="button"
             className={styles.iconButton}

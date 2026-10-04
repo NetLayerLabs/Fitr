@@ -7,6 +7,7 @@ import { formatSkr } from "@/lib/solana/format";
 import { formatGoal } from "./format";
 import styles from "./WorkoutScreen.module.css";
 import { SkrText } from "@/components/brand/SkrAmount";
+import { workoutHrefFor } from "@/components/crews/multiPool";
 
 export interface StakeBannerProps {
   status: VerifiedStatus;
@@ -48,11 +49,25 @@ export default function StakeBanner({ status, commitment, otherExercise, error }
       </span>
       <div>
         <p className={styles.stakeTitle}>
-          Staked · <SkrText text={formatSkr(commitment.amount)} /> on {formatGoal(commitment.goalTarget, info.unit)}
+          Staked{commitment.crewName ? ` with ${commitment.crewName}` : ""} · <SkrText text={formatSkr(commitment.amount)} /> on{" "}
+          {formatGoal(commitment.goalTarget, info.unit)}
         </p>
         <p className={styles.stakeText}>
           This workout is verified live. Watch for live checks on screen and keep going until they are done.
         </p>
+        {commitment.alternatives?.length ? (
+          <p className={styles.stakeText}>
+            Verify for another stake instead:{" "}
+            {commitment.alternatives.map((a, i) => (
+              <span key={a.crewId.toString()}>
+                {i > 0 ? ", " : null}
+                {/* A full load: the stake is looked up once per screen. */}
+                <a href={workoutHrefFor(commitment.exercise, a.crewId)}>{a.crewId === 0n ? "Solo" : a.crewName}</a>
+              </span>
+            ))}
+            . One workout verifies one stake.
+          </p>
+        ) : null}
         {status === "error" && error ? <p className={styles.stakeError}>{error}</p> : null}
       </div>
     </section>
