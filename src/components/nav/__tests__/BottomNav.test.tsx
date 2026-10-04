@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 let pathname = "/";
 vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
 
-import BottomNav, { NAV_ITEMS, isNavItemActive } from "../BottomNav";
+import BottomNav, { NAV_ITEMS, isBottomNavVisible, isNavItemActive } from "../BottomNav";
 
 afterEach(() => {
   cleanup();
@@ -46,6 +46,11 @@ describe("BottomNav", () => {
   it("is hidden on live workout screens", () => {
     const { container } = renderAt("/workout/pushup");
     expect(container.firstChild).toBeNull();
+  });
+
+  it("renders on /landing too (the landing page hides it with CSS, keeping hydration stable)", () => {
+    expect(isBottomNavVisible("/landing")).toBe(true);
+    expect(isBottomNavVisible("/")).toBe(true);
   });
 
   it("stays visible on an unknown /workout path (404)", () => {

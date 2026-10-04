@@ -332,6 +332,19 @@ ol[role="list"] {
   }
 }
 
+/* Public landing page (/landing, served as fitr.day): a full-width marketing page, not the
+   480 px app column. The ambient light spans the whole viewport; no column hairlines. */
+.app-frame:has([data-page="landing"]) {
+  max-width: none;
+  border-inline: 0;
+  box-shadow: none;
+}
+
+.app-frame:has([data-page="landing"])::before,
+.app-frame:has([data-page="landing"])::after {
+  width: 100vw;
+}
+
 /* ---------- Utilities ---------- */
 
 .sr-only {
@@ -468,4 +481,10 @@ ol[role="list"] {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* The marketing landing page has no app tab bar. Hidden by content (not URL) because on
+   fitr.day the landing is served at "/" via a host rewrite. */
+.app-frame:has([data-page="landing"]) [data-bottom-nav] {
+  display: none;
 }

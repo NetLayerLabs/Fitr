@@ -10,6 +10,21 @@ const SW_REMOTE_ORIGINS = ["https://cdn.jsdelivr.net", "https://storage.googleap
 const nextConfig: NextConfig = {
   // Old tab routes from before the five-tab redesign. Permanent (308) so installed shells,
   // bookmarks and the TWA land on the new tabs. Query strings carry over automatically.
+  // fitr.day (marketing) and app.fitr.day (the app) are the same Next server behind nginx.
+  // The landing page is /landing; on the marketing host it is served at "/". Doing this here
+  // (not in nginx) keeps the server and client router agreeing on the URL, so hydration and
+  // client navigation stay consistent.
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: "/", has: [{ type: "host", value: "fitr.day" }], destination: "/landing" },
+        { source: "/", has: [{ type: "host", value: "www.fitr.day" }], destination: "/landing" },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
+
   async redirects() {
     return [
       { source: "/history", destination: "/progress", permanent: true },

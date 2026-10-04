@@ -44,15 +44,26 @@ function isWorkoutScreen(pathname: string): boolean {
 }
 
 /**
+ * Whether the tab bar is shown at `pathname`. The public landing page also hides it, but via
+ * CSS on its content (globals.css: [data-page="landing"]): on fitr.day the landing is a host
+ * rewrite of "/", so the server sees "/landing" while the browser sees "/". A pathname check
+ * here would render differently on each side and break hydration.
+ */
+export function isBottomNavVisible(pathname: string): boolean {
+  return !isWorkoutScreen(pathname);
+}
+
+/**
  * Sticky five-tab bar: Today · Workouts · Commit · Progress · You. Commit is the raised lime
- * centre button. Hidden on the live workout screens so the camera can use the full height.
+ * centre button. Hidden on the live workout screens so the camera can use the full height; the
+ * public landing page hides it with CSS (see isBottomNavVisible).
  */
 export default function BottomNav() {
   const pathname = usePathname() ?? "/";
-  if (isWorkoutScreen(pathname)) return null;
+  if (!isBottomNavVisible(pathname)) return null;
 
   return (
-    <nav className={styles.nav} aria-label="Primary">
+    <nav className={styles.nav} aria-label="Primary" data-bottom-nav="">
       <ul className={styles.list} role="list">
         {NAV_ITEMS.map((item) => {
           const { href, label, Icon, primary } = item;
