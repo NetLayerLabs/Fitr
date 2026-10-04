@@ -29,7 +29,7 @@
  * API calls, and anything cross-origin except the MediaPipe CDN fallbacks.
  */
 
-const VERSION = "2026-09-25.1";
+const VERSION = "2026-10-04.1";
 const POSE_ASSETS_VERSION = "mp-1.0.1";
 
 const CACHE_PREFIX = "fitr-";
@@ -54,7 +54,7 @@ const REMOTE_POSE_ASSETS = [
   { host: "storage.googleapis.com", pathPrefix: "/mediapipe-models/" },
 ];
 
-const STATIC_ASSET_PATHS = new Set(["/manifest.webmanifest", "/favicon.ico", "/icon", "/apple-icon"]);
+const STATIC_ASSET_PATHS = new Set(["/manifest.webmanifest", "/favicon.ico", "/icon.png", "/apple-icon.png"]);
 const STATIC_ASSET_EXT = /\.(?:png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|css|js|webmanifest)$/i;
 
 // ---------------------------------------------------------------------------------------------

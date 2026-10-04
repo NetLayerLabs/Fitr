@@ -1,4 +1,4 @@
-import { FitrMark } from "@/components/icons/Icons";
+import { Wordmark } from "@/components/brand/Brand";
 import { ArrowUpRightIcon } from "./LandingIcons";
 import { LANDING_LINKS } from "./links";
 import section from "./section.module.css";
@@ -17,8 +17,7 @@ export default function LandingNav() {
     <header className={styles.bar}>
       <div className={`${section.container} ${styles.inner}`}>
         <a href="#top" className={styles.brand} aria-label="Fitr, back to top">
-          <FitrMark size={30} className={styles.mark} />
-          <span className={styles.wordmark}>Fitr</span>
+          <Wordmark height={30} alt="" />
         </a>
         <nav aria-label="Sections" className={styles.anchors}>
           <ul role="list">

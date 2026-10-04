@@ -1,4 +1,5 @@
-import { CoinIcon, FitrMark } from "@/components/icons/Icons";
+import { BrandMark } from "@/components/brand/Brand";
+import { CoinIcon } from "@/components/icons/Icons";
 import { KeyIcon, PhoneIcon } from "./LandingIcons";
 import section from "./section.module.css";
 import styles from "./BuiltForSeeker.module.css";
@@ -58,7 +59,7 @@ export default function BuiltForSeeker() {
             <div className={styles.grabber} />
             <div className={styles.sheetHead}>
               <span className={styles.appIcon}>
-                <FitrMark size={28} />
+                <BrandMark size={28} />
               </span>
               <div>
                 <p className={styles.sheetApp}>Fitr</p>

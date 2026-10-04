@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FitrMark, PlayIcon } from "@/components/icons/Icons";
+import { BrandMark } from "@/components/brand/Brand";
+import { PlayIcon } from "@/components/icons/Icons";
 
 export const metadata: Metadata = {
   title: "Not found",
@@ -14,7 +15,7 @@ export default function NotFound() {
   return (
     <div className="not-found">
       <span className="not-found-mark">
-        <FitrMark size={48} />
+        <BrandMark size={48} />
       </span>
       <p className="not-found-code">404</p>
       <h1 className="not-found-title">This page skipped leg day</h1>

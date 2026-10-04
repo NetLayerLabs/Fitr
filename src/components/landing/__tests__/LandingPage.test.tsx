@@ -47,13 +47,13 @@ describe("LandingPage", () => {
     }
   });
 
-  it("uses root-relative art and gives every image an alt attribute", () => {
+  it("uses root-relative art/brand images and gives every image an alt attribute", () => {
     const { container } = render(<LandingPage />);
     const imgs = Array.from(container.querySelectorAll("img"));
     expect(imgs.length).toBeGreaterThan(EXERCISE_LIST.length);
     for (const img of imgs) {
       expect(img.hasAttribute("alt")).toBe(true);
-      expect(img.getAttribute("src")).toMatch(/^\/art\//);
+      expect(img.getAttribute("src")).toMatch(/^\/(art|brand)\//);
     }
   });
 

@@ -2,7 +2,7 @@
  * Fitr brand mark geometry: a bold geometric "F" inside a rep-progress ring (a ring ~80% closed,
  * with a knob on its leading edge), in a 100-unit viewBox centered on (50, 50).
  *
- * Single source for every place the mark is drawn: the app / PWA / TWA icons (iconArt.tsx),
+ * Single source for every place the mark is drawn: the in-app FitrMark icon,
  * the in-app FitrMark (components/icons/Icons.tsx) and the offline page. Pure constants, safe
  * to import from server and client code.
  */

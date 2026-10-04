@@ -1,4 +1,4 @@
-import { FitrMark } from "@/components/icons/Icons";
+import { Wordmark } from "@/components/brand/Brand";
 import { LANDING_LINKS } from "./links";
 import section from "./section.module.css";
 import styles from "./LandingFooter.module.css";
@@ -17,9 +17,8 @@ export default function LandingFooter() {
     <footer className={styles.footer}>
       <div className={`${section.container} ${styles.inner}`}>
         <div className={styles.brand}>
-          <FitrMark size={28} className={styles.mark} />
           <div>
-            <p className={styles.wordmark}>Fitr</p>
+            <Wordmark height={30} />
             <p className={styles.tag}>Put your word on the line.</p>
           </div>
         </div>
