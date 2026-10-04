@@ -30,6 +30,8 @@ export interface VaultTxRequest {
   /** Required for commit when the pool requires a Seeker Genesis Token. */
   sgt: SgtAccounts | null;
   registerDevice: boolean;
+  /** The pool every instruction acts on: 0 / omitted = the global pool, else a crew. */
+  crewId?: bigint;
 }
 
 export type VaultTxPhase = "idle" | TxStep | "done" | "error";
@@ -77,6 +79,7 @@ export function useVaultTx(account: UiWalletAccount) {
           commit,
           sgt: commit ? req.sgt : null,
           registerDevice: Boolean(commit && req.sgt && req.registerDevice),
+          crewId: req.crewId ?? 0n,
         });
         const unitLimit = estimateComputeUnits({
           settle: plan.settle,

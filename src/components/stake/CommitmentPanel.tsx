@@ -3,7 +3,7 @@
 import { CheckIcon } from "@/components/icons/Icons";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
-import { workoutHref } from "@/components/workouts/catalog";
+import { workoutHrefFor } from "@/components/crews/multiPool";
 import { EXERCISES, exerciseFromCode } from "@/lib/exercises";
 import { dayEnd, dayStart, type DayConfig } from "@/lib/solana/vault/day";
 import { claimOpensAt, estimatePayout, type Settlement } from "@/lib/solana/vault/status";
@@ -45,10 +45,12 @@ export interface CommitmentPanelProps {
   settlement: Settlement | null;
   busy: boolean;
   onSettle: (s: Settlement) => void;
+  /** The crew this panel belongs to (its "Start workout" verifies for this crew). */
+  crewId?: bigint;
 }
 
 /** The user's own slots: today's (and tomorrow's) commitment, plus anything to claim. */
-export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settlement, busy, onSettle }: CommitmentPanelProps) {
+export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settlement, busy, onSettle, crewId }: CommitmentPanelProps) {
   const mine = entries.filter((e) => e.commitment && e.day >= today);
   const claim = settlement?.kind === "claim" ? entries.find((e) => e.day === settlement.day) : undefined;
   const claimPayout = claim ? estimatePayout(claim, pool) : null;
@@ -69,10 +71,10 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
             <SkrText text={claim.dayState?.voided
               ? "That day was cancelled, so your full stake comes back."
               : claim.commitment?.status === CommitmentStatus.Revoked
-                ? `Your verification was withdrawn after review, so your $<SkrText text={fmt(claimPayout.principal)} /> stake comes back with no bonus.`
+                ? `Your verification was withdrawn after review, so your ${fmt(claimPayout.principal)} stake comes back with no bonus.`
                 : claimPayout.bonus > 0n
-                ? `Your $<SkrText text={fmt(claimPayout.principal)} /> stake plus $<SkrText text={fmt(claimPayout.bonus)} /> from people who missed.`
-                : `Your $<SkrText text={fmt(claimPayout.principal)} /> stake back. Everyone showed up, so there is no bonus this time.`} />
+                ? `Your ${fmt(claimPayout.principal)} stake plus ${fmt(claimPayout.bonus)} from people who missed.`
+                : `Your ${fmt(claimPayout.principal)} stake back. Everyone showed up, so there is no bonus this time.`} />
           </p>
           <Button variant="primary" size="lg" block disabled={busy} onClick={() => onSettle(settlement)}>
             {busy ? "Working…" : "Claim"}
@@ -142,7 +144,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
               {formatLocalDeadline(finishBy)}
             </p>
             {isToday && kind ? (
-              <Button variant="primary" size="lg" block trailingPlay href={workoutHref(kind)}>
+              <Button variant="primary" size="lg" block trailingPlay href={workoutHrefFor(kind, crewId)}>
                 Start workout
               </Button>
             ) : null}

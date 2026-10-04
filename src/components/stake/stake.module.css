@@ -691,3 +691,50 @@
     animation: none;
   }
 }
+
+/* ---------- Crews: locked fields, Solo/Crew switch, commitments across pools ---------- */
+
+.locked {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--hairline) solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+}
+
+.locked strong {
+  color: var(--text);
+}
+
+.modeSwitch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: var(--hairline) solid var(--border);
+}
+
+.modeButton {
+  min-height: var(--tap);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+
+.modeButton[aria-checked="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.modeButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

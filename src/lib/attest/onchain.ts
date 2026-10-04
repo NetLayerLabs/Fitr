@@ -11,15 +11,17 @@ import "server-only";
 import { address, isAddress, type Address } from "@solana/kit";
 import { EXERCISE_KINDS, type ExerciseKind } from "@/lib/pose/types";
 import { dayConfigFromPool, dayIndexAt, dayStart, dayEnd } from "@/lib/solana/vault/day";
-import { getUserDayAddresses } from "@/lib/solana/vault/addresses";
+import { getPoolAddresses, getUserDayAddresses } from "@/lib/solana/vault/addresses";
 import {
   CommitmentStatus as VaultCommitmentStatus,
   fetchMaybeCommitment,
+  fetchMaybePool,
   getAttestCompletionInstructionAsync,
 } from "@/lib/solana/vault/generated";
 import {
   getServerSolana,
   loadPool,
+  type LoadedPool,
   sendServerInstructions,
   ServerSolanaNotConfiguredError,
   ServerTxError,
@@ -50,10 +52,13 @@ export interface SubmitAttestationParams {
   sessionHash: Uint8Array;
   /** Unix seconds the server started the session (the on-chain session_started_at). */
   sessionStartedAt: number;
+  /** The pool: 0 / omitted = the global pool, else a crew (anchor/SPEC.md §2.7). */
+  crewId?: bigint;
 }
 
 export interface AttestOnchain {
-  getCommitment(wallet: string, dayIndex: number): Promise<OnchainCommitment | null>;
+  /** The commitment in the global pool, or in crew `crewId` when given (and non-zero). */
+  getCommitment(wallet: string, dayIndex: number, crewId?: bigint): Promise<OnchainCommitment | null>;
   submitAttestation(p: SubmitAttestationParams): Promise<{ signature: string }>;
   /**
    * Optional: the vault's current day index for a server epoch ms (pool.day_length_secs /
@@ -93,6 +98,10 @@ const ATTEST_ERROR_COPY: Record<number, string> = {
   [VAULT_ERR.GoalNotMet]: "The verified count is below your goal",
 };
 
+/** Crew pools are cached like the global one (loadPool): a minute, bounded. */
+const CREW_POOL_TTL_MS = 60_000;
+const CREW_POOL_CACHE_MAX = 256;
+
 export interface VaultOnchainDeps {
   /** Resolves the server context; default getServerSolana() from the environment. */
   context?: () => Promise<ServerSolana>;
@@ -125,17 +134,41 @@ export function createVaultOnchain(deps: VaultOnchainDeps = {}): AttestOnchain {
     }
   }
 
-  async function poolOrThrow(c: ServerSolana) {
-    const pool = await loadPool(c, { nowMs: now() });
-    if (!pool) throw new AttestNotConfiguredError();
+  const crewPools = new Map<string, { at: number; pool: LoadedPool | null }>();
+
+  /** A crew's pool (null when it does not exist), validated against the configured mint. */
+  async function loadCrewPool(c: ServerSolana, crewId: bigint): Promise<LoadedPool | null> {
+    const key = `${c.programAddress}:${c.mint}:${crewId}`;
+    const t = now();
+    const hit = crewPools.get(key);
+    if (hit && t - hit.at < CREW_POOL_TTL_MS) return hit.pool;
+    const { pool: address } = await getPoolAddresses(c.mint, c.programAddress, crewId);
+    const acc = await fetchMaybePool(c.rpc, address);
+    const pool = acc.exists && acc.data.mint === c.mint && acc.data.crewId === crewId ? { address, data: acc.data } : null;
+    if (crewPools.size >= CREW_POOL_CACHE_MAX) crewPools.clear();
+    crewPools.set(key, { at: t, pool });
     return pool;
   }
 
+  /**
+   * The global pool (crewId 0 / omitted) or a crew pool. A missing global pool means the vault is
+   * not live (not configured); a missing crew is simply "no commitment" (null).
+   */
+  async function poolFor(c: ServerSolana, crewId: bigint | undefined): Promise<LoadedPool | null> {
+    if (!crewId) {
+      const pool = await loadPool(c, { nowMs: now() });
+      if (!pool) throw new AttestNotConfiguredError();
+      return pool;
+    }
+    return loadCrewPool(c, crewId);
+  }
+
   return {
-    async getCommitment(wallet, dayIndex) {
+    async getCommitment(wallet, dayIndex, crewId) {
       const user = asWallet(wallet);
       const c = await ctx();
-      const pool = await poolOrThrow(c);
+      const pool = await poolFor(c, crewId);
+      if (!pool) return null;
       const cfg = dayConfigFromPool(pool.data);
       const nowSecs = Math.floor(now() / 1000);
       let today: number;
@@ -167,8 +200,13 @@ export function createVaultOnchain(deps: VaultOnchainDeps = {}): AttestOnchain {
       const user = asWallet(p.wallet);
       if (p.sessionHash.length !== 32) throw new Error("sessionHash must be 32 bytes");
       const c = await ctx();
-      const pool = await poolOrThrow(c);
-      if (pool.data.attestor !== c.signer.address) {
+      const pool = await poolFor(c, p.crewId);
+      if (!pool) throw new Error("No commitment for this wallet and day");
+      // Every day (crew days included) snapshots the GLOBAL pool's attestor and every crew
+      // instruction reads the global pool live (SPEC §2.7), so the global pool is what to check.
+      const global = p.crewId ? await loadPool(c, { nowMs: now() }) : pool;
+      if (!global) throw new AttestNotConfiguredError();
+      if (global.data.attestor !== c.signer.address) {
         // Configuration mistake: never send a transaction that is bound to fail.
         throw new Error("ATTESTOR_KEYPAIR is not the pool's attestor");
       }
@@ -201,6 +239,7 @@ export function createVaultOnchain(deps: VaultOnchainDeps = {}): AttestOnchain {
         {
           attestor: c.signer,
           pool: pool.address,
+          globalPool: global.address,
           user,
           day,
           commitment,

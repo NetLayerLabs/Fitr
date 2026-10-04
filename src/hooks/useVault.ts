@@ -39,7 +39,8 @@ function subscribe(l: () => void) {
   };
 }
 
-function useVaultVersion(): number {
+/** Bumps on every notifyVaultChanged(); 0 during server rendering (also used by components/crews). */
+export function useVaultVersion(): number {
   return useSyncExternalStore(
     subscribe,
     () => vaultVersion,
@@ -55,14 +56,22 @@ interface Settled {
   error: string | null;
 }
 
-export function useVault(owner: Address | null, opts: { sgtMint?: Address | null } = {}): VaultState {
+/**
+ * `opts.crewId` picks the pool: 0 / omitted is the global pool, anything else a crew
+ * ("unavailable" when that crew does not exist).
+ */
+export function useVault(
+  owner: Address | null,
+  opts: { sgtMint?: Address | null; crewId?: bigint | null } = {},
+): VaultState {
   const mint = solanaConfig.skrMint;
   const sgtMint = opts.sgtMint ?? null;
+  const crewId = opts.crewId ?? 0n;
   const version = useVaultVersion();
   const [tick, setTick] = useState(0);
   const [settled, setSettled] = useState<Settled | null>(null);
 
-  const key = mint ? `${mint}:${owner ?? "-"}:${sgtMint ?? "-"}` : null;
+  const key = mint ? `${mint}:${owner ?? "-"}:${sgtMint ?? "-"}${crewId === 0n ? "" : `:crew${crewId}`}` : null;
   const requestKey = key === null ? null : `${key}#${version}#${tick}`;
 
   useEffect(() => {
@@ -74,6 +83,7 @@ export function useVault(owner: Address | null, opts: { sgtMint?: Address | null
       sgtMint,
       nowSecs: Math.floor(Date.now() / 1000),
       abortSignal: controller.signal,
+      ...(crewId === 0n ? {} : { crewId }),
     }).then(
       (snapshot) => {
         if (controller.signal.aborted) return;
@@ -91,7 +101,7 @@ export function useVault(owner: Address | null, opts: { sgtMint?: Address | null
       },
     );
     return () => controller.abort();
-  }, [mint, owner, sgtMint, key, requestKey]);
+  }, [mint, owner, sgtMint, crewId, key, requestKey]);
 
   // Poll while visible; refetch when the tab comes back.
   useEffect(() => {

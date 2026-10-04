@@ -36,8 +36,16 @@ vi.mock("@/components/wallet/hooks", () => ({
   useSendingSigner: () => ({}),
   notifyBalancesChanged: () => {},
 }));
-vi.mock("@/hooks/useVault", () => ({ useVault: () => mocks.vault, notifyVaultChanged: () => {} }));
-vi.mock("@/hooks/useSessions", () => ({ useHydrated: () => true, useNow: () => mocks.now }));
+vi.mock("@/hooks/useVault", () => ({ useVault: () => mocks.vault, notifyVaultChanged: () => {}, useVaultVersion: () => 0 }));
+// Crews: none for this wallet (the crew hub and multi-pool list have their own tests).
+vi.mock("@/components/crews/useCrews", () => ({
+  useMyCrews: () => ({ status: "ready", data: [], error: null, refresh: () => {} }),
+  useCrewVaults: () => ({ status: "idle", data: undefined, error: null, refresh: () => {} }),
+  useCrewBoard: () => ({ status: "idle", data: undefined, error: null, refresh: () => {} }),
+  rememberCrew: () => {},
+}));
+vi.mock("@/hooks/useSessions", () => ({ useHydrated: () => true, useNow: () => mocks.now, useSessions: () => [] }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {} }), usePathname: () => "/commit" }));
 vi.mock("@/components/wallet/ConnectWalletList", () => ({ default: () => <p>Use Installed Wallet</p> }));
 vi.mock("../useVaultTx", () => ({
   useVaultTx: () => ({ state: mocks.txState, run: mocks.run, reset: mocks.reset }),
@@ -175,5 +183,20 @@ describe("CommitScreen staking", () => {
     expect(screen.getByRole("heading", { name: "You're in." })).toBeTruthy();
     expect(document.body.textContent).toMatch(/10 SKR staked/);
     expect(screen.getByRole("link", { name: /View on Solana Explorer/ }).getAttribute("href")).toContain("/tx/5sig");
+  });
+});
+
+describe("CommitScreen Solo / Crew", () => {
+  it("switches to the crew hub and back to the solo stake form", () => {
+    render(<CommitScreen />);
+    const solo = screen.getByRole("radio", { name: "Solo" });
+    expect(solo.getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("heading", { name: "Set your commitment" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Crew" }));
+    expect(screen.getByRole("heading", { name: "Your crews" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Start a crew" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Set your commitment" })).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: "Solo" }));
+    expect(screen.getByRole("heading", { name: "Set your commitment" })).toBeTruthy();
   });
 });

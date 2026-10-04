@@ -132,6 +132,12 @@ export interface TodayCommitment {
   deadlineMs?: number;
   /** Total claimable now, e.g. "≈ 52.3 SKR". */
   claimableLabel?: string;
+  /** Which pool day the exercise/goal fields describe (absent when there is none). */
+  forDay?: "yesterday" | "today" | "tomorrow";
+  /** The pool (absent / "0" = the global pool; set by the multi-pool aggregation). */
+  crewId?: string;
+  /** The crew's name ("" for the global pool). */
+  crewName?: string;
 }
 
 export interface TodayInputs {
@@ -172,6 +178,7 @@ export function deriveTodayCommitment(i: TodayInputs): TodayCommitment {
       goalTarget: t.commitment.goalTarget,
       amountLabel: i.formatAmount(t.commitment.amount),
       claimableLabel,
+      forDay: "today" as const,
     };
     const status = deriveUserDayStatus(t, s.cfg, i.nowSecs);
     if (t.commitment.status === CommitmentStatus.Revoked) return { state: "revoked", ...base };
@@ -192,6 +199,7 @@ export function deriveTodayCommitment(i: TodayInputs): TodayCommitment {
       exercise: exerciseFromCode(y.commitment.exercise) ?? undefined,
       goalTarget: y.commitment.goalTarget,
       amountLabel: i.formatAmount(y.commitment.amount),
+      forDay: "yesterday",
     };
   }
 
@@ -205,6 +213,7 @@ export function deriveTodayCommitment(i: TodayInputs): TodayCommitment {
       goalTarget: tomorrow.commitment.goalTarget,
       amountLabel: i.formatAmount(tomorrow.commitment.amount),
       deadlineMs: dayEnd(today + 1, s.cfg) * 1000,
+      forDay: "tomorrow",
     };
   }
   return {

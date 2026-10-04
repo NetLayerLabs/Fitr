@@ -30,6 +30,8 @@ export interface AttestSession {
   id: string;
   wallet: string;
   dayIndex: number;
+  /** The pool attested for: 0n = the global pool, else a crew. Absent means 0n. */
+  crewId?: bigint;
   exercise: ExerciseKind;
   goalTarget: number;
   /** Server epoch ms when the session started. */
@@ -76,6 +78,11 @@ export const STORE_DEFAULTS: AttestStoreOptions = Object.freeze({
   fingerprintTtlMs: 3 * 86_400_000,
   walletStartsPerHour: 20,
 });
+
+/** `${wallet}:${day}` for the global pool (unchanged), `${wallet}:${day}:${crew}` for a crew. */
+function attestedKey(wallet: string, dayIndex: number, crewId: bigint): string {
+  return crewId === 0n ? `${wallet}:${dayIndex}` : `${wallet}:${dayIndex}:${crewId}`;
+}
 
 export class StoreFullError extends Error {
   constructor(message = "Too many active sessions, try again shortly") {
@@ -194,8 +201,9 @@ export class AttestStore {
     }
   }
 
-  isAttested(wallet: string, dayIndex: number, now: number): boolean {
-    const key = `${wallet}:${dayIndex}`;
+  /** `crewId` (default 0n = the global pool) keeps each pool's day separate. */
+  isAttested(wallet: string, dayIndex: number, now: number, crewId: bigint = 0n): boolean {
+    const key = attestedKey(wallet, dayIndex, crewId);
     const exp = this.attested.get(key);
     if (exp === undefined) return false;
     if (exp <= now) {
@@ -205,8 +213,8 @@ export class AttestStore {
     return true;
   }
 
-  markAttested(wallet: string, dayIndex: number, now: number): void {
-    this.attested.set(`${wallet}:${dayIndex}`, now + 2 * 86_400_000);
+  markAttested(wallet: string, dayIndex: number, now: number, crewId: bigint = 0n): void {
+    this.attested.set(attestedKey(wallet, dayIndex, crewId), now + 2 * 86_400_000);
     if (this.attested.size > 100_000) {
       for (const [k, exp] of this.attested) if (exp <= now) this.attested.delete(k);
     }

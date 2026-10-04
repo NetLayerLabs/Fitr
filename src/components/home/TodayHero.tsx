@@ -5,7 +5,8 @@ import { CheckIcon } from "@/components/icons/Icons";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import ArtPhoto from "@/components/workouts/ArtPhoto";
-import { workoutHref } from "@/components/workouts/catalog";
+import { workoutHrefFor } from "@/components/crews/multiPool";
+import { crewPath, parseCrewId } from "@/lib/solana/vault/crews";
 import { useNow } from "@/hooks/useSessions";
 import { useTodayCommitment } from "@/hooks/useTodayCommitment";
 import { STANDING_ART, type ExerciseArt } from "@/lib/exerciseArt";
@@ -83,6 +84,10 @@ export default function TodayHero() {
   const kind = commitment?.exercise;
   const info = kind && isExerciseKind(kind) ? EXERCISES[kind] : null;
   const target = commitment?.goalTarget ?? info?.defaultGoal ?? 0;
+  // A crew commitment (multi-pool: the most urgent one wins the hero) carries its crew.
+  const crewId = parseCrewId(commitment?.crewId);
+  const crewTag = crewId && commitment?.crewName ? ` · ${commitment.crewName}` : "";
+  const poolHref = crewId ? crewPath(crewId) : "/commit";
 
   switch (state) {
     case "loading":
@@ -98,7 +103,7 @@ export default function TodayHero() {
       return (
         <Shell
           state={state}
-          eyebrow="Your goal"
+          eyebrow={`Your goal${crewTag}`}
           title={
             info ? (
               <>
@@ -111,11 +116,11 @@ export default function TodayHero() {
           }
           action={
             info ? (
-              <Cta href={workoutHref(info.kind)} play>
+              <Cta href={workoutHrefFor(info.kind, crewId)} play>
                 Start
               </Cta>
             ) : (
-              <Cta href="/commit">View commitment</Cta>
+              <Cta href={poolHref}>View commitment</Cta>
             )
           }
         >
@@ -150,7 +155,7 @@ export default function TodayHero() {
         <Shell
           state={state}
           tone="lime"
-          eyebrow="Today"
+          eyebrow={`Today${crewTag}`}
           title={
             <>
               <span className={styles.check} aria-hidden="true">
@@ -173,7 +178,7 @@ export default function TodayHero() {
         <Shell
           state={state}
           tone="lime"
-          eyebrow="Ready to claim"
+          eyebrow={`Ready to claim${crewTag}`}
           title={
             commitment?.claimableLabel ? (
               <span className={`numeral ${styles.big}`}><SkrText text={commitment.claimableLabel} /></span>
@@ -181,7 +186,7 @@ export default function TodayHero() {
               "Your stake is back"
             )
           }
-          action={<Cta href="/commit">Claim</Cta>}
+          action={<Cta href={poolHref}>Claim</Cta>}
         >
           <p className={styles.body}>You kept your word. Claim your stake and your share.</p>
         </Shell>
@@ -189,14 +194,14 @@ export default function TodayHero() {
 
     case "missed":
       return (
-        <Shell state={state} eyebrow="Goal missed" title="Tomorrow is a new day" action={<Cta href="/commit">Commit again</Cta>}>
+        <Shell state={state} eyebrow={`Goal missed${crewTag}`} title="Tomorrow is a new day" action={<Cta href={poolHref}>Commit again</Cta>}>
           <p className={styles.body}>The deadline passed before a verified workout. Set a goal you can keep.</p>
         </Shell>
       );
 
     case "revoked":
       return (
-        <Shell state={state} eyebrow="Under review" title="Verification withdrawn" action={<Cta href="/commit">View details</Cta>}>
+        <Shell state={state} eyebrow={`Under review${crewTag}`} title="Verification withdrawn" action={<Cta href={poolHref}>View details</Cta>}>
           <p className={styles.body}>
             Fitr&apos;s review withdrew today&apos;s verification. Your stake is not forfeited: you can claim it back
             (no bonus) once the day closes.

@@ -102,6 +102,20 @@ function isObject(v: unknown): v is Record<string, unknown> {
 
 const bad = (msg: string) => new AttestError(400, "bad_request", msg);
 
+const U64_MAX = (1n << 64n) - 1n;
+
+/**
+ * StartRequest.crewId: absent / null / "0" / 0 → 0n (the global pool); a canonical decimal string
+ * (or a safe integer) → that crew; anything else → null (rejected).
+ */
+export function parseCrewIdField(v: unknown): bigint | null {
+  if (v === undefined || v === null) return 0n;
+  if (typeof v === "number") return Number.isSafeInteger(v) && v >= 0 ? BigInt(v) : null;
+  if (typeof v !== "string" || !/^(0|[1-9][0-9]{0,19})$/.test(v)) return null;
+  const id = BigInt(v);
+  return id <= U64_MAX ? id : null;
+}
+
 export class AttestService {
   readonly store: AttestStore;
   readonly config: AttestServiceConfig;
@@ -132,6 +146,8 @@ export class AttestService {
   async start(body: unknown): Promise<StartResponse> {
     if (!isObject(body)) throw bad("Body must be a JSON object");
     const { wallet, dayIndex, exercise, goalTarget } = body;
+    const crewId = parseCrewIdField(body.crewId);
+    if (crewId === null) throw bad("Invalid crewId");
     if (typeof wallet !== "string" || wallet.length > 64 || !isAddress(wallet)) throw bad("Invalid wallet");
     if (typeof dayIndex !== "number" || !Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex > 0xffffffff)
       throw bad("Invalid dayIndex");
@@ -145,7 +161,7 @@ export class AttestService {
       throw bad("Invalid goalTarget");
 
     const now = this.now();
-    if (this.store.isAttested(wallet, dayIndex, now)) {
+    if (this.store.isAttested(wallet, dayIndex, now, crewId)) {
       throw new AttestError(409, "conflict", "This day is already verified");
     }
     if (!this.store.allowWalletStart(wallet, now)) {
@@ -159,7 +175,7 @@ export class AttestService {
     }
     let commitment;
     try {
-      commitment = await onchain.getCommitment(wallet, dayIndex);
+      commitment = crewId === 0n ? await onchain.getCommitment(wallet, dayIndex) : await onchain.getCommitment(wallet, dayIndex, crewId);
     } catch (e) {
       throw this.onchainError(e);
     }
@@ -183,6 +199,7 @@ export class AttestService {
       id,
       wallet,
       dayIndex,
+      crewId,
       exercise,
       goalTarget,
       startedAtServer: now,
@@ -206,6 +223,7 @@ export class AttestService {
     }
     return {
       sessionId: id,
+      ...(crewId === 0n ? {} : { crewId: crewId.toString() }),
       serverTime: now,
       exercise,
       goalTarget,
@@ -414,7 +432,8 @@ export class AttestService {
 
   private async submit(session: AttestSession, result: FinishResult): Promise<FinishResult> {
     const now = this.now();
-    if (this.store.isAttested(session.wallet, session.dayIndex, now)) {
+    const crewId = session.crewId ?? 0n;
+    if (this.store.isAttested(session.wallet, session.dayIndex, now, crewId)) {
       return { ...result, onchain: { status: "skipped", message: "Day already verified" } };
     }
     const hashBytes = new Uint8Array(result.sessionHash.match(/../g)!.map((h) => parseInt(h, 16)));
@@ -425,8 +444,9 @@ export class AttestService {
         reps: result.count,
         sessionHash: hashBytes,
         sessionStartedAt: this.sessionStartedAtSec(session),
+        ...(crewId === 0n ? {} : { crewId }),
       });
-      this.store.markAttested(session.wallet, session.dayIndex, this.now());
+      this.store.markAttested(session.wallet, session.dayIndex, this.now(), crewId);
       return { ...result, onchain: { status: "submitted", signature } };
     } catch (e) {
       if (e instanceof AttestNotConfiguredError) return { ...result, onchain: { status: "not_configured" } };

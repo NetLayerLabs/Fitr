@@ -35,6 +35,8 @@ import {
   getDayStateEncoder,
   getPoolEncoder,
   SWEEP_DAY_DISCRIMINATOR,
+  SYNC_CREW_DISCRIMINATOR,
+  getPoolDecoder,
   type CommitmentArgs,
   type DayStateArgs,
   type PoolArgs,
@@ -47,10 +49,12 @@ const ZERO = address("11111111111111111111111111111111");
 const BLOCKHASH = "4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZAMdL4VZHirAn";
 
 export interface SentTx {
-  kind: "finalize" | "close_missed" | "sweep" | "attest" | "unknown";
+  kind: "finalize" | "close_missed" | "sweep" | "attest" | "sync_crew" | "unknown";
   days: number[];
   users: Address[];
   signature: string;
+  /** finalize_day: [pool, global_pool]. */
+  pools?: Address[];
 }
 
 function eq(a: ArrayLike<number>, b: ArrayLike<number>, n = b.length): boolean {
@@ -89,7 +93,14 @@ export function poolArgs(attestor: Address, over: Partial<PoolArgs> = {}): PoolA
     finalizeDelaySecs: 0,
     pausedSince: 0,
     totalPausedSecs: 0,
-    reserved: new Uint8Array(64),
+    crewId: 0,
+    creator: ZERO,
+    name: new Uint8Array(32),
+    hasFixedExercise: false,
+    fixedExercise: Exercise.Pushup,
+    fixedGoalTarget: 0,
+    rollover: 0,
+    reserved: new Uint8Array(56),
     ...over,
   };
 }
@@ -117,12 +128,19 @@ export class FakeVault {
     return this;
   }
 
-  async addCommitment(user: Address, day: number, over: Partial<CommitmentArgs> = {}): Promise<Address> {
-    const { commitment } = await getUserDayAddresses({ pool: this.pool, user, dayIndex: day, programAddress: FITR_VAULT_PROGRAM_ADDRESS });
+  /** A crew pool (copied config, its own crew id) next to the global pool; returns its address. */
+  async addCrew(crewId: bigint, over: Partial<PoolArgs> = {}): Promise<Address> {
+    const { pool } = await getPoolAddresses(MINT, FITR_VAULT_PROGRAM_ADDRESS, crewId);
+    this.accounts.set(pool, new Uint8Array(getPoolEncoder().encode(poolArgs(this.signer.address, { crewId, ...over }))));
+    return pool;
+  }
+
+  async addCommitment(user: Address, day: number, over: Partial<CommitmentArgs> = {}, pool: Address = this.pool): Promise<Address> {
+    const { commitment } = await getUserDayAddresses({ pool, user, dayIndex: day, programAddress: FITR_VAULT_PROGRAM_ADDRESS });
     const args: CommitmentArgs = {
       bump: 1,
       status: CommitmentStatus.Committed,
-      pool: this.pool,
+      pool,
       user,
       dayIndex: day,
       version: 1,
@@ -143,14 +161,14 @@ export class FakeVault {
     return commitment;
   }
 
-  async addDay(day: number, over: Partial<DayStateArgs> = {}): Promise<Address> {
-    const { day: addr } = await getUserDayAddresses({ pool: this.pool, user: ZERO, dayIndex: day, programAddress: FITR_VAULT_PROGRAM_ADDRESS });
+  async addDay(day: number, over: Partial<DayStateArgs> = {}, pool: Address = this.pool): Promise<Address> {
+    const { day: addr } = await getUserDayAddresses({ pool, user: ZERO, dayIndex: day, programAddress: FITR_VAULT_PROGRAM_ADDRESS });
     const args: DayStateArgs = {
       version: 1,
       bump: 1,
       finalized: false,
       voided: false,
-      pool: this.pool,
+      pool,
       dayIndex: day,
       rentPayer: ZERO,
       feeBps: 500,
@@ -174,7 +192,9 @@ export class FakeVault {
       pausedSecsBase: 0,
       revokedCount: 0,
       revokedStake: 0,
-      reserved: new Uint8Array(32),
+      globalPausedSecsBase: 0,
+      rollover: 0,
+      reserved: new Uint8Array(16),
       ...over,
     };
     this.accounts.set(addr, new Uint8Array(getDayStateEncoder().encode(args)));
@@ -218,10 +238,31 @@ export class FakeVault {
       if (keys[ix.programAddressIndex] !== FITR_VAULT_PROGRAM_ADDRESS || !ix.data) continue;
       const data = ix.data;
       const acc = (i: number) => keys[ix.accountIndices![i]];
+      if (eq(data, SYNC_CREW_DISCRIMINATOR)) {
+        out.kind = "sync_crew";
+        out.pools = [...(out.pools ?? []), acc(0)];
+        const crew = getPoolDecoder().decode(this.accounts.get(acc(0))!);
+        const global = getPoolDecoder().decode(this.accounts.get(acc(1))!);
+        if (crew.crewId === 0n) throw this.programError(6030);
+        this.accounts.set(
+          acc(0),
+          new Uint8Array(
+            getPoolEncoder().encode({
+              ...crew,
+              authority: global.authority,
+              attestor: global.attestor,
+              requireSgt: global.requireSgt,
+              pendingAuthority: ZERO,
+            }),
+          ),
+        );
+        continue;
+      }
       const day = u32.decode(data, 8);
       out.days.push(day);
       if (eq(data, FINALIZE_DAY_DISCRIMINATOR)) {
         out.kind = "finalize";
+        out.pools = [acc(1), acc(3)];
         const ds = this.dayState(acc(2))!;
         if (ds.finalized) throw this.programError(6010);
         if (this.dayNotOverLag > 0 || this.nowSecs <= Number(ds.attestDeadline)) {

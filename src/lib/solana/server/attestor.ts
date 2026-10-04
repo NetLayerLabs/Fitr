@@ -34,16 +34,19 @@ import {
 import { getSetComputeUnitLimitInstruction, getSetComputeUnitPriceInstruction } from "@solana-program/compute-budget";
 import { solanaConfig, type SolanaCluster } from "../config";
 import { commitmentsForDayFilters, getPoolAddresses, vaultProgramAddress } from "../vault/addresses";
-import { dayConfigFromPool, finalizeAfterOf } from "../vault/day";
+import { POOL_OFFSETS, POOL_SIZE } from "../vault/crews";
+import { dayConfigFromPool, finalizeAfterOf, withGlobalPause } from "../vault/day";
 import {
   fetchMaybeDayState,
   fetchMaybePool,
+  getPoolDecoder,
   getCloseMissedInstructionAsync,
   getCommitmentDecoder,
   getDayStateDecoder,
   getDayStateSize,
   getFinalizeDayInstructionAsync,
   getSweepDayInstructionAsync,
+  getSyncCrewInstruction,
   type DayState,
   type Pool,
 } from "../vault/generated";
@@ -362,6 +365,10 @@ const DAY_STATE_POOL_OFFSET = 12n;
 const FINALIZE_CU = 20_000;
 const CLOSE_MISSED_CU_EACH = 16_000;
 const SWEEP_CU = 15_000;
+const SYNC_CREW_CU_EACH = 8_000;
+/** sync_crew instructions per transaction (2 accounts each; SPEC: about 10 fit). */
+export const SYNC_CREW_BATCH = 8;
+const NO_PENDING_AUTHORITY = "11111111111111111111111111111111";
 /** close_missed instructions per transaction (fits the size limit with room to spare). */
 export const CLOSE_MISSED_BATCH = 5;
 
@@ -369,6 +376,8 @@ export type FinalizeOutcome = "finalized" | "already" | "voided" | "not_over" | 
 
 export interface CrankDayReport {
   day: number;
+  /** Crew id (decimal) for a crew pool's day; absent for the global pool. */
+  crewId?: string;
   finalize: FinalizeOutcome;
   /** Missed commitments closed by this run. */
   closedMissed: number;
@@ -385,6 +394,12 @@ export interface CrankReport {
   days: CrankDayReport[];
   /** True when maxTransactions was reached before all work was done. */
   truncated: boolean;
+  /** Crew pools visited this run (the global pool is always visited first). */
+  crewsScanned: number;
+  /** Crews brought back in line with the global authority / attestor / require_sgt (sync_crew). */
+  crewsSynced: number;
+  /** Problems listing crews or their days; the global pool's work still ran. */
+  errors: string[];
 }
 
 export interface CrankOptions {
@@ -461,11 +476,46 @@ function describe(e: unknown): string {
   return "RPC error";
 }
 
+/** Every crew pool (crew_id != 0) of ctx.mint, by crew id. Program-owned accounts only. */
+async function listCrewPools(ctx: ServerSolana): Promise<LoadedPool[]> {
+  const accounts = await ctx.rpc
+    .getProgramAccounts(ctx.programAddress, {
+      encoding: "base64",
+      filters: [
+        { dataSize: BigInt(POOL_SIZE) },
+        {
+          memcmp: {
+            offset: BigInt(POOL_OFFSETS.mint),
+            bytes: getBase58Decoder().decode(getAddressEncoder().encode(ctx.mint)) as Base58EncodedBytes,
+            encoding: "base58",
+          },
+        },
+      ],
+    })
+    .send();
+  const out: LoadedPool[] = [];
+  for (const a of accounts as unknown as Array<{ pubkey: Address; account: { data: unknown } }>) {
+    try {
+      const data = getPoolDecoder().decode(base64Bytes(a.account.data));
+      if (data.mint !== ctx.mint || BigInt(data.crewId) === 0n) continue;
+      // Only the canonical PDA for its crew id (never a look-alike account).
+      const { pool } = await getPoolAddresses(ctx.mint, ctx.programAddress, BigInt(data.crewId));
+      if (pool !== a.pubkey) continue;
+      out.push({ address: a.pubkey, data });
+    } catch {
+      // Not a Pool (size collision): ignore.
+    }
+  }
+  return out.sort((x, y) => (BigInt(x.data.crewId) < BigInt(y.data.crewId) ? -1 : 1));
+}
+
 /**
- * One idempotent crank pass over every live DayState of the pool whose attest deadline has
- * passed: finalize (retrying DayNotOver), close the missed commitments, then sweep once every
- * commitment is resolved. Safe to run repeatedly and concurrently with users' own claims: every
- * "already done" program error is treated as success.
+ * One idempotent crank pass over every pool (the global pool, then each crew) and every live
+ * DayState whose attest deadline has passed: finalize (retrying DayNotOver), close the missed
+ * commitments, then sweep once every commitment is resolved. Safe to run repeatedly and
+ * concurrently with users' own claims: every "already done" program error is treated as success.
+ * maxTransactions / budgetMs cap the whole run; the global pool goes first, so a large number of
+ * crews can never starve it.
  */
 export async function runCrank(ctx: ServerSolana, o: CrankOptions = {}): Promise<CrankReport> {
   const nowSecs = o.nowSecs ?? Math.floor(Date.now() / 1000);
@@ -474,38 +524,112 @@ export async function runCrank(ctx: ServerSolana, o: CrankOptions = {}): Promise
   const delay = o.dayNotOverDelayMs ?? 5_000;
   const sleep = o.sleep ?? defaultSleep;
   let txCount = 0;
-  let truncated = false;
   const clock = o.clock ?? Date.now;
   const t0 = clock();
   const budget = o.budgetMs ?? 90_000;
   const exhausted = () => txCount >= maxTx || clock() - t0 > budget;
 
-  const pool = await loadPool(ctx, { fresh: true });
-  if (!pool) throw new ServerSolanaNotConfiguredError("vault pool not initialized");
-  const len = Number(pool.data.dayLengthSecs);
-  const off = Number(pool.data.dayOffsetSecs);
+  const global = await loadPool(ctx, { fresh: true });
+  if (!global) throw new ServerSolanaNotConfiguredError("vault pool not initialized");
+  const len = Number(global.data.dayLengthSecs);
+  const off = Number(global.data.dayOffsetSecs);
   const today = Math.floor((nowSecs - off) / len);
 
   const send = async (ixs: Instruction[], cu: number, accounts: Address[]) => {
     txCount++;
     return sendServerInstructions(ctx, ixs, { computeUnitLimit: cu, priorityAccounts: accounts, ...o.send });
   };
-  const cfg = { programAddress: ctx.programAddress };
 
-  const days: CrankDayReport[] = [];
+  const report: CrankReport = { today, days: [], truncated: false, crewsScanned: 0, crewsSynced: 0, errors: [] };
+  const run = { send, exhausted, retries, delay, sleep, nowSecs };
+  await crankPool(ctx, global, global, run, report);
+  if (report.truncated) return report;
+
+  let crews: LoadedPool[] = [];
+  try {
+    crews = await listCrewPools(ctx);
+  } catch {
+    report.errors.push("crews: could not list crew pools");
+  }
+  // Permissionless sync_crew for crews whose copied authority / attestor / require_sgt went stale
+  // (after a global rotation, SPEC §2.7). The program already reads the global pool live where it
+  // matters; this keeps crew accounts honest for readers and drops stale authority transfers.
+  const stale = crews.filter((c) => crewNeedsSync(c.data, global.data));
+  for (let i = 0; i < stale.length; i += SYNC_CREW_BATCH) {
+    if (exhausted()) {
+      report.truncated = true;
+      return report;
+    }
+    const batch = stale.slice(i, i + SYNC_CREW_BATCH);
+    try {
+      const ixs = batch.map((c) => getSyncCrewInstruction({ pool: c.address, globalPool: global.address }, { programAddress: ctx.programAddress }));
+      await send(ixs, SYNC_CREW_CU_EACH * batch.length, [global.address, ...batch.map((c) => c.address)]);
+      report.crewsSynced += batch.length;
+    } catch (e) {
+      report.errors.push(`sync_crew: ${describe(e)}`);
+    }
+  }
+
+  for (const crew of crews) {
+    if (exhausted()) {
+      report.truncated = true;
+      break;
+    }
+    report.crewsScanned++;
+    try {
+      await crankPool(ctx, crew, global, run, report);
+    } catch {
+      report.errors.push(`crew ${crew.data.crewId.toString()}: could not list days`);
+    }
+    if (report.truncated) break;
+  }
+  return report;
+}
+
+/** A crew whose copied authority, attestor or require_sgt differs from the global pool's. */
+export function crewNeedsSync(
+  crew: Pick<Pool, "authority" | "pendingAuthority" | "attestor" | "requireSgt">,
+  global: Pick<Pool, "authority" | "attestor" | "requireSgt">,
+): boolean {
+  return (
+    crew.authority !== global.authority ||
+    crew.attestor !== global.attestor ||
+    crew.requireSgt !== global.requireSgt ||
+    crew.pendingAuthority !== NO_PENDING_AUTHORITY
+  );
+}
+
+interface CrankRun {
+  send: (ixs: Instruction[], cu: number, accounts: Address[]) => Promise<string>;
+  exhausted: () => boolean;
+  retries: number;
+  delay: number;
+  sleep: (ms: number) => Promise<void>;
+  nowSecs: number;
+}
+
+/** One pool's pass of runCrank (appends to report.days; sets report.truncated). */
+async function crankPool(ctx: ServerSolana, pool: LoadedPool, global: LoadedPool, run: CrankRun, report: CrankReport): Promise<void> {
+  const { send, exhausted, retries, delay, sleep, nowSecs } = run;
+  const cfg = { programAddress: ctx.programAddress };
+  const isCrew = BigInt(pool.data.crewId) !== 0n;
+  const dayCfg = withGlobalPause(dayConfigFromPool(pool.data), global.data, isCrew);
+  const paused = pool.data.paused || (isCrew && global.data.paused);
+  const days = report.days;
   for (const ds of await listDayStates(ctx, pool.address)) {
     if (nowSecs <= Number(ds.data.attestDeadline)) continue; // day (or its grace) still open
     if (!ds.data.finalized && !ds.data.voided) {
       // finalize_day waits for the pause-extended deadline + the day's review window, and never
       // runs while the pool is paused (SPEC §3).
-      if (pool.data.paused || nowSecs <= finalizeAfterOf(ds.data, dayConfigFromPool(pool.data), nowSecs)) continue;
+      if (paused || nowSecs <= finalizeAfterOf(ds.data, dayCfg, nowSecs)) continue;
     }
     if (exhausted()) {
-      truncated = true;
-      break;
+      report.truncated = true;
+      return;
     }
     const d = ds.data.dayIndex;
     const r: CrankDayReport = { day: d, finalize: "already", closedMissed: 0, missedLeft: 0, swept: false, signatures: [], errors: [] };
+    if (isCrew) r.crewId = pool.data.crewId.toString();
     days.push(r);
     let finalized = ds.data.finalized;
     const voided = ds.data.voided;
@@ -515,7 +639,11 @@ export async function runCrank(ctx: ServerSolana, o: CrankOptions = {}): Promise
     else if (!finalized) {
       for (let attempt = 0; ; attempt++) {
         try {
-          const ix = await getFinalizeDayInstructionAsync({ cranker: ctx.signer, pool: pool.address, day: ds.address, dayIndex: d }, cfg);
+          // Every pool reads the global pool live (for the global pool it is itself; SPEC §2.7).
+          const ix = await getFinalizeDayInstructionAsync(
+            { cranker: ctx.signer, pool: pool.address, globalPool: global.address, day: ds.address, dayIndex: d },
+            cfg,
+          );
           r.signatures.push(await send([ix], FINALIZE_CU, [pool.address, ds.address]));
           r.finalize = "finalized";
           finalized = true;
@@ -553,7 +681,7 @@ export async function runCrank(ctx: ServerSolana, o: CrankOptions = {}): Promise
       }
       for (let i = 0; i < missed.length; i += CLOSE_MISSED_BATCH) {
         if (exhausted()) {
-          truncated = true;
+          report.truncated = true;
           break;
         }
         const batch = missed.slice(i, i + CLOSE_MISSED_BATCH);
@@ -576,7 +704,7 @@ export async function runCrank(ctx: ServerSolana, o: CrankOptions = {}): Promise
 
     // 3. sweep_day once every commitment is resolved
     if (exhausted()) {
-      truncated = true;
+      report.truncated = true;
       continue;
     }
     try {
@@ -597,5 +725,4 @@ export async function runCrank(ctx: ServerSolana, o: CrankOptions = {}): Promise
       if (code !== VAULT_ERR.DayNotResolved) r.errors.push(`sweep: ${describe(e)}`);
     }
   }
-  return { today, days, truncated };
 }

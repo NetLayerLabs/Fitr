@@ -35,6 +35,12 @@ export interface StakeFormProps {
   bundledClaim: string | null;
   busy: boolean;
   initialExercise?: ExerciseKind;
+  /** A crew's fixed exercise: shown locked instead of the picker. */
+  fixedExercise?: ExerciseKind | null;
+  /** A crew's fixed goal (needs fixedExercise): shown locked instead of the stepper. */
+  fixedGoal?: number | null;
+  /** e.g. "Run Club": the form commits into this crew. */
+  crewName?: string | null;
   onSubmit: (v: StakeSubmit) => void;
 }
 
@@ -49,13 +55,16 @@ export function formatFeePercent(feeBps: number): string {
 }
 
 export default function StakeForm(p: StakeFormProps) {
-  const [kind, setKind] = useState<ExerciseKind>(p.initialExercise ?? "pushup");
-  const [goal, setGoal] = useState(() => defaultGoal(p.pool, p.initialExercise ?? "pushup"));
+  const fixedKind = p.fixedExercise ?? null;
+  const fixedGoal = fixedKind ? (p.fixedGoal ?? null) : null;
+  const [pickedKind, setKind] = useState<ExerciseKind>(fixedKind ?? p.initialExercise ?? "pushup");
+  const kind = fixedKind ?? pickedKind;
+  const [goal, setGoal] = useState(() => fixedGoal ?? defaultGoal(p.pool, kind));
   const [amountText, setAmountText] = useState("");
   const [touched, setTouched] = useState(false);
 
   const bounds = goalBounds(p.pool, kind);
-  const safeGoal = clampInt(goal, bounds);
+  const safeGoal = fixedGoal ?? clampInt(goal, bounds);
   const check = checkAmount(amountText, p.pool, p.balance, p.decimals);
   // The program rejects commits after day_start + cutoff; the workout itself must land before day end.
   const finishByMs = dayEnd(p.targetDay, p.cfg) * 1000 - 1000;
@@ -79,22 +88,35 @@ export default function StakeForm(p: StakeFormProps) {
       <div className={styles.formHead}>
         <p className={styles.eyebrow}>{p.isTomorrow ? "Tomorrow" : "Today"}</p>
         <h2 id="stake-form-title" className={styles.sectionTitle}>
-          Set your commitment
+          {p.crewName ? "Commit with the crew" : "Set your commitment"}
         </h2>
       </div>
 
       <section className={styles.step} aria-label="1. Exercise">
         <h3 className={styles.stepTitle}>
-          <span className={styles.stepNum} aria-hidden="true">1</span> Pick an exercise
+          <span className={styles.stepNum} aria-hidden="true">1</span>{" "}
+          {fixedKind ? "The crew's exercise" : "Pick an exercise"}
         </h3>
-        <ExercisePicker value={kind} onChange={pick} />
+        {fixedKind ? (
+          <p className={styles.locked} data-testid="locked-exercise">
+            <strong>{EXERCISES[fixedKind].name}</strong> · set by the crew
+          </p>
+        ) : (
+          <ExercisePicker value={kind} onChange={pick} />
+        )}
       </section>
 
       <section className={styles.step} aria-label="2. Goal">
         <h3 className={styles.stepTitle}>
-          <span className={styles.stepNum} aria-hidden="true">2</span> Set the bar
+          <span className={styles.stepNum} aria-hidden="true">2</span> {fixedGoal ? "The crew's bar" : "Set the bar"}
         </h3>
-        <GoalStepper kind={kind} value={safeGoal} bounds={bounds} onChange={setGoal} />
+        {fixedGoal ? (
+          <p className={styles.locked} data-testid="locked-goal">
+            <strong>{formatGoal(kind, fixedGoal)}</strong> · same for everyone in the crew
+          </p>
+        ) : (
+          <GoalStepper kind={kind} value={safeGoal} bounds={bounds} onChange={setGoal} />
+        )}
       </section>
 
       <section className={styles.step} aria-label="3. Stake">
@@ -128,11 +150,12 @@ export default function StakeForm(p: StakeFormProps) {
             (your local time). Fitr counts on your phone and re-checks it with live challenges.
           </li>
           <li>
-            Show up and you get your full stake back, plus a share of what others forfeited.
+            Show up and you get your full stake back, plus a share of what {p.crewName ? "crew members" : "others"}{" "}
+            forfeited.
           </li>
           <li>
-            Miss it and your stake is forfeited to the people who showed up. Fitr keeps a {fee} fee on
-            forfeited stakes only.
+            Miss it and your stake is forfeited to the {p.crewName ? "crew members" : "people"} who showed up. Fitr
+            keeps a {fee} fee on forfeited stakes only.
           </li>
           <li>Goal and stake are locked on-chain when you sign. There is no cancel.</li>
         </ul>

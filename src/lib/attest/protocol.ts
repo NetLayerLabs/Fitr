@@ -21,6 +21,11 @@ export interface StartRequest {
   dayIndex: number;
   exercise: ExerciseKind;
   goalTarget: number;
+  /**
+   * The pool the commitment is in: omitted / "0" = the global pool, else the crew id as a decimal
+   * string (u64; a string because JSON numbers cannot carry every u64).
+   */
+  crewId?: string;
 }
 
 export interface ChallengePlanEntry {
@@ -33,6 +38,8 @@ export interface ChallengePlanEntry {
 
 export interface StartResponse {
   sessionId: string;
+  /** The pool this session attests for ("0" = the global pool). */
+  crewId?: string;
   /** Server epoch ms at session start. Start the TraceRecorder clock when this arrives. */
   serverTime: number;
   exercise: ExerciseKind;

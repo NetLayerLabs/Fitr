@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import CommitmentsToday from "@/components/crews/CommitmentsToday";
+import CrewHub from "@/components/crews/CrewHub";
+import { workoutHrefFor } from "@/components/crews/multiPool";
 import type { Address } from "@solana/kit";
 import type { UiWalletAccount } from "@wallet-standard/react";
 import { LockIcon, ShieldIcon } from "@/components/icons/Icons";
@@ -10,14 +13,15 @@ import LimeMoment from "@/components/ui/LimeMoment";
 import PageHeader from "@/components/ui/PageHeader";
 import ConnectWalletList from "@/components/wallet/ConnectWalletList";
 import { useSeekerStatus, useSelectedWallet, useSkrBalance, useSolBalance } from "@/components/wallet/hooks";
-import { workoutHref } from "@/components/workouts/catalog";
 import { useHydrated, useNow } from "@/hooks/useSessions";
+import { usePoolsToday } from "@/hooks/useTodayCommitment";
 import { useVault, type VaultState } from "@/hooks/useVault";
 import { EXERCISE_CODE, EXERCISES } from "@/lib/exercises";
 import type { ExerciseKind } from "@/lib/pose/types";
 import { SKR_DECIMALS, solanaConfig } from "@/lib/solana/config";
 import { formatSkr, formatSol } from "@/lib/solana/format";
 import type { SeekerStatus } from "@/lib/solana/types";
+import type { CrewInfo } from "@/lib/solana/vault/crews";
 import { commitDeadline, dayEnd } from "@/lib/solana/vault/day";
 import type { Exercise } from "@/lib/solana/vault/generated";
 import type { VaultSnapshot } from "@/lib/solana/vault/read";
@@ -249,15 +253,59 @@ export default function CommitScreen() {
   }
 
   return (
-    <Connected
+    <CommitHome
       account={account}
       owner={owner}
       snapshot={vault.snapshot}
       vault={vault}
+      seekerState={seeker}
       seeker={requireSgt ? seeker.data : null}
       nowMs={nowMs}
     />
   );
+}
+
+type CommitMode = "solo" | "crew";
+
+/** Solo / Crew switch (a two-option radio group). */
+function ModeSwitch({ mode, onChange }: { mode: CommitMode; onChange: (m: CommitMode) => void }) {
+  return (
+    <div className={styles.modeSwitch} role="radiogroup" aria-label="Commit solo or with a crew">
+      {(["solo", "crew"] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          role="radio"
+          aria-checked={mode === m}
+          className={styles.modeButton}
+          onClick={() => onChange(m)}
+        >
+          {m === "solo" ? "Solo" : "Crew"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** The connected Commit tab: today's commitments across pools, then Solo (global pool) or Crew. */
+function CommitHome(props: ConnectedProps & { seekerState: Parameters<typeof usePoolsToday>[2] }) {
+  const [mode, setMode] = useState<CommitMode>("solo");
+  const { pools } = usePoolsToday(props.owner, props.vault, props.seekerState);
+  const head = (
+    <>
+      <CommitmentsToday pools={pools} />
+      <ModeSwitch mode={mode} onChange={setMode} />
+    </>
+  );
+  if (mode === "crew") {
+    return (
+      <Shell eyebrow="Commit together">
+        {head}
+        <CrewHub account={props.account} owner={props.owner} globalPool={props.snapshot.pool} />
+      </Shell>
+    );
+  }
+  return <PoolCommitFlow {...props} before={head} />;
 }
 
 interface ConnectedProps {
@@ -269,12 +317,42 @@ interface ConnectedProps {
   nowMs: number;
 }
 
+export interface PoolCommitFlowProps extends ConnectedProps {
+  /** The crew this flow commits into; null / omitted = the global pool. */
+  crew?: CrewInfo | null;
+  /** Rendered first inside the wrapper (e.g. the Solo/Crew switch). */
+  before?: ReactNode;
+  /** Wraps the flow; default the Commit tab shell. */
+  wrap?: (children: ReactNode) => ReactNode;
+  /** Show the "How it works" card (default true). */
+  howItWorks?: boolean;
+}
+
 interface LastSubmit extends StakeSubmit {
   dayIndex: number;
 }
 
-function Connected({ account, owner, snapshot, vault, seeker, nowMs }: ConnectedProps) {
+/**
+ * Stake / claim flow for ONE pool (the global pool, or a crew on its page): today's slots, the
+ * stake form (locked to the crew's fixed exercise/goal) and the done screens.
+ */
+export function PoolCommitFlow({
+  account,
+  owner,
+  snapshot,
+  vault,
+  seeker,
+  nowMs,
+  crew = null,
+  before = null,
+  wrap,
+  howItWorks = true,
+}: PoolCommitFlowProps) {
   const tx = useVaultTx(account);
+  const crewId = crew && crew.crewId !== 0n ? crew.crewId : 0n;
+  // Only crews name their pool; the global pool's requests stay exactly as before.
+  const poolArg = crewId === 0n ? {} : { crewId };
+  const frame = (children: ReactNode) => (wrap ? wrap(children) : <Shell>{children}</Shell>);
   const skr = useSkrBalance(owner);
   const sol = useSolBalance(owner);
   const [last, setLast] = useState<LastSubmit | null>(null);
@@ -315,6 +393,7 @@ function Connected({ account, owner, snapshot, vault, seeker, nowMs }: Connected
       },
       sgt: pool.requireSgt ? sgt : null,
       registerDevice: pool.requireSgt && snapshot.deviceLock === null,
+      ...poolArg,
     });
   };
 
@@ -322,7 +401,7 @@ function Connected({ account, owner, snapshot, vault, seeker, nowMs }: Connected
     if (!settlement) return;
     setLast(null);
     setClaimedLabel(settlement.kind === "claim" ? bundledClaim : null);
-    void tx.run({ plan: { settle: settlement, commit: false }, commit: null, sgt: null, registerDevice: false });
+    void tx.run({ plan: { settle: settlement, commit: false }, commit: null, sgt: null, registerDevice: false, ...poolArg });
   };
 
   if (tx.state.phase === "done" && tx.state.signature) {
@@ -333,13 +412,19 @@ function Connected({ account, owner, snapshot, vault, seeker, nowMs }: Connected
       const finishBy = dayEnd(last.dayIndex, cfg) * 1000 - 1000;
       return (
         <LimeMoment
-          eyebrow={isToday ? "Committed for today" : "Committed for tomorrow"}
+          eyebrow={`${isToday ? "Committed for today" : "Committed for tomorrow"}${crew?.name ? ` · ${crew.name}` : ""}`}
           title="You're in."
           big={<span className="numeral">{info.unit === "seconds" ? formatHold(last.goalTarget) : last.goalTarget}</span>}
           actions={
             <>
               {isToday ? (
-                <Button variant="primary" size="lg" block trailingPlay href={workoutHref(last.exercise as ExerciseKind)}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  block
+                  trailingPlay
+                  href={workoutHrefFor(last.exercise as ExerciseKind, crewId)}
+                >
                   Start workout
                 </Button>
               ) : null}
@@ -388,8 +473,9 @@ function Connected({ account, owner, snapshot, vault, seeker, nowMs }: Connected
       ? `Commits for today close at ${formatLocalDeadline(commitDeadline(today, cfg) * 1000)}.`
       : null;
 
-  return (
-    <Shell>
+  return frame(
+    <>
+      {before}
       <PoolSummary dayState={todayEntry?.dayState ?? null} decimals={SKR_DECIMALS} label={solanaConfig.tokenLabel} yourStatus={yourStatus} />
 
       {tx.state.phase === "error" && tx.state.error ? (
@@ -406,6 +492,7 @@ function Connected({ account, owner, snapshot, vault, seeker, nowMs }: Connected
         settlement={settlement}
         busy={busy}
         onSettle={settleOnly}
+        crewId={crewId === 0n ? undefined : crewId}
       />
 
       {pool.paused ? (
@@ -424,6 +511,9 @@ function Connected({ account, owner, snapshot, vault, seeker, nowMs }: Connected
           solShortfall={solShortfall}
           bundledClaim={settlement?.kind === "claim" ? bundledClaim : null}
           busy={busy}
+          fixedExercise={crew?.fixedExercise ?? null}
+          fixedGoal={crew?.fixedGoal ?? null}
+          crewName={crew && crewId !== 0n ? crew.name || "your crew" : null}
           onSubmit={submitCommit}
         />
       ) : null}
@@ -433,7 +523,7 @@ function Connected({ account, owner, snapshot, vault, seeker, nowMs }: Connected
           Showing the last known state; refreshing failed.
         </p>
       ) : null}
-      <HowItWorks feeBps={pool.feeBps} />
-    </Shell>
+      {howItWorks ? <HowItWorks feeBps={pool.feeBps} /> : null}
+    </>,
   );
 }

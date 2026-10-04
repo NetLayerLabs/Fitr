@@ -9,6 +9,7 @@ import {
   MAX_PRIORITY_MICROLAMPORTS,
   resetServerSolana,
   runCrank,
+  SYNC_CREW_BATCH,
   ServerSolanaNotConfiguredError,
 } from "../attestor";
 import { DAY_LEN, FakeVault, MINT } from "./fakeVault";
@@ -172,6 +173,58 @@ describe("runCrank", () => {
     const r = await runCrank(vault.context(), { nowSecs: vault.nowSecs, send: fastSend });
     expect(r.days[0].finalize).toBe("error");
     expect(r.days[0].errors[0]).toMatch(/program error 6000/);
+  });
+
+  it("settles crew pools too, after the global pool, passing the global pool to finalize", async () => {
+    await seedDay(1, 1);
+    const crewA = await vault.addCrew(7n);
+    const crewB = await vault.addCrew(3n);
+    await vault.addDay(D, { committedCount: 1 }, crewA);
+    await vault.addCommitment((await generateKeyPairSigner()).address, D, {}, crewA);
+    await vault.addDay(D, { committedCount: 0 }, crewB);
+    const r = await runCrank(vault.context(), { nowSecs: vault.nowSecs, send: fastSend });
+    expect(r.crewsScanned).toBe(2);
+    expect(r.errors).toEqual([]);
+    expect(r.days.map((d) => d.crewId ?? "global")).toEqual(["global", "3", "7"]);
+    expect(r.days[2]).toMatchObject({ day: D, finalize: "finalized", closedMissed: 1, swept: true });
+    const finals = vault.sent.filter((t) => t.kind === "finalize");
+    expect(finals.map((t) => t.pools)).toEqual([
+      [vault.pool, vault.pool],
+      [crewB, vault.pool],
+      [crewA, vault.pool],
+    ]);
+  });
+
+  it("leaves crew days alone while the global pool is paused, and gives the global pool first claim on the budget", async () => {
+    const crew = await vault.addCrew(9n);
+    await vault.addDay(D, { committedCount: 0 }, crew);
+    const paused = await new FakeVault().init({ paused: true, pausedSince: vault.nowSecs - 10 });
+    const pCrew = await paused.addCrew(9n);
+    await paused.addDay(D, { committedCount: 0 }, pCrew);
+    const r = await runCrank(paused.context(), { nowSecs: paused.nowSecs, send: fastSend });
+    expect(r.days).toEqual([]);
+    expect(paused.sent).toHaveLength(0);
+
+    await vault.addDay(D, { committedCount: 0 });
+    const capped = await runCrank(vault.context(), { nowSecs: vault.nowSecs, maxTransactions: 1, send: fastSend });
+    expect(capped.truncated).toBe(true);
+    expect(capped.days.map((d) => d.crewId)).toEqual([undefined]);
+  });
+
+  it("syncs crews whose copied authority / attestor went stale, in batches, and leaves synced crews alone", async () => {
+    const old = (await generateKeyPairSigner()).address;
+    const stale: string[] = [];
+    for (let i = 1n; i <= 10n; i++) stale.push(await vault.addCrew(i, { attestor: old }));
+    await vault.addCrew(11n); // already in sync
+    const pending = await vault.addCrew(12n, { pendingAuthority: old });
+    const r = await runCrank(vault.context(), { nowSecs: vault.nowSecs, send: fastSend });
+    expect(r.crewsSynced).toBe(11);
+    expect(r.crewsScanned).toBe(12);
+    const syncs = vault.sent.filter((t) => t.kind === "sync_crew");
+    expect(syncs.map((t) => t.pools?.length)).toEqual([SYNC_CREW_BATCH, 11 - SYNC_CREW_BATCH]);
+    expect(new Set(syncs.flatMap((t) => t.pools))).toEqual(new Set([...stale, pending]));
+    const again = await runCrank(vault.context(), { nowSecs: vault.nowSecs, send: fastSend });
+    expect(again.crewsSynced).toBe(0);
   });
 
   it("refuses to run without a pool", async () => {

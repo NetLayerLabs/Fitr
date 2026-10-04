@@ -119,6 +119,7 @@ describe("deriveTodayCommitment (Today tab contract)", () => {
       amountLabel: "25 SKR",
       deadlineMs: (T0 + DAY) * 1000,
       claimableLabel: undefined,
+      forDay: "today",
     });
     expect(deriveTodayCommitment({ ...base, snapshot: s, hasLocalGoalMet: (k, g) => k === "plank" && g === 90 }).state).toBe("verifying");
     const done = { ...today, commitment: { ...today.commitment, status: CommitmentStatus.Completed } };

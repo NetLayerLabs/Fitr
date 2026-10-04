@@ -30,6 +30,8 @@ import { solanaConfig } from "@/lib/solana/config";
 import { getPoolAddresses, getUserDayAddresses, vaultProgramAddress } from "@/lib/solana/vault/addresses";
 import { dayConfigFromPool, dayIndexAt } from "@/lib/solana/vault/day";
 import { CommitmentStatus, fetchMaybeCommitment, fetchMaybePool } from "@/lib/solana/vault/generated";
+import { crewDisplayName, fetchUserTodayCommitments, type CrewRpc } from "@/lib/solana/vault/crews";
+import { crewFromSearch, pickWorkoutPool } from "@/components/crews/multiPool";
 
 // ---------------------------------------------------------------------------------------------
 // Commitment lookup (vault client, read-only)
@@ -43,6 +45,12 @@ export interface StakedCommitment {
   /** Stake in base units. */
   amount: bigint;
   status: "committed" | "completed" | "revoked";
+  /** The pool: absent / 0n = the global pool, else a crew. */
+  crewId?: bigint;
+  /** The crew's name (crews only). */
+  crewName?: string;
+  /** Other still-open stakes for this exercise today (other pools) the user can verify instead. */
+  alternatives?: Array<{ crewId: bigint; crewName: string }>;
 }
 
 /**
@@ -83,6 +91,68 @@ export async function loadTodayCommitment(
           ? "revoked"
           : "committed",
   };
+}
+
+function stakeStatus(s: CommitmentStatus): StakedCommitment["status"] {
+  return s === CommitmentStatus.Completed ? "completed" : s === CommitmentStatus.Revoked ? "revoked" : "committed";
+}
+
+/**
+ * Today's stakes of `owner` in every pool (global and crews), for a workout of `exercise`: picks
+ * the one this workout verifies (see pickWorkoutPool; `preferredCrewId` from ?crew=<id>), with
+ * the other open stakes for the same exercise as `alternatives`. When nothing matches the
+ * exercise but another stake is open, returns that one (the screen says "today's stake is for X").
+ */
+export async function loadWorkoutCommitment(
+  rpc: CrewRpc,
+  owner: Address,
+  opts: { mint: Address | null; nowSecs: number; exercise: ExerciseKind; preferredCrewId?: bigint | null; programAddress?: Address },
+): Promise<StakedCommitment | null> {
+  if (!opts.mint) return null;
+  const all = await fetchUserTodayCommitments(rpc, {
+    mint: opts.mint,
+    user: owner,
+    nowSecs: opts.nowSecs,
+    programAddress: opts.programAddress,
+  });
+  const stakes: Array<StakedCommitment & { crewId: bigint; crewName: string }> = [];
+  for (const { crew, commitment } of all) {
+    const exercise = EXERCISE_KINDS[commitment.exercise];
+    if (!exercise) continue;
+    stakes.push({
+      dayIndex: commitment.dayIndex,
+      exercise,
+      goalTarget: commitment.goalTarget,
+      amount: commitment.amount,
+      status: stakeStatus(commitment.status),
+      crewId: crew.crewId,
+      crewName: crew.crewId === 0n ? "" : crewDisplayName(crew),
+    });
+  }
+  const pick = pickWorkoutPool(stakes, opts.exercise, opts.preferredCrewId ?? null);
+  const toStake = (s: (typeof stakes)[number]): StakedCommitment => {
+    const out: StakedCommitment = {
+      dayIndex: s.dayIndex,
+      exercise: s.exercise,
+      goalTarget: s.goalTarget,
+      amount: s.amount,
+      status: s.status,
+    };
+    if (s.crewId !== 0n) {
+      out.crewId = s.crewId;
+      out.crewName = s.crewName;
+    }
+    return out;
+  };
+  if (pick.chosen) {
+    const out = toStake(pick.chosen);
+    if (pick.alternatives.length > 0) {
+      out.alternatives = pick.alternatives.map((a) => ({ crewId: a.crewId, crewName: a.crewId === 0n ? "" : a.crewName }));
+    }
+    return out;
+  }
+  const other = stakes.find((s) => s.status === "committed" && s.exercise === pick.otherExercise);
+  return other ? toStake(other) : null;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -305,6 +375,8 @@ export class VerifiedSessionController {
         dayIndex: c.dayIndex,
         exercise: c.exercise,
         goalTarget: c.goalTarget,
+        // The pool this workout verifies (omitted for the global pool).
+        ...(c.crewId ? { crewId: c.crewId.toString() } : {}),
       });
     } catch (e) {
       if (gen !== this.generation) return;
@@ -554,12 +626,22 @@ export interface VerifiedSessionApi extends VerifiedSnapshot {
   reset(): void;
 }
 
-async function defaultLoad(owner: Address): Promise<StakedCommitment | null> {
+async function defaultLoad(owner: Address, exercise: ExerciseKind): Promise<StakedCommitment | null> {
   const { getBrowserRpc } = await import("@/lib/solana/rpc");
-  return loadTodayCommitment(getBrowserRpc(), owner, {
-    mint: solanaConfig.skrMint,
-    nowSecs: Math.floor(Date.now() / 1000),
-  });
+  const rpc = getBrowserRpc();
+  const nowSecs = Math.floor(Date.now() / 1000);
+  try {
+    // Every pool (global + crews); ?crew=<id> (from a crew page) picks among several.
+    return await loadWorkoutCommitment(rpc, owner, {
+      mint: solanaConfig.skrMint,
+      nowSecs,
+      exercise,
+      preferredCrewId: typeof window === "undefined" ? null : crewFromSearch(window.location.search),
+    });
+  } catch {
+    // getProgramAccounts unavailable: the global pool alone still works with plain reads.
+    return loadTodayCommitment(rpc, owner, { mint: solanaConfig.skrMint, nowSecs });
+  }
 }
 
 const serverSnapshot = () => OFF;
@@ -569,7 +651,7 @@ export function useVerifiedSession({ exercise, owner, loadCommitment, deps }: Us
   const [controller] = useState(() => new VerifiedSessionController(exercise, deps));
   const snap = useSyncExternalStore(controller.subscribe, controller.getSnapshot, serverSnapshot);
 
-  const load = loadCommitment ?? defaultLoad;
+  const load = loadCommitment ?? ((o: Address) => defaultLoad(o, exercise));
   useEffect(() => {
     void controller.lookup(owner, load);
     // `load` is stable in the app (defaultLoad) and tests pass it once.
