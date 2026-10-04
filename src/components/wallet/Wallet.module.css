@@ -1,0 +1,261 @@
+/* Wallet UI. Design tokens only (src/app/globals.css) so a re-theme only touches :root. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.cardTitle {
+  font-size: var(--text-lg);
+}
+
+.label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.subtle {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.error {
+  margin-top: var(--space-2);
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+.warn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--warning);
+  font-size: var(--text-sm);
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--warning-dim);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.notice > svg {
+  flex: none;
+  color: var(--warning);
+}
+
+.testBanner {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  background: var(--warning-dim);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* Picker */
+
+.walletList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.walletOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap-lg);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  font-weight: 700;
+  text-align: left;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.walletOption:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.walletOption:disabled {
+  color: var(--text-muted);
+}
+
+.walletOptionIcon {
+  flex: none;
+  border-radius: var(--radius-xs);
+}
+
+.walletOptionLabel {
+  flex: 1;
+}
+
+/* Connected account */
+
+.accountRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.accountIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.accountText {
+  flex: 1;
+  min-width: 0;
+}
+
+.accountName {
+  font-size: var(--text-md);
+}
+
+.address {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.linkButton {
+  min-height: var(--tap);
+  padding-block: var(--space-2);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge[data-tone="ok"] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.badge[data-tone="warn"] {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+/* Balance */
+
+.balanceHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.balance {
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin: calc(-1 * var(--space-3));
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+}
+
+.iconButton:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.secondary {
+  width: 100%;
+  min-height: var(--tap-lg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.secondary:disabled {
+  color: var(--text-muted);
+}
+
+.addressRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.copyButton {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin-block: calc(-1 * var(--space-3));
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.copyButton:hover {
+  color: var(--text);
+}
+
+.copyButton[data-copied] {
+  color: var(--accent);
+}
