@@ -27,13 +27,24 @@ export function vaultProgramAddress(): Address {
   return solanaConfig.vaultProgramId ?? FITR_VAULT_PROGRAM_ADDRESS;
 }
 
+/** crew_id of the global public pool; crews use any other u64 (anchor/SPEC.md §2). */
+export const GLOBAL_CREW_ID = 0n;
+
+/** Pool PDA ["pool", mint, crewId u64 LE] and its vault. crewId defaults to the global pool (0). */
 export async function getPoolAddresses(
   mint: Address,
   programAddress: Address = vaultProgramAddress(),
+  crewId: bigint | number = GLOBAL_CREW_ID,
 ): Promise<{ pool: Address; vault: Address }> {
-  const [pool] = await findPoolPda({ mint }, { programAddress });
+  const [pool] = await findPoolPda({ mint, crewId }, { programAddress });
   const [vault] = await findVaultPda({ pool }, { programAddress });
   return { pool, vault };
+}
+
+/** The global pool ["pool", mint, 0]: read live by every crew instruction (SPEC §2.7). */
+export async function getGlobalPoolAddress(mint: Address, programAddress: Address = vaultProgramAddress()): Promise<Address> {
+  const [pool] = await findPoolPda({ mint, crewId: GLOBAL_CREW_ID }, { programAddress });
+  return pool;
 }
 
 export async function getUserDayAddresses(p: {

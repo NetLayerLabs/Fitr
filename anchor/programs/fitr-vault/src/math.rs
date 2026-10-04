@@ -72,14 +72,21 @@ pub struct Finalization {
     pub slashed: u64,
     pub fee: u64,
     pub sponsor: u64,
-    /// Bonus pool for completers of this day.
+    /// Crew rollover (pool.rollover) added to this day's bonus pool: all of it, only when the day
+    /// has a completer. Always 0 for the global pool.
+    pub rollover_in: u64,
+    /// Bonus pool for completers of this day: net forfeits + sponsor + rollover_in.
     pub distributable: u64,
-    /// Net slashed moved to pool.reserve when nobody completed.
+    /// Global pool only: net slashed moved to pool.reserve when nobody completed.
     pub to_reserve: u64,
+    /// Crews only: net slashed moved to pool.rollover when nobody completed (audit CREW-2 /
+    /// ECON-MP-1: it goes to the crew's next day with a completer, never to the sponsor reserve).
+    pub to_rollover: u64,
 }
 
 /// `revoked_stake` (revoked commitments) is refunded, never forfeited. `sponsor_cap` is the day's
-/// DayState snapshot of daily_sponsor_amount.
+/// DayState snapshot of daily_sponsor_amount; `reserve` / `rollover` are the pool's balances.
+#[allow(clippy::too_many_arguments)]
 pub fn finalize_math(
     total_staked: u64,
     completed_stake: u64,
@@ -88,20 +95,40 @@ pub fn finalize_math(
     fee_bps: u16,
     sponsor_cap: u64,
     reserve: u64,
+    rollover: u64,
+    is_crew: bool,
 ) -> Result<Finalization> {
     require!(fee_bps as u64 <= BPS_DENOM, VaultError::InvalidConfig);
+    // The global pool never accrues a rollover; refuse to release one from it.
+    require!(is_crew || rollover == 0, VaultError::InvalidConfig);
     let slashed = total_staked
         .checked_sub(completed_stake)
         .and_then(|v| v.checked_sub(revoked_stake))
         .ok_or(VaultError::MathOverflow)?;
     let fee = bps_of(slashed, fee_bps)?;
     let net = slashed.checked_sub(fee).ok_or(VaultError::MathOverflow)?;
+    let zero = Finalization {
+        slashed,
+        fee,
+        sponsor: 0,
+        rollover_in: 0,
+        distributable: 0,
+        to_reserve: 0,
+        to_rollover: 0,
+    };
     if completed_count == 0 {
-        return Ok(Finalization { slashed, fee, sponsor: 0, distributable: 0, to_reserve: net });
+        return Ok(if is_crew {
+            Finalization { to_rollover: net, ..zero }
+        } else {
+            Finalization { to_reserve: net, ..zero }
+        });
     }
     let sponsor = sponsor_cap.min(reserve);
-    let distributable = net.checked_add(sponsor).ok_or(VaultError::MathOverflow)?;
-    Ok(Finalization { slashed, fee, sponsor, distributable, to_reserve: 0 })
+    let distributable = net
+        .checked_add(sponsor)
+        .and_then(|v| v.checked_add(rollover))
+        .ok_or(VaultError::MathOverflow)?;
+    Ok(Finalization { sponsor, rollover_in: rollover, distributable, ..zero })
 }
 
 /// floor(distributable * weight / total_weight). Sum over all completers <= distributable.
@@ -206,38 +233,59 @@ mod tests {
 
     #[test]
     fn finalize_nobody_completed_goes_to_reserve() {
-        let f = finalize_math(300, 0, 0, 0, 1_000, 50, 1_000).unwrap();
-        assert_eq!(f, Finalization { slashed: 300, fee: 30, sponsor: 0, distributable: 0, to_reserve: 270 });
+        let f = finalize_math(300, 0, 0, 0, 1_000, 50, 1_000, 0, false).unwrap();
+        assert_eq!(f, Finalization { slashed: 300, fee: 30, sponsor: 0, rollover_in: 0, distributable: 0, to_reserve: 270, to_rollover: 0 });
+    }
+
+    /// Audit CREW-2 / ECON-MP-1: a crew day nobody completed rolls its net forfeit over to the
+    /// crew's next day with a completer; nothing goes to the (sponsor) reserve.
+    #[test]
+    fn crew_zero_completer_rolls_over() {
+        let f = finalize_math(1_000, 0, 0, 0, 500, 30, 77, 10, true).unwrap();
+        assert_eq!(
+            f,
+            Finalization { slashed: 1_000, fee: 50, sponsor: 0, rollover_in: 0, distributable: 0, to_reserve: 0, to_rollover: 950 }
+        );
+        // next day with a completer: the whole rollover (+ capped sponsor) joins the bonus pool
+        let f = finalize_math(110, 10, 0, 1, 500, 30, 77, 960, true).unwrap();
+        assert_eq!((f.fee, f.sponsor, f.rollover_in, f.distributable, f.to_rollover), (5, 30, 960, 95 + 30 + 960, 0));
+        // all revoked, nobody completed: nothing forfeited, nothing rolled over
+        let f = finalize_math(300, 0, 300, 0, 500, 0, 0, 5, true).unwrap();
+        assert_eq!((f.to_rollover, f.rollover_in, f.distributable), (0, 0, 0));
+        // the global pool can never release a rollover
+        assert!(finalize_math(10, 10, 0, 1, 500, 0, 0, 1, false).is_err());
+        assert!(finalize_math(10, 10, 0, 1, 500, 0, 0, u64::MAX, true).is_ok());
+        assert!(finalize_math(10, 0, 0, 1, 500, 0, 0, u64::MAX, true).is_err()); // overflow, checked
     }
 
     #[test]
     fn finalize_sponsor_capped_by_reserve() {
-        let f = finalize_math(300, 100, 0, 1, 0, 500, 40).unwrap();
+        let f = finalize_math(300, 100, 0, 1, 0, 500, 40, 0, false).unwrap();
         assert_eq!(f.sponsor, 40);
         assert_eq!(f.distributable, 240);
-        let f = finalize_math(300, 100, 0, 1, 0, 25, 40).unwrap();
+        let f = finalize_math(300, 100, 0, 1, 0, 25, 40, 0, false).unwrap();
         assert_eq!((f.sponsor, f.distributable), (25, 225)); // capped by the day's sponsor_cap
     }
 
     #[test]
     fn finalize_everyone_completed() {
-        let f = finalize_math(777, 777, 0, 3, 500, 0, 0).unwrap();
-        assert_eq!(f, Finalization { slashed: 0, fee: 0, sponsor: 0, distributable: 0, to_reserve: 0 });
-        assert!(finalize_math(1, 2, 0, 1, 500, 0, 0).is_err()); // completed > total: impossible, rejected
-        assert!(finalize_math(10, 6, 5, 1, 500, 0, 0).is_err()); // completed + revoked > total
+        let f = finalize_math(777, 777, 0, 3, 500, 0, 0, 0, false).unwrap();
+        assert_eq!(f, Finalization { slashed: 0, fee: 0, sponsor: 0, rollover_in: 0, distributable: 0, to_reserve: 0, to_rollover: 0 });
+        assert!(finalize_math(1, 2, 0, 1, 500, 0, 0, 0, false).is_err()); // completed > total: impossible, rejected
+        assert!(finalize_math(10, 6, 5, 1, 500, 0, 0, 0, false).is_err()); // completed + revoked > total
     }
 
     #[test]
     fn revoked_stake_is_never_forfeited() {
         // 300 staked: 100 completed, 150 revoked (refunded), 50 missed -> only 50 is slashed.
-        let f = finalize_math(300, 100, 150, 1, 1_000, 0, 0).unwrap();
-        assert_eq!(f, Finalization { slashed: 50, fee: 5, sponsor: 0, distributable: 45, to_reserve: 0 });
+        let f = finalize_math(300, 100, 150, 1, 1_000, 0, 0, 0, false).unwrap();
+        assert_eq!(f, Finalization { slashed: 50, fee: 5, sponsor: 0, rollover_in: 0, distributable: 45, to_reserve: 0, to_rollover: 0 });
         // everyone completed but one was revoked: nothing slashed, no fee
-        let f = finalize_math(300, 200, 100, 2, 2_000, 0, 0).unwrap();
+        let f = finalize_math(300, 200, 100, 2, 2_000, 0, 0, 0, false).unwrap();
         assert_eq!((f.slashed, f.fee, f.distributable), (0, 0, 0));
         // all revoked, nobody completed: nothing to the reserve or treasury
-        let f = finalize_math(300, 0, 300, 0, 2_000, 0, 0).unwrap();
-        assert_eq!(f, Finalization { slashed: 0, fee: 0, sponsor: 0, distributable: 0, to_reserve: 0 });
+        let f = finalize_math(300, 0, 300, 0, 2_000, 0, 0, 0, false).unwrap();
+        assert_eq!(f, Finalization { slashed: 0, fee: 0, sponsor: 0, rollover_in: 0, distributable: 0, to_reserve: 0, to_rollover: 0 });
     }
 
     #[test]
@@ -262,7 +310,7 @@ mod tests {
         let total_staked = 10 * stake;
         let w = [stake, stake, weight_for(stake, stake, 5, 500, 5_000).unwrap()];
         let completed_stake = 3 * stake;
-        let f = finalize_math(total_staked, completed_stake, 0, 3, 500, 0, 0).unwrap();
+        let f = finalize_math(total_staked, completed_stake, 0, 3, 500, 0, 0, 0, false).unwrap();
         let total_w: u64 = w.iter().sum();
         let payouts: u64 = w.iter().map(|wi| stake + bonus_share(f.distributable, *wi, total_w).unwrap()).sum();
         let dust = f.distributable - (payouts - completed_stake);
@@ -284,7 +332,7 @@ mod tests {
         let wa = weight_for(a, 0, 1, 500, 5_000).unwrap();
         let wb = weight_for(b, b, 3, 500, 5_000).unwrap();
         assert_eq!((wa, wb), (50_000_000, 275_000_000));
-        let f = finalize_math(a + b + c + d, a + b, 0, 2, 500, 0, 0).unwrap();
+        let f = finalize_math(a + b + c + d, a + b, 0, 2, 500, 0, 0, 0, false).unwrap();
         assert_eq!(f.slashed, 1_007_000_003);
         assert_eq!(f.fee, 50_350_000);
         assert_eq!(f.distributable, 956_650_003);

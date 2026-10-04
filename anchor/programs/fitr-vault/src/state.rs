@@ -84,7 +84,11 @@ pub struct GoalLimits {
     pub max: u32,
 }
 
-/// Global config + accounting. PDA: ["pool", mint]. One pool per stake mint.
+/// Config + accounting of one pool. PDA: ["pool", mint, crew_id u64 LE].
+/// crew_id 0 is the global public pool (initialize_pool, upgrade authority); every other id is a
+/// crew pool created permissionlessly by create_crew, which copies the global pool's whole config
+/// (same authority and attestor). Every other PDA (vault, day, commitment, profile, device) is
+/// seeded by the pool address, so each pool has its own days, settlement, streaks and vault.
 #[account]
 #[derive(InitSpace)]
 pub struct Pool {
@@ -94,7 +98,8 @@ pub struct Pool {
     pub vault_bump: u8,
     /// Blocks commit, attest_completion, finalize_day and attestor-signed revoke_completion.
     /// Never blocks claim / close_missed / sweep. Time spent paused extends the attest window of
-    /// every day that existed during the pause (see `paused_secs_total`).
+    /// every day that existed during the pause (see `paused_secs_total`). The GLOBAL pool's flag is
+    /// also a mint-wide kill switch: while it is set, those instructions fail in every crew too.
     pub paused: bool,
     /// Require a Seeker Genesis Token (one commitment per device per day). true on mainnet.
     pub require_sgt: bool,
@@ -145,10 +150,48 @@ pub struct Pool {
     pub paused_since: i64,
     /// Total seconds of all completed pauses since the pool was created.
     pub total_paused_secs: i64,
-    pub reserved: [u8; 64],
+    // --- crews (appended; every offset above is unchanged) ---
+    /// 0 for the global public pool, otherwise the crew id (a PDA seed, chosen by the creator).
+    pub crew_id: u64,
+    /// Wallet that created the crew (paid its rent). No powers. Default pubkey for crew 0.
+    pub creator: Pubkey,
+    /// Crew display name: UTF-8, zero-padded. All zeros for crew 0.
+    pub name: [u8; 32],
+    /// true: every commitment in this pool must use `fixed_exercise`.
+    pub has_fixed_exercise: bool,
+    /// Meaningful only when `has_fixed_exercise`.
+    pub fixed_exercise: Exercise,
+    /// Non-zero: every commitment must use exactly this goal (requires `has_fixed_exercise`).
+    /// 0 = free goal within goal_limits (goal minimums are always >= 1, so 0 is never a goal).
+    pub fixed_goal_target: u32,
+    /// Crews only (always 0 in the global pool): net forfeits of crew days that nobody completed,
+    /// waiting for the crew's next finalized day with at least one completer, which receives all
+    /// of it on top of its own forfeits (audit CREW-2 / ECON-MP-1). Never touched by the sponsor
+    /// tap, the authority or withdraw_treasury.
+    pub rollover: u64,
+    pub reserved: [u8; 56],
 }
 
 impl Pool {
+    /// The pool's crew_id as a PDA seed (little-endian).
+    pub fn crew_seed(&self) -> [u8; 8] {
+        self.crew_id.to_le_bytes()
+    }
+
+    /// Crew rule for commit: a crew with a fixed exercise (and optionally a fixed goal) only
+    /// accepts commitments that match it exactly. Always true for a pool without fixed rules.
+    pub fn crew_allows(&self, exercise: Exercise, goal_target: u32) -> bool {
+        if !self.has_fixed_exercise {
+            return true;
+        }
+        exercise == self.fixed_exercise && (self.fixed_goal_target == 0 || goal_target == self.fixed_goal_target)
+    }
+
+    /// true for a crew pool (crew_id != 0).
+    pub fn is_crew(&self) -> bool {
+        self.crew_id != GLOBAL_CREW_ID
+    }
+
     /// Largest stake the hard-coded ceiling allows for this pool's mint.
     pub fn stake_ceiling(&self) -> Result<u64> {
         math::stake_ceiling(self.mint_decimals)
@@ -191,6 +234,19 @@ impl Pool {
         require!(self.attestor != Pubkey::default(), VaultError::InvalidConfig);
         // Separation of duties: the authority can never make itself the attestor.
         require!(self.attestor != self.authority, VaultError::InvalidConfig);
+        // Crew rules must stay satisfiable: a fixed goal always lies inside the fixed exercise's
+        // goal limits, so update_config can never brick a fixed-goal crew (audit CREW-3).
+        if self.has_fixed_exercise {
+            if self.fixed_goal_target != 0 {
+                let l = self.goal_limits[self.fixed_exercise.index()];
+                require!(
+                    self.fixed_goal_target >= l.min && self.fixed_goal_target <= l.max,
+                    VaultError::InvalidConfig
+                );
+            }
+        } else {
+            require!(self.fixed_goal_target == 0, VaultError::InvalidConfig);
+        }
         Ok(())
     }
 
@@ -248,7 +304,7 @@ pub struct DayState {
     // --- fixed at finalize ---
     pub fee: u64,
     pub sponsor: u64,
-    /// Bonus pool for completers: forfeited - fee + sponsor.
+    /// Bonus pool for completers: forfeited - fee + sponsor (+ crew rollover).
     pub distributable: u64,
     // --- settlement progress ---
     pub principal_paid: u64,
@@ -266,26 +322,41 @@ pub struct DayState {
     /// Revoked commitments: never forfeited, claim refunds principal only.
     pub revoked_count: u32,
     pub revoked_stake: u64,
-    pub reserved: [u8; 32],
+    // --- crews hardening (appended) ---
+    /// Crew days: the GLOBAL pool's total paused seconds at creation (a global pause blocks every
+    /// crew, so it extends crew attest windows too). 0 and unused in the global pool.
+    pub global_paused_secs_base: i64,
+    /// Crew days: pool.rollover added to this day's bonus pool at finalize (part of `distributable`).
+    pub rollover: u64,
+    pub reserved: [u8; 16],
 }
 
 impl DayState {
     /// Seconds the pool has been paused since this day was created (including an ongoing pause).
-    pub fn pause_extension(&self, pool: &Pool, now: i64) -> Result<i64> {
-        Ok(pool.paused_secs_total(now)?.saturating_sub(self.paused_secs_base).max(0))
+    /// For a crew day this adds the time the GLOBAL pool (`global`) was paused since then; for a
+    /// global-pool day `global` is the pool itself and is ignored. Overlapping crew and global
+    /// pauses are counted twice, which only lengthens the window (in the users' favour).
+    pub fn pause_extension(&self, pool: &Pool, global: &Pool, now: i64) -> Result<i64> {
+        let own = pool.paused_secs_total(now)?.saturating_sub(self.paused_secs_base).max(0);
+        if !pool.is_crew() {
+            return Ok(own);
+        }
+        let g = global.paused_secs_total(now)?.saturating_sub(self.global_paused_secs_base).max(0);
+        own.checked_add(g).ok_or(error!(VaultError::MathOverflow))
     }
 
     /// Last second (inclusive) attest/revoke are accepted: the nominal deadline pushed back by the
-    /// time the pool spent paused, so a pause can never run out an honest user's attestation.
-    pub fn effective_attest_deadline(&self, pool: &Pool, now: i64) -> Result<i64> {
+    /// time the pool (or, for a crew, the global pool) spent paused, so a pause can never run out
+    /// an honest user's attestation.
+    pub fn effective_attest_deadline(&self, pool: &Pool, global: &Pool, now: i64) -> Result<i64> {
         self.attest_deadline
-            .checked_add(self.pause_extension(pool, now)?)
+            .checked_add(self.pause_extension(pool, global, now)?)
             .ok_or(error!(VaultError::MathOverflow))
     }
 
-    /// finalize_day is allowed once now > this (and the pool is not paused).
-    pub fn finalize_after(&self, pool: &Pool, now: i64) -> Result<i64> {
-        self.effective_attest_deadline(pool, now)?
+    /// finalize_day is allowed once now > this (and neither the pool nor the global pool is paused).
+    pub fn finalize_after(&self, pool: &Pool, global: &Pool, now: i64) -> Result<i64> {
+        self.effective_attest_deadline(pool, global, now)?
             .checked_add(self.finalize_delay_secs)
             .ok_or(error!(VaultError::MathOverflow))
     }
@@ -448,6 +519,12 @@ impl UserProfile {
     }
 }
 
+/// A crew name is non-empty UTF-8 followed only by zero padding (no interior NUL bytes).
+pub fn is_valid_crew_name(name: &[u8; 32]) -> bool {
+    let len = name.iter().position(|b| *b == 0).unwrap_or(name.len());
+    len > 0 && name[len..].iter().all(|b| *b == 0) && core::str::from_utf8(&name[..len]).is_ok()
+}
+
 /// One per Seeker device (SGT mint). PDA: ["device", pool, sgt_mint]
 #[account]
 #[derive(InitSpace)]
@@ -530,7 +607,14 @@ mod tests {
             finalize_delay_secs: 14_400,
             paused_since: 0,
             total_paused_secs: 0,
-            reserved: [0; 64],
+            crew_id: 0,
+            creator: Pubkey::default(),
+            name: [0; 32],
+            has_fixed_exercise: false,
+            fixed_exercise: Exercise::Pushup,
+            fixed_goal_target: 0,
+            rollover: 0,
+            reserved: [0; 56],
         }
     }
 
@@ -802,8 +886,121 @@ mod tests {
     }
 
     #[test]
+    fn crew_rules() {
+        let mut p = pool();
+        assert!(p.crew_allows(Exercise::Squat, 99)); // no fixed rules
+        p.has_fixed_exercise = true;
+        p.fixed_exercise = Exercise::Pushup;
+        assert!(p.crew_allows(Exercise::Pushup, 10) && p.crew_allows(Exercise::Pushup, 500));
+        assert!(!p.crew_allows(Exercise::Squat, 10));
+        p.fixed_goal_target = 20;
+        assert!(p.crew_allows(Exercise::Pushup, 20));
+        assert!(!p.crew_allows(Exercise::Pushup, 21) && !p.crew_allows(Exercise::Pushup, 19));
+        assert!(!p.crew_allows(Exercise::Plank, 20));
+        p.crew_id = 0x0102_0304_0506_0708;
+        assert_eq!(p.crew_seed(), [8, 7, 6, 5, 4, 3, 2, 1]);
+    }
+
+    /// Audit CREW-3: the config can never make a fixed-goal crew's rule unsatisfiable.
+    #[test]
+    fn fixed_goal_stays_within_goal_limits() {
+        let mut p = pool();
+        p.crew_id = 5;
+        p.has_fixed_exercise = true;
+        p.fixed_exercise = Exercise::Pushup;
+        p.fixed_goal_target = 500;
+        p.validate().unwrap();
+        p.goal_limits[Exercise::Pushup.index()] = GoalLimits { min: 10, max: 200 };
+        assert!(p.validate().is_err()); // tightening below the fixed goal is rejected
+        p.goal_limits[Exercise::Pushup.index()] = GoalLimits { min: 10, max: 500 };
+        p.validate().unwrap();
+        p.goal_limits[Exercise::Pushup.index()] = GoalLimits { min: 501, max: 1_000 };
+        assert!(p.validate().is_err());
+        // other exercises' limits are free; a free-goal crew is unconstrained
+        p.goal_limits[Exercise::Pushup.index()] = GoalLimits { min: 10, max: 1_000 };
+        p.goal_limits[Exercise::Squat.index()] = GoalLimits { min: 15, max: 20 };
+        p.validate().unwrap();
+        p.fixed_goal_target = 0;
+        p.goal_limits[Exercise::Pushup.index()] = GoalLimits { min: 10, max: 20 };
+        p.validate().unwrap();
+        // a fixed goal without a fixed exercise is never valid
+        p.has_fixed_exercise = false;
+        p.fixed_goal_target = 15;
+        assert!(p.validate().is_err());
+    }
+
+    /// Audit CREW-1: a crew day's window is extended by global pauses as well as its own.
+    #[test]
+    fn crew_day_pause_extension_includes_the_global_pool() {
+        let mut g = pool();
+        let mut c = pool();
+        c.crew_id = 9;
+        let mut day = DayState {
+            version: ACCOUNT_VERSION,
+            bump: 0,
+            finalized: false,
+            voided: false,
+            pool: Pubkey::new_unique(),
+            day_index: 1,
+            rent_payer: Pubkey::new_unique(),
+            fee_bps: 0,
+            streak_bonus_bps: 0,
+            max_streak_bonus_bps: 0,
+            attest_deadline: 1_000,
+            committed_count: 0,
+            completed_count: 0,
+            resolved_count: 0,
+            total_staked: 0,
+            completed_stake: 0,
+            completed_weight: 0,
+            fee: 0,
+            sponsor: 0,
+            distributable: 0,
+            principal_paid: 0,
+            bonus_paid: 0,
+            attestor: Pubkey::new_unique(),
+            sponsor_cap: 0,
+            finalize_delay_secs: 10,
+            paused_secs_base: 0,
+            revoked_count: 0,
+            revoked_stake: 0,
+            global_paused_secs_base: 0,
+            rollover: 0,
+            reserved: [0; 16],
+        };
+        g.set_paused(true, 100).unwrap();
+        assert_eq!(day.effective_attest_deadline(&c, &g, 150).unwrap(), 1_050); // ongoing global pause
+        g.set_paused(false, 300).unwrap();
+        c.set_paused(true, 400).unwrap();
+        c.set_paused(false, 450).unwrap();
+        assert_eq!(day.effective_attest_deadline(&c, &g, 500).unwrap(), 1_250); // 200 global + 50 own
+        assert_eq!(day.finalize_after(&c, &g, 500).unwrap(), 1_260);
+        day.global_paused_secs_base = 200; // day created after 200 s of global pause
+        assert_eq!(day.pause_extension(&c, &g, 500).unwrap(), 50);
+        // a global-pool day ignores the `global` argument (it is the pool itself)
+        g.set_paused(true, 600).unwrap();
+        assert_eq!(day.pause_extension(&g, &g, 700).unwrap(), 300);
+    }
+
+    #[test]
+    fn crew_names() {
+        let name = |s: &[u8]| {
+            let mut n = [0u8; 32];
+            n[..s.len()].copy_from_slice(s);
+            n
+        };
+        assert!(is_valid_crew_name(&name(b"Morning crew")));
+        assert!(is_valid_crew_name(&name("Équipe 💪".as_bytes())));
+        assert!(is_valid_crew_name(&[b'a'; 32])); // full length, no padding
+        assert!(!is_valid_crew_name(&[0; 32])); // empty
+        assert!(!is_valid_crew_name(&name(b"a\0b"))); // interior NUL
+        assert!(!is_valid_crew_name(&name(&[0xff, 0xfe]))); // not UTF-8
+        assert!(!is_valid_crew_name(&name(&[0xF0, 0x9F]))); // truncated multi-byte char
+    }
+
+    #[test]
     fn account_sizes() {
-        assert_eq!(8 + Pool::INIT_SPACE, 476);
+        assert_eq!(8 + Pool::INIT_SPACE, 554);
         assert_eq!(8 + DayState::INIT_SPACE, 270);
         assert_eq!(8 + Commitment::INIT_SPACE, 224);
         assert_eq!(8 + UserProfile::INIT_SPACE, 153);

@@ -65,6 +65,7 @@ export type AttestCompletionInstruction<
   TAccountDay extends string | AccountMeta<string> = string,
   TAccountCommitment extends string | AccountMeta<string> = string,
   TAccountProfile extends string | AccountMeta<string> = string,
+  TAccountGlobalPool extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -87,6 +88,9 @@ export type AttestCompletionInstruction<
       TAccountProfile extends string
         ? WritableAccount<TAccountProfile>
         : TAccountProfile,
+      TAccountGlobalPool extends string
+        ? ReadonlyAccount<TAccountGlobalPool>
+        : TAccountGlobalPool,
       ...TRemainingAccounts,
     ]
   >;
@@ -146,6 +150,7 @@ export type AttestCompletionAsyncInput<
   TAccountDay extends InstructionAccountInput = InstructionAccountInput,
   TAccountCommitment extends InstructionAccountInput = InstructionAccountInput,
   TAccountProfile extends InstructionAccountInput = InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput = InstructionAccountInput,
 > = {
   /**
    * Must be the attestor snapshotted into this day's DayState (not the current pool.attestor),
@@ -157,6 +162,11 @@ export type AttestCompletionAsyncInput<
   day?: TAccountDay;
   commitment?: TAccountCommitment;
   profile?: TAccountProfile;
+  /**
+   * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+   * `pool` for a global-pool day.
+   */
+  globalPool: TAccountGlobalPool;
   dayIndex: AttestCompletionInstructionDataArgs["dayIndex"];
   reps: AttestCompletionInstructionDataArgs["reps"];
   sessionHash: AttestCompletionInstructionDataArgs["sessionHash"];
@@ -170,6 +180,7 @@ export async function getAttestCompletionInstructionAsync<
   TAccountDay extends InstructionAccountInput,
   TAccountCommitment extends InstructionAccountInput,
   TAccountProfile extends InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput,
   TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
 >(
   input: AttestCompletionAsyncInput<
@@ -178,7 +189,8 @@ export async function getAttestCompletionInstructionAsync<
     TAccountUser,
     TAccountDay,
     TAccountCommitment,
-    TAccountProfile
+    TAccountProfile,
+    TAccountGlobalPool
   >,
   config?: { programAddress?: TProgramAddress },
 ): Promise<
@@ -207,6 +219,10 @@ export async function getAttestCompletionInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountProfile,
       InstructionAccountInputAddress<TAccountProfile>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >
 > {
@@ -235,6 +251,11 @@ export async function getAttestCompletionInstructionAsync<
       value: input.profile ?? null,
       isSigner: false,
       isWritable: true,
+    },
+    globalPool: {
+      value: input.globalPool ?? null,
+      isSigner: false,
+      isWritable: false,
     },
   };
   const accounts = originalAccounts as Record<
@@ -298,6 +319,7 @@ export async function getAttestCompletionInstructionAsync<
       getAccountMeta("day", accounts.day),
       getAccountMeta("commitment", accounts.commitment),
       getAccountMeta("profile", accounts.profile),
+      getAccountMeta("globalPool", accounts.globalPool),
     ],
     data: getAttestCompletionInstructionDataEncoder().encode(
       args as AttestCompletionInstructionDataArgs,
@@ -328,6 +350,10 @@ export async function getAttestCompletionInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountProfile,
       InstructionAccountInputAddress<TAccountProfile>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >);
 }
@@ -339,6 +365,7 @@ export type AttestCompletionInput<
   TAccountDay extends InstructionAccountInput = InstructionAccountInput,
   TAccountCommitment extends InstructionAccountInput = InstructionAccountInput,
   TAccountProfile extends InstructionAccountInput = InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput = InstructionAccountInput,
 > = {
   /**
    * Must be the attestor snapshotted into this day's DayState (not the current pool.attestor),
@@ -350,6 +377,11 @@ export type AttestCompletionInput<
   day: TAccountDay;
   commitment: TAccountCommitment;
   profile: TAccountProfile;
+  /**
+   * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+   * `pool` for a global-pool day.
+   */
+  globalPool: TAccountGlobalPool;
   dayIndex: AttestCompletionInstructionDataArgs["dayIndex"];
   reps: AttestCompletionInstructionDataArgs["reps"];
   sessionHash: AttestCompletionInstructionDataArgs["sessionHash"];
@@ -363,6 +395,7 @@ export function getAttestCompletionInstruction<
   TAccountDay extends InstructionAccountInput,
   TAccountCommitment extends InstructionAccountInput,
   TAccountProfile extends InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput,
   TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
 >(
   input: AttestCompletionInput<
@@ -371,7 +404,8 @@ export function getAttestCompletionInstruction<
     TAccountUser,
     TAccountDay,
     TAccountCommitment,
-    TAccountProfile
+    TAccountProfile,
+    TAccountGlobalPool
   >,
   config?: { programAddress?: TProgramAddress },
 ): AttestCompletionInstruction<
@@ -399,6 +433,10 @@ export function getAttestCompletionInstruction<
   ResolvedInstructionAccountMeta<
     TAccountProfile,
     InstructionAccountInputAddress<TAccountProfile>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountGlobalPool,
+    InstructionAccountInputAddress<TAccountGlobalPool>
   >
 > {
   // Program address.
@@ -427,6 +465,11 @@ export function getAttestCompletionInstruction<
       isSigner: false,
       isWritable: true,
     },
+    globalPool: {
+      value: input.globalPool ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -444,6 +487,7 @@ export function getAttestCompletionInstruction<
       getAccountMeta("day", accounts.day),
       getAccountMeta("commitment", accounts.commitment),
       getAccountMeta("profile", accounts.profile),
+      getAccountMeta("globalPool", accounts.globalPool),
     ],
     data: getAttestCompletionInstructionDataEncoder().encode(
       args as AttestCompletionInstructionDataArgs,
@@ -474,6 +518,10 @@ export function getAttestCompletionInstruction<
     ResolvedInstructionAccountMeta<
       TAccountProfile,
       InstructionAccountInputAddress<TAccountProfile>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >);
 }
@@ -494,6 +542,11 @@ export type ParsedAttestCompletionInstruction<
     day: TAccountMetas[3];
     commitment: TAccountMetas[4];
     profile: TAccountMetas[5];
+    /**
+     * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+     * `pool` for a global-pool day.
+     */
+    globalPool: TAccountMetas[6];
   };
   data: AttestCompletionInstructionData;
 };
@@ -506,12 +559,12 @@ export function parseAttestCompletionInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedAttestCompletionInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 6) {
+  if (instruction.accounts.length < 7) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 6,
+        expectedAccountMetas: 7,
       },
     );
   }
@@ -530,6 +583,7 @@ export function parseAttestCompletionInstruction<
       day: getNextAccount(),
       commitment: getNextAccount(),
       profile: getNextAccount(),
+      globalPool: getNextAccount(),
     },
     data: getAttestCompletionInstructionDataDecoder().decode(instruction.data),
   };

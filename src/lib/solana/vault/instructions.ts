@@ -22,7 +22,7 @@ import {
   getSetComputeUnitPriceInstruction,
 } from "@solana-program/compute-budget";
 import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
-import { getDeviceLockAddress, getPoolAddresses, vaultProgramAddress } from "./addresses";
+import { getDeviceLockAddress, getGlobalPoolAddress, getPoolAddresses, vaultProgramAddress } from "./addresses";
 import {
   getAttestCompletionInstructionAsync,
   getClaimInstructionAsync,
@@ -31,6 +31,7 @@ import {
   getFinalizeDayInstructionAsync,
   getRegisterDeviceInstructionAsync,
   getSweepDayInstructionAsync,
+  getSyncCrewInstruction,
   type Exercise,
 } from "./generated";
 import type { Settlement } from "./status";
@@ -64,11 +65,13 @@ export interface CommitIxParams {
   /** Required with `sgt`: the DeviceLock PDA ["device", pool, sgt.mint]. */
   deviceLock?: Address | null;
   programAddress?: Address;
+  /** Target pool: 0 / omitted = the global pool, else a crew. */
+  crewId?: bigint;
 }
 
 export async function buildCommitIx(p: CommitIxParams): Promise<Instruction> {
   const programAddress = p.programAddress ?? vaultProgramAddress();
-  const { pool, vault } = await getPoolAddresses(p.mint, programAddress);
+  const { pool, vault } = await getPoolAddresses(p.mint, programAddress, p.crewId ?? 0n);
   if (p.sgt && !p.deviceLock) throw new Error("commit with an SGT needs its DeviceLock address");
   return getCommitInstructionAsync(
     {
@@ -95,11 +98,13 @@ export interface ClaimIxParams {
   /** Payout destination; default the user's ATA. */
   userToken?: Address;
   programAddress?: Address;
+  /** Pool to claim from: 0 / omitted = the global pool, else a crew. */
+  crewId?: bigint;
 }
 
 export async function buildClaimIx(p: ClaimIxParams): Promise<Instruction> {
   const programAddress = p.programAddress ?? vaultProgramAddress();
-  const { pool, vault } = await getPoolAddresses(p.mint, programAddress);
+  const { pool, vault } = await getPoolAddresses(p.mint, programAddress, p.crewId ?? 0n);
   return getClaimInstructionAsync(
     {
       user: p.user,
@@ -113,15 +118,31 @@ export async function buildClaimIx(p: ClaimIxParams): Promise<Instruction> {
   );
 }
 
-/** finalize_day(d), permissionless: `cranker` only signs (and pays the fee). */
+/**
+ * finalize_day(d), permissionless: `cranker` only signs (and pays the fee). `globalPool` is the
+ * global pool of the same mint (== `pool` for a global-pool day; see getGlobalPoolAddress).
+ */
 export async function buildFinalizeIx(p: {
   cranker: TransactionSigner;
   pool: Address;
+  globalPool: Address;
   dayIndex: number;
   programAddress?: Address;
 }): Promise<Instruction> {
   const programAddress = p.programAddress ?? vaultProgramAddress();
-  return getFinalizeDayInstructionAsync({ cranker: p.cranker, pool: p.pool, dayIndex: p.dayIndex }, { programAddress });
+  return getFinalizeDayInstructionAsync(
+    { cranker: p.cranker, pool: p.pool, globalPool: p.globalPool, dayIndex: p.dayIndex },
+    { programAddress },
+  );
+}
+
+/**
+ * sync_crew: permissionless crank copying the global pool's authority, attestor and require_sgt
+ * into crew `pool` (SPEC §2.7). No signer besides the fee payer; batch several per transaction.
+ */
+export function buildSyncCrewIx(p: { pool: Address; globalPool: Address; programAddress?: Address }): Instruction {
+  const programAddress = p.programAddress ?? vaultProgramAddress();
+  return getSyncCrewInstruction({ pool: p.pool, globalPool: p.globalPool }, { programAddress });
 }
 
 /** close_missed(d) for `user`; the user may sign alone as the cranker (rent comes back to them). */
@@ -167,10 +188,11 @@ export async function buildRegisterDeviceIx(p: {
   );
 }
 
-/** attest_completion (attestor server only). */
+/** attest_completion (attestor server only). `globalPool`: see buildFinalizeIx. */
 export async function buildAttestIx(p: {
   attestor: TransactionSigner;
   pool: Address;
+  globalPool: Address;
   user: Address;
   dayIndex: number;
   reps: number;
@@ -184,6 +206,7 @@ export async function buildAttestIx(p: {
     {
       attestor: p.attestor,
       pool: p.pool,
+      globalPool: p.globalPool,
       user: p.user,
       dayIndex: p.dayIndex,
       reps: p.reps,
@@ -204,27 +227,33 @@ export interface DailyLoopParams {
   /** Settle a past day first (claim or close_missed, optionally after finalize_day). */
   settle?: Settlement | null;
   /** Then commit (omit for a claim-only transaction). */
-  commit?: Omit<CommitIxParams, "user" | "mint" | "sgt" | "deviceLock" | "programAddress" | "userToken"> | null;
+  commit?: Omit<CommitIxParams, "user" | "mint" | "sgt" | "deviceLock" | "programAddress" | "userToken" | "crewId"> | null;
   /** Required for commit when pool.requireSgt. */
   sgt?: SgtAccounts | null;
   /** Prepend register_device (no DeviceLock exists for this SGT yet). */
   registerDevice?: boolean;
   programAddress?: Address;
+  /** The pool every instruction acts on: 0 / omitted = the global pool, else a crew. */
+  crewId?: bigint;
 }
 
 /** [finalize?, claim | close_missed]?, [register_device?, commit]? — one signer, one signature. */
 export async function buildDailyLoopIxs(p: DailyLoopParams): Promise<Instruction[]> {
   const programAddress = p.programAddress ?? vaultProgramAddress();
-  const { pool } = await getPoolAddresses(p.mint, programAddress);
+  const crewId = p.crewId ?? 0n;
+  const { pool } = await getPoolAddresses(p.mint, programAddress, crewId);
   const userToken = await userTokenAccount(p.user.address, p.mint);
   const ixs: Instruction[] = [];
 
   if (p.settle) {
     const dayIndex = p.settle.day;
-    if (p.settle.needsFinalize) ixs.push(await buildFinalizeIx({ cranker: p.user, pool, dayIndex, programAddress }));
+    if (p.settle.needsFinalize) {
+      const globalPool = await getGlobalPoolAddress(p.mint, programAddress);
+      ixs.push(await buildFinalizeIx({ cranker: p.user, pool, globalPool, dayIndex, programAddress }));
+    }
     ixs.push(
       p.settle.kind === "claim"
-        ? await buildClaimIx({ user: p.user, mint: p.mint, dayIndex, userToken, programAddress })
+        ? await buildClaimIx({ user: p.user, mint: p.mint, dayIndex, userToken, programAddress, crewId })
         : await buildCloseMissedIx({ cranker: p.user, pool, user: p.user.address, dayIndex, programAddress }),
     );
   }
@@ -244,6 +273,7 @@ export async function buildDailyLoopIxs(p: DailyLoopParams): Promise<Instruction
         sgt: p.sgt ?? null,
         deviceLock,
         programAddress,
+        crewId,
       }),
     );
   }
@@ -253,11 +283,11 @@ export async function buildDailyLoopIxs(p: DailyLoopParams): Promise<Instruction
 
 /** Measured CU per instruction (anchor/SPEC.md §4, LiteSVM), rounded up. */
 export const CU_ESTIMATES = {
-  /** Worst case: the SGT path (58,637). */
-  commit: 58_700,
+  /** Worst case (fresh DayState + Profile, unlucky PDA bumps), measured up to 59,596. */
+  commit: 60_000,
   claim: 31_100,
   closeMissed: 12_600,
-  finalize: 10_200,
+  finalize: 16_100,
   registerDevice: 21_200,
 } as const;
 

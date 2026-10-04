@@ -156,6 +156,22 @@ pub fn pda(seeds: &[&[u8]]) -> Pubkey {
     Pubkey::find_program_address(seeds, &fitr_vault::ID).0
 }
 
+/// Pool PDA ["pool", mint, crew_id LE]; crew 0 is the global pool.
+pub fn pool_pda(mint: &Pubkey, crew_id: u64) -> Pubkey {
+    pda(&[POOL_SEED, mint.as_ref(), &crew_id.to_le_bytes()])
+}
+
+pub fn vault_pda(pool: &Pubkey) -> Pubkey {
+    pda(&[VAULT_SEED, pool.as_ref()])
+}
+
+/// Zero-padded crew name.
+pub fn crew_name(s: &str) -> [u8; 32] {
+    let mut n = [0u8; 32];
+    n[..s.len()].copy_from_slice(s.as_bytes());
+    n
+}
+
 // ---------------------------------------------------------------- deploy / mints
 
 pub fn so_bytes() -> Vec<u8> {
@@ -310,8 +326,8 @@ impl Env {
         deploy_upgradeable(&mut svm, so, Some(admin.pubkey()));
         let mint = create_mint(&mut svm, &admin, 6);
         let admin_ata = fund_ata(&mut svm, &admin, &mint, &admin.pubkey(), 0);
-        let pool = pda(&[POOL_SEED, mint.as_ref()]);
-        let vault = pda(&[VAULT_SEED, pool.as_ref()]);
+        let pool = pool_pda(&mint, 0);
+        let vault = vault_pda(&pool);
         Env { svm, admin, attestor, mint, pool, vault, admin_ata, day_len: 86_400, offset: 0 }
     }
 
@@ -329,6 +345,42 @@ impl Env {
             }
             .to_account_metas(None),
             data: ix::InitializePool { p }.data(),
+        }
+    }
+
+    /// The global pool (crew 0) of this env's mint.
+    pub fn global_pool(&self) -> Pubkey {
+        pool_pda(&self.mint, 0)
+    }
+
+    /// Points every builder / read at pool `crew_id` (0 = global) of this env's mint.
+    pub fn use_crew(&mut self, crew_id: u64) {
+        self.pool = pool_pda(&self.mint, crew_id);
+        self.vault = vault_pda(&self.pool);
+    }
+
+    pub fn ix_create_crew(
+        &self,
+        creator: &Pubkey,
+        crew_id: u64,
+        name: [u8; 32],
+        exercise: Option<Exercise>,
+        goal_target: Option<u32>,
+    ) -> Instruction {
+        let pool = pool_pda(&self.mint, crew_id);
+        Instruction {
+            program_id: fitr_vault::ID,
+            accounts: acc::CreateCrew {
+                creator: *creator,
+                global_pool: self.global_pool(),
+                mint: self.mint,
+                pool,
+                vault: vault_pda(&pool),
+                token_program: spl_token::ID,
+                system_program: SYS,
+            }
+            .to_account_metas(None),
+            data: ix::CreateCrew { crew_id, name, exercise, goal_target }.data(),
         }
     }
 
@@ -419,6 +471,7 @@ impl Env {
                 device: sgt.map(|s| s.1),
                 token_program: spl_token::ID,
                 system_program: SYS,
+                global_pool: self.global_pool(),
             }
             .to_account_metas(None),
             data: ix::Commit { day_index: d, amount, exercise, goal_target: goal }.data(),
@@ -435,6 +488,7 @@ impl Env {
                 day: self.day_pda(d),
                 commitment: self.commitment_pda(user, d),
                 profile: self.profile_pda(user),
+                global_pool: self.global_pool(),
             }
             .to_account_metas(None),
             data: ix::AttestCompletion { day_index: d, reps, session_hash: [7u8; 32], session_started_at: started }
@@ -452,6 +506,7 @@ impl Env {
                 day: self.day_pda(d),
                 commitment: self.commitment_pda(user, d),
                 profile: self.profile_pda(user),
+                global_pool: self.global_pool(),
             }
             .to_account_metas(None),
             data: ix::RevokeCompletion { day_index: d }.data(),
@@ -461,8 +516,23 @@ impl Env {
     pub fn ix_finalize(&self, cranker: &Pubkey, d: u32) -> Instruction {
         Instruction {
             program_id: fitr_vault::ID,
-            accounts: acc::FinalizeDay { cranker: *cranker, pool: self.pool, day: self.day_pda(d) }.to_account_metas(None),
+            accounts: acc::FinalizeDay {
+                cranker: *cranker,
+                pool: self.pool,
+                day: self.day_pda(d),
+                global_pool: self.global_pool(),
+            }
+            .to_account_metas(None),
             data: ix::FinalizeDay { day_index: d }.data(),
+        }
+    }
+
+    /// sync_crew for the pool the env points at (permissionless: no signer besides the payer).
+    pub fn ix_sync_crew(&self) -> Instruction {
+        Instruction {
+            program_id: fitr_vault::ID,
+            accounts: acc::SyncCrew { pool: self.pool, global_pool: self.global_pool() }.to_account_metas(None),
+            data: ix::SyncCrew {}.data(),
         }
     }
 

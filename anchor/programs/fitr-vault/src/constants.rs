@@ -7,6 +7,11 @@ pub const COMMITMENT_SEED: &[u8] = b"commitment";
 pub const PROFILE_SEED: &[u8] = b"profile";
 pub const DEVICE_SEED: &[u8] = b"device";
 
+/// crew_id of the global public pool: Pool PDA ["pool", mint, 0u64 LE]. Crews use any other id.
+pub const GLOBAL_CREW_ID: u64 = 0;
+/// GLOBAL_CREW_ID.to_le_bytes(), usable as a constant PDA seed.
+pub const GLOBAL_CREW_SEED: [u8; 8] = [0; 8];
+
 /// Layout version written into every account this program creates.
 /// A future program version that changes a layout bumps this and migrates lazily.
 pub const ACCOUNT_VERSION: u8 = 1;

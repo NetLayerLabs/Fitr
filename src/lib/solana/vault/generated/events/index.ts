@@ -13,6 +13,8 @@ export * from "./committed";
 export * from "./completionAttested";
 export * from "./completionRevoked";
 export * from "./configUpdated";
+export * from "./crewCreated";
+export * from "./crewSynced";
 export * from "./dayFinalized";
 export * from "./daySwept";
 export * from "./dayVoided";

@@ -123,19 +123,20 @@ export interface PayoutEstimate {
 /**
  * Mirrors math.rs finalize_math: what the day's completers will share. Revoked stake is refunded,
  * never forfeited; the sponsor draw is capped by the day's `sponsorCap` snapshot (falls back to the
- * pool's current daily_sponsor_amount for a DayState without it).
+ * pool's current daily_sponsor_amount for a DayState without it). In a crew, the crew's rollover
+ * (forfeits of earlier days nobody completed) joins the first finalized day with a completer.
  */
 export function projectedDistributable(
   d: Pick<DayState, "totalStaked" | "completedStake" | "completedCount" | "feeBps"> &
     Partial<Pick<DayState, "revokedStake" | "sponsorCap">>,
-  pool?: Pick<Pool, "dailySponsorAmount" | "reserve"> | null,
+  pool?: (Pick<Pool, "dailySponsorAmount" | "reserve"> & Partial<Pick<Pool, "rollover">>) | null,
 ): bigint {
   const slashed = d.totalStaked - d.completedStake - (d.revokedStake ?? 0n);
   const fee = (slashed * BigInt(d.feeBps)) / 10_000n;
   if (d.completedCount === 0) return 0n;
   const cap = d.sponsorCap ?? pool?.dailySponsorAmount ?? 0n;
   const sponsor = pool ? (cap < pool.reserve ? cap : pool.reserve) : 0n;
-  return slashed - fee + sponsor;
+  return slashed - fee + sponsor + (pool?.rollover ?? 0n);
 }
 
 /** What claim(d) pays (principal + bonus), or null when nothing is claimable. */

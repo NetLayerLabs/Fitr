@@ -195,7 +195,7 @@ fn device_lock_bound_to_pool() {
     let (m1, p1, v1) = (env.mint, env.pool, env.vault);
     let admin = env.admin.insecure_clone();
     env.mint = create_mint(&mut env.svm, &admin, 6);
-    env.pool = pda(&[fitr_vault::POOL_SEED, env.mint.as_ref()]);
+    env.pool = pool_pda(&env.mint, 0);
     env.vault = pda(&[fitr_vault::VAULT_SEED, env.pool.as_ref()]);
     let p = InitPoolParams { require_sgt: true, attestor: env.attestor.pubkey(), ..params(Default::default(), 86_400) };
     env.send_admin(&[env.ix_init(&admin.pubkey(), p)]).unwrap();
@@ -204,4 +204,42 @@ fn device_lock_bound_to_pool() {
     (env.mint, env.pool, env.vault) = (m1, p1, v1);
     let c = env.ix_commit(&alice.pubkey(), &a_ata, DAY, 10 * SKR, Exercise::Pushup, 10, Some((sgt, foreign_lock)));
     expect_err(env.send(&[c], &alice), 6016); // InvalidSgt: device.pool != pool
+}
+
+/// Crews copy require_sgt; the DeviceLock is per pool, so one Seeker commits at most once per day
+/// in each pool (the global pool and every crew), and a lock from another pool is never accepted.
+#[test]
+fn crew_pools_have_their_own_device_lock() {
+    let (mut env, sgt_mint) = sgt_env();
+    let (alice, a_ata) = env.user(1_000);
+    let (mallory, m_ata) = env.user(1_000);
+    let alice_sgt = Keypair::new().pubkey();
+    plant_sgt_account(&mut env, alice_sgt, alice.pubkey(), 1);
+    let mallory_sgt = Keypair::new().pubkey(); // the same device, handed to a second wallet
+    plant_sgt_account(&mut env, mallory_sgt, mallory.pubkey(), 1);
+    let ap = alice.pubkey();
+    env.send(&[env.ix_register(&ap, &sgt_mint, &alice_sgt)], &alice).unwrap();
+    let global_lock = env.device_pda(&sgt_mint);
+    env.send(&[env.ix_commit(&ap, &a_ata, DAY, 10 * SKR, Exercise::Pushup, 10, Some((alice_sgt, global_lock)))], &alice)
+        .unwrap();
+
+    let ix = env.ix_create_crew(&ap, 42, crew_name("seekers"), None, None);
+    env.send(&[ix], &alice).unwrap();
+    env.use_crew(42);
+    assert!(env.pool_state().require_sgt);
+    // no SGT accounts -> SgtRequired; the global pool's lock -> InvalidSgt (device.pool != pool)
+    expect_err(env.send(&[env.ix_commit(&ap, &a_ata, DAY, 10 * SKR, Exercise::Pushup, 10, None)], &alice), 6015);
+    expect_err(
+        env.send(&[env.ix_commit(&ap, &a_ata, DAY, 10 * SKR, Exercise::Pushup, 10, Some((alice_sgt, global_lock)))], &alice),
+        6016,
+    );
+    env.send(&[env.ix_register(&ap, &sgt_mint, &alice_sgt)], &alice).unwrap();
+    let crew_lock = env.device_pda(&sgt_mint);
+    assert_ne!(crew_lock, global_lock);
+    env.send(&[env.ix_commit(&ap, &a_ata, DAY, 10 * SKR, Exercise::Pushup, 10, Some((alice_sgt, crew_lock)))], &alice)
+        .unwrap();
+    // the same Seeker cannot commit a second time in this crew today, even from another wallet
+    let mp = mallory.pubkey();
+    expect_err(env.send(&[env.ix_commit(&mp, &m_ata, DAY, 10 * SKR, Exercise::Pushup, 10, Some((mallory_sgt, crew_lock)))], &mallory), 6017);
+    assert_eq!(env.device(&sgt_mint).unwrap().commit_count, 1);
 }

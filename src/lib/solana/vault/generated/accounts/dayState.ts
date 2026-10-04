@@ -82,7 +82,7 @@ export type DayState = {
   completedWeight: bigint;
   fee: bigint;
   sponsor: bigint;
-  /** Bonus pool for completers: forfeited - fee + sponsor. */
+  /** Bonus pool for completers: forfeited - fee + sponsor (+ crew rollover). */
   distributable: bigint;
   principalPaid: bigint;
   bonusPaid: bigint;
@@ -100,6 +100,13 @@ export type DayState = {
   /** Revoked commitments: never forfeited, claim refunds principal only. */
   revokedCount: number;
   revokedStake: bigint;
+  /**
+   * Crew days: the GLOBAL pool's total paused seconds at creation (a global pause blocks every
+   * crew, so it extends crew attest windows too). 0 and unused in the global pool.
+   */
+  globalPausedSecsBase: bigint;
+  /** Crew days: pool.rollover added to this day's bonus pool at finalize (part of `distributable`). */
+  rollover: bigint;
   reserved: ReadonlyUint8Array;
 };
 
@@ -129,7 +136,7 @@ export type DayStateArgs = {
   completedWeight: number | bigint;
   fee: number | bigint;
   sponsor: number | bigint;
-  /** Bonus pool for completers: forfeited - fee + sponsor. */
+  /** Bonus pool for completers: forfeited - fee + sponsor (+ crew rollover). */
   distributable: number | bigint;
   principalPaid: number | bigint;
   bonusPaid: number | bigint;
@@ -147,6 +154,13 @@ export type DayStateArgs = {
   /** Revoked commitments: never forfeited, claim refunds principal only. */
   revokedCount: number;
   revokedStake: number | bigint;
+  /**
+   * Crew days: the GLOBAL pool's total paused seconds at creation (a global pause blocks every
+   * crew, so it extends crew attest windows too). 0 and unused in the global pool.
+   */
+  globalPausedSecsBase: number | bigint;
+  /** Crew days: pool.rollover added to this day's bonus pool at finalize (part of `distributable`). */
+  rollover: number | bigint;
   reserved: ReadonlyUint8Array;
 };
 
@@ -183,7 +197,9 @@ export function getDayStateEncoder(): FixedSizeEncoder<DayStateArgs> {
       ["pausedSecsBase", getI64Encoder()],
       ["revokedCount", getU32Encoder()],
       ["revokedStake", getU64Encoder()],
-      ["reserved", fixEncoderSize(getBytesEncoder(), 32)],
+      ["globalPausedSecsBase", getI64Encoder()],
+      ["rollover", getU64Encoder()],
+      ["reserved", fixEncoderSize(getBytesEncoder(), 16)],
     ]),
     (value) => ({ ...value, discriminator: DAY_STATE_DISCRIMINATOR }),
   );
@@ -221,7 +237,9 @@ export function getDayStateDecoder(): FixedSizeDecoder<DayState> {
     ["pausedSecsBase", getI64Decoder()],
     ["revokedCount", getU32Decoder()],
     ["revokedStake", getU64Decoder()],
-    ["reserved", fixDecoderSize(getBytesDecoder(), 32)],
+    ["globalPausedSecsBase", getI64Decoder()],
+    ["rollover", getU64Decoder()],
+    ["reserved", fixDecoderSize(getBytesDecoder(), 16)],
   ]);
 }
 

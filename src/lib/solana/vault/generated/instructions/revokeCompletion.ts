@@ -63,6 +63,7 @@ export type RevokeCompletionInstruction<
   TAccountDay extends string | AccountMeta<string> = string,
   TAccountCommitment extends string | AccountMeta<string> = string,
   TAccountProfile extends string | AccountMeta<string> = string,
+  TAccountGlobalPool extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -85,6 +86,9 @@ export type RevokeCompletionInstruction<
       TAccountProfile extends string
         ? WritableAccount<TAccountProfile>
         : TAccountProfile,
+      TAccountGlobalPool extends string
+        ? ReadonlyAccount<TAccountGlobalPool>
+        : TAccountGlobalPool,
       ...TRemainingAccounts,
     ]
   >;
@@ -130,14 +134,23 @@ export type RevokeCompletionAsyncInput<
   TAccountDay extends InstructionAccountInput = InstructionAccountInput,
   TAccountCommitment extends InstructionAccountInput = InstructionAccountInput,
   TAccountProfile extends InstructionAccountInput = InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput = InstructionAccountInput,
 > = {
-  /** The pool authority or the day's snapshotted attestor. */
+  /**
+   * The pool authority, the global pool's authority or the day's snapshotted attestor
+   * (checked in the handler).
+   */
   signer: TAccountSigner;
   pool: TAccountPool;
   user: TAccountUser;
   day?: TAccountDay;
   commitment?: TAccountCommitment;
   profile?: TAccountProfile;
+  /**
+   * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+   * `pool` for a global-pool day.
+   */
+  globalPool: TAccountGlobalPool;
   dayIndex: RevokeCompletionInstructionDataArgs["dayIndex"];
 };
 
@@ -148,6 +161,7 @@ export async function getRevokeCompletionInstructionAsync<
   TAccountDay extends InstructionAccountInput,
   TAccountCommitment extends InstructionAccountInput,
   TAccountProfile extends InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput,
   TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
 >(
   input: RevokeCompletionAsyncInput<
@@ -156,7 +170,8 @@ export async function getRevokeCompletionInstructionAsync<
     TAccountUser,
     TAccountDay,
     TAccountCommitment,
-    TAccountProfile
+    TAccountProfile,
+    TAccountGlobalPool
   >,
   config?: { programAddress?: TProgramAddress },
 ): Promise<
@@ -185,6 +200,10 @@ export async function getRevokeCompletionInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountProfile,
       InstructionAccountInputAddress<TAccountProfile>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >
 > {
@@ -209,6 +228,11 @@ export async function getRevokeCompletionInstructionAsync<
       value: input.profile ?? null,
       isSigner: false,
       isWritable: true,
+    },
+    globalPool: {
+      value: input.globalPool ?? null,
+      isSigner: false,
+      isWritable: false,
     },
   };
   const accounts = originalAccounts as Record<
@@ -272,6 +296,7 @@ export async function getRevokeCompletionInstructionAsync<
       getAccountMeta("day", accounts.day),
       getAccountMeta("commitment", accounts.commitment),
       getAccountMeta("profile", accounts.profile),
+      getAccountMeta("globalPool", accounts.globalPool),
     ],
     data: getRevokeCompletionInstructionDataEncoder().encode(
       args as RevokeCompletionInstructionDataArgs,
@@ -302,6 +327,10 @@ export async function getRevokeCompletionInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountProfile,
       InstructionAccountInputAddress<TAccountProfile>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >);
 }
@@ -313,14 +342,23 @@ export type RevokeCompletionInput<
   TAccountDay extends InstructionAccountInput = InstructionAccountInput,
   TAccountCommitment extends InstructionAccountInput = InstructionAccountInput,
   TAccountProfile extends InstructionAccountInput = InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput = InstructionAccountInput,
 > = {
-  /** The pool authority or the day's snapshotted attestor. */
+  /**
+   * The pool authority, the global pool's authority or the day's snapshotted attestor
+   * (checked in the handler).
+   */
   signer: TAccountSigner;
   pool: TAccountPool;
   user: TAccountUser;
   day: TAccountDay;
   commitment: TAccountCommitment;
   profile: TAccountProfile;
+  /**
+   * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+   * `pool` for a global-pool day.
+   */
+  globalPool: TAccountGlobalPool;
   dayIndex: RevokeCompletionInstructionDataArgs["dayIndex"];
 };
 
@@ -331,6 +369,7 @@ export function getRevokeCompletionInstruction<
   TAccountDay extends InstructionAccountInput,
   TAccountCommitment extends InstructionAccountInput,
   TAccountProfile extends InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput,
   TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
 >(
   input: RevokeCompletionInput<
@@ -339,7 +378,8 @@ export function getRevokeCompletionInstruction<
     TAccountUser,
     TAccountDay,
     TAccountCommitment,
-    TAccountProfile
+    TAccountProfile,
+    TAccountGlobalPool
   >,
   config?: { programAddress?: TProgramAddress },
 ): RevokeCompletionInstruction<
@@ -367,6 +407,10 @@ export function getRevokeCompletionInstruction<
   ResolvedInstructionAccountMeta<
     TAccountProfile,
     InstructionAccountInputAddress<TAccountProfile>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountGlobalPool,
+    InstructionAccountInputAddress<TAccountGlobalPool>
   >
 > {
   // Program address.
@@ -391,6 +435,11 @@ export function getRevokeCompletionInstruction<
       isSigner: false,
       isWritable: true,
     },
+    globalPool: {
+      value: input.globalPool ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -408,6 +457,7 @@ export function getRevokeCompletionInstruction<
       getAccountMeta("day", accounts.day),
       getAccountMeta("commitment", accounts.commitment),
       getAccountMeta("profile", accounts.profile),
+      getAccountMeta("globalPool", accounts.globalPool),
     ],
     data: getRevokeCompletionInstructionDataEncoder().encode(
       args as RevokeCompletionInstructionDataArgs,
@@ -438,6 +488,10 @@ export function getRevokeCompletionInstruction<
     ResolvedInstructionAccountMeta<
       TAccountProfile,
       InstructionAccountInputAddress<TAccountProfile>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >);
 }
@@ -448,13 +502,21 @@ export type ParsedRevokeCompletionInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    /** The pool authority or the day's snapshotted attestor. */
+    /**
+     * The pool authority, the global pool's authority or the day's snapshotted attestor
+     * (checked in the handler).
+     */
     signer: TAccountMetas[0];
     pool: TAccountMetas[1];
     user: TAccountMetas[2];
     day: TAccountMetas[3];
     commitment: TAccountMetas[4];
     profile: TAccountMetas[5];
+    /**
+     * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+     * `pool` for a global-pool day.
+     */
+    globalPool: TAccountMetas[6];
   };
   data: RevokeCompletionInstructionData;
 };
@@ -467,12 +529,12 @@ export function parseRevokeCompletionInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedRevokeCompletionInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 6) {
+  if (instruction.accounts.length < 7) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 6,
+        expectedAccountMetas: 7,
       },
     );
   }
@@ -491,6 +553,7 @@ export function parseRevokeCompletionInstruction<
       day: getNextAccount(),
       commitment: getNextAccount(),
       profile: getNextAccount(),
+      globalPool: getNextAccount(),
     },
     data: getRevokeCompletionInstructionDataDecoder().decode(instruction.data),
   };

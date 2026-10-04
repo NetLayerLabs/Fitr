@@ -29,6 +29,8 @@ import {
   getStructEncoder,
   getU16Decoder,
   getU16Encoder,
+  getU32Decoder,
+  getU32Encoder,
   getU64Decoder,
   getU64Encoder,
   getU8Decoder,
@@ -47,8 +49,12 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  getExerciseDecoder,
+  getExerciseEncoder,
   getGoalLimitsDecoder,
   getGoalLimitsEncoder,
+  type Exercise,
+  type ExerciseArgs,
   type GoalLimits,
   type GoalLimitsArgs,
 } from "../types";
@@ -70,7 +76,8 @@ export type Pool = {
   /**
    * Blocks commit, attest_completion, finalize_day and attestor-signed revoke_completion.
    * Never blocks claim / close_missed / sweep. Time spent paused extends the attest window of
-   * every day that existed during the pause (see `paused_secs_total`).
+   * every day that existed during the pause (see `paused_secs_total`). The GLOBAL pool's flag is
+   * also a mint-wide kill switch: while it is set, those instructions fail in every crew too.
    */
   paused: boolean;
   /** Require a Seeker Genesis Token (one commitment per device per day). true on mainnet. */
@@ -130,6 +137,28 @@ export type Pool = {
   pausedSince: bigint;
   /** Total seconds of all completed pauses since the pool was created. */
   totalPausedSecs: bigint;
+  /** 0 for the global public pool, otherwise the crew id (a PDA seed, chosen by the creator). */
+  crewId: bigint;
+  /** Wallet that created the crew (paid its rent). No powers. Default pubkey for crew 0. */
+  creator: Address;
+  /** Crew display name: UTF-8, zero-padded. All zeros for crew 0. */
+  name: ReadonlyUint8Array;
+  /** true: every commitment in this pool must use `fixed_exercise`. */
+  hasFixedExercise: boolean;
+  /** Meaningful only when `has_fixed_exercise`. */
+  fixedExercise: Exercise;
+  /**
+   * Non-zero: every commitment must use exactly this goal (requires `has_fixed_exercise`).
+   * 0 = free goal within goal_limits (goal minimums are always >= 1, so 0 is never a goal).
+   */
+  fixedGoalTarget: number;
+  /**
+   * Crews only (always 0 in the global pool): net forfeits of crew days that nobody completed,
+   * waiting for the crew's next finalized day with at least one completer, which receives all
+   * of it on top of its own forfeits (audit CREW-2 / ECON-MP-1). Never touched by the sponsor
+   * tap, the authority or withdraw_treasury.
+   */
+  rollover: bigint;
   reserved: ReadonlyUint8Array;
 };
 
@@ -141,7 +170,8 @@ export type PoolArgs = {
   /**
    * Blocks commit, attest_completion, finalize_day and attestor-signed revoke_completion.
    * Never blocks claim / close_missed / sweep. Time spent paused extends the attest window of
-   * every day that existed during the pause (see `paused_secs_total`).
+   * every day that existed during the pause (see `paused_secs_total`). The GLOBAL pool's flag is
+   * also a mint-wide kill switch: while it is set, those instructions fail in every crew too.
    */
   paused: boolean;
   /** Require a Seeker Genesis Token (one commitment per device per day). true on mainnet. */
@@ -201,6 +231,28 @@ export type PoolArgs = {
   pausedSince: number | bigint;
   /** Total seconds of all completed pauses since the pool was created. */
   totalPausedSecs: number | bigint;
+  /** 0 for the global public pool, otherwise the crew id (a PDA seed, chosen by the creator). */
+  crewId: number | bigint;
+  /** Wallet that created the crew (paid its rent). No powers. Default pubkey for crew 0. */
+  creator: Address;
+  /** Crew display name: UTF-8, zero-padded. All zeros for crew 0. */
+  name: ReadonlyUint8Array;
+  /** true: every commitment in this pool must use `fixed_exercise`. */
+  hasFixedExercise: boolean;
+  /** Meaningful only when `has_fixed_exercise`. */
+  fixedExercise: ExerciseArgs;
+  /**
+   * Non-zero: every commitment must use exactly this goal (requires `has_fixed_exercise`).
+   * 0 = free goal within goal_limits (goal minimums are always >= 1, so 0 is never a goal).
+   */
+  fixedGoalTarget: number;
+  /**
+   * Crews only (always 0 in the global pool): net forfeits of crew days that nobody completed,
+   * waiting for the crew's next finalized day with at least one completer, which receives all
+   * of it on top of its own forfeits (audit CREW-2 / ECON-MP-1). Never touched by the sponsor
+   * tap, the authority or withdraw_treasury.
+   */
+  rollover: number | bigint;
   reserved: ReadonlyUint8Array;
 };
 
@@ -237,7 +289,14 @@ export function getPoolEncoder(): FixedSizeEncoder<PoolArgs> {
       ["finalizeDelaySecs", getI64Encoder()],
       ["pausedSince", getI64Encoder()],
       ["totalPausedSecs", getI64Encoder()],
-      ["reserved", fixEncoderSize(getBytesEncoder(), 64)],
+      ["crewId", getU64Encoder()],
+      ["creator", getAddressEncoder()],
+      ["name", fixEncoderSize(getBytesEncoder(), 32)],
+      ["hasFixedExercise", getBooleanEncoder()],
+      ["fixedExercise", getExerciseEncoder()],
+      ["fixedGoalTarget", getU32Encoder()],
+      ["rollover", getU64Encoder()],
+      ["reserved", fixEncoderSize(getBytesEncoder(), 56)],
     ]),
     (value) => ({ ...value, discriminator: POOL_DISCRIMINATOR }),
   );
@@ -275,7 +334,14 @@ export function getPoolDecoder(): FixedSizeDecoder<Pool> {
     ["finalizeDelaySecs", getI64Decoder()],
     ["pausedSince", getI64Decoder()],
     ["totalPausedSecs", getI64Decoder()],
-    ["reserved", fixDecoderSize(getBytesDecoder(), 64)],
+    ["crewId", getU64Decoder()],
+    ["creator", getAddressDecoder()],
+    ["name", fixDecoderSize(getBytesDecoder(), 32)],
+    ["hasFixedExercise", getBooleanDecoder()],
+    ["fixedExercise", getExerciseDecoder()],
+    ["fixedGoalTarget", getU32Decoder()],
+    ["rollover", getU64Decoder()],
+    ["reserved", fixDecoderSize(getBytesDecoder(), 56)],
   ]);
 }
 
@@ -338,5 +404,5 @@ export async function fetchAllMaybePool(
 }
 
 export function getPoolSize(): number {
-  return 476;
+  return 554;
 }

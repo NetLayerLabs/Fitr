@@ -53,7 +53,7 @@ pub struct InitializePool<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     /// This program's ProgramData account. Only the program's upgrade authority may create
-    /// a pool, so nobody can front-run the canonical ["pool", SKR] PDA after deploy.
+    /// the global pool, so nobody can front-run the canonical ["pool", SKR, 0] PDA after deploy.
     /// (Anchor runs `init` before other constraints; a failed check reverts the whole tx.)
     #[account(
         seeds = [crate::ID.as_ref()],
@@ -69,7 +69,7 @@ pub struct InitializePool<'info> {
         init,
         payer = authority,
         space = 8 + Pool::INIT_SPACE,
-        seeds = [POOL_SEED, mint.key().as_ref()],
+        seeds = [POOL_SEED, mint.key().as_ref(), &GLOBAL_CREW_SEED],
         bump
     )]
     pub pool: Account<'info, Pool>,
@@ -83,6 +83,47 @@ pub struct InitializePool<'info> {
         token::token_program = token_program
     )]
     pub vault: InterfaceAccount<'info, TokenAccount>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
+}
+
+/// Permissionless: anyone creates a crew pool. Its whole config (authority, attestor, fee, rails,
+/// day geometry, SGT gate, sponsor tap) is copied from the global pool; the creator only picks the
+/// id, the name and an optional fixed exercise/goal, and gets no powers.
+#[derive(Accounts)]
+#[instruction(crew_id: u64)]
+pub struct CreateCrew<'info> {
+    /// Pays the rent of the crew Pool and its vault. Only signer (MWA-signable).
+    #[account(mut)]
+    pub creator: Signer<'info>,
+    /// The global pool (crew_id 0) of `mint`: the config source.
+    #[account(
+        seeds = [POOL_SEED, mint.key().as_ref(), &GLOBAL_CREW_SEED],
+        bump = global_pool.bump,
+        has_one = mint
+    )]
+    pub global_pool: Box<Account<'info, Pool>>,
+    #[account(mint::token_program = token_program)]
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    /// The crew pool. `init` fails if this crew_id already exists.
+    #[account(
+        init,
+        payer = creator,
+        space = 8 + Pool::INIT_SPACE,
+        seeds = [POOL_SEED, mint.key().as_ref(), &crew_id.to_le_bytes()],
+        bump
+    )]
+    pub pool: Box<Account<'info, Pool>>,
+    #[account(
+        init,
+        payer = creator,
+        seeds = [VAULT_SEED, pool.key().as_ref()],
+        bump,
+        token::mint = mint,
+        token::authority = pool,
+        token::token_program = token_program
+    )]
+    pub vault: Box<InterfaceAccount<'info, TokenAccount>>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
@@ -136,7 +177,7 @@ pub struct Commit<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
-        seeds = [POOL_SEED, mint.key().as_ref()],
+        seeds = [POOL_SEED, mint.key().as_ref(), &pool.crew_id.to_le_bytes()],
         bump = pool.bump,
         has_one = mint,
         has_one = vault
@@ -187,6 +228,15 @@ pub struct Commit<'info> {
     pub device: Option<Box<Account<'info, DeviceLock>>>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
+    /// The global pool (crew_id 0) of `mint`, read live: its pause is a mint-wide kill switch, its
+    /// attestor is the one every new day snapshots, and its require_sgt also gates crews (audit
+    /// CREW-1). For a commit into the global pool this is the same account as `pool`.
+    #[account(
+        seeds = [POOL_SEED, mint.key().as_ref(), &GLOBAL_CREW_SEED],
+        bump = global_pool.bump,
+        has_one = mint
+    )]
+    pub global_pool: Box<Account<'info, Pool>>,
 }
 
 #[derive(Accounts)]
@@ -217,22 +267,25 @@ pub struct AttestCompletion<'info> {
         bump = profile.bump
     )]
     pub profile: Box<Account<'info, UserProfile>>,
+    /// The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+    /// `pool` for a global-pool day.
+    #[account(
+        seeds = [POOL_SEED, pool.mint.as_ref(), &GLOBAL_CREW_SEED],
+        bump = global_pool.bump
+    )]
+    pub global_pool: Box<Account<'info, Pool>>,
 }
 
 #[derive(Accounts)]
 #[instruction(day_index: u32)]
 pub struct RevokeCompletion<'info> {
-    /// The pool authority or the day's snapshotted attestor.
+    /// The pool authority, the global pool's authority or the day's snapshotted attestor
+    /// (checked in the handler).
     pub signer: Signer<'info>,
     pub pool: Box<Account<'info, Pool>>,
     /// CHECK: PDA seed only.
     pub user: UncheckedAccount<'info>,
-    #[account(
-        mut,
-        seeds = [DAY_SEED, pool.key().as_ref(), &day_index.to_le_bytes()],
-        bump = day.bump,
-        constraint = (signer.key() == pool.authority || signer.key() == day.attestor) @ VaultError::NotAuthority
-    )]
+    #[account(mut, seeds = [DAY_SEED, pool.key().as_ref(), &day_index.to_le_bytes()], bump = day.bump)]
     pub day: Box<Account<'info, DayState>>,
     #[account(
         mut,
@@ -242,6 +295,13 @@ pub struct RevokeCompletion<'info> {
     pub commitment: Box<Account<'info, Commitment>>,
     #[account(mut, seeds = [PROFILE_SEED, pool.key().as_ref(), user.key().as_ref()], bump = profile.bump)]
     pub profile: Box<Account<'info, UserProfile>>,
+    /// The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+    /// `pool` for a global-pool day.
+    #[account(
+        seeds = [POOL_SEED, pool.mint.as_ref(), &GLOBAL_CREW_SEED],
+        bump = global_pool.bump
+    )]
+    pub global_pool: Box<Account<'info, Pool>>,
 }
 
 #[derive(Accounts)]
@@ -252,6 +312,32 @@ pub struct FinalizeDay<'info> {
     pub pool: Box<Account<'info, Pool>>,
     #[account(mut, seeds = [DAY_SEED, pool.key().as_ref(), &day_index.to_le_bytes()], bump = day.bump)]
     pub day: Box<Account<'info, DayState>>,
+    /// The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+    /// `pool` for a global-pool day.
+    #[account(
+        seeds = [POOL_SEED, pool.mint.as_ref(), &GLOBAL_CREW_SEED],
+        bump = global_pool.bump
+    )]
+    pub global_pool: Box<Account<'info, Pool>>,
+}
+
+/// Permissionless crank: copies the global pool's trust settings (authority, attestor,
+/// require_sgt) into a crew and clears any pending authority transfer, so an authority / attestor
+/// rotation reaches every crew without one multisig transaction per crew (audit CREW-1).
+#[derive(Accounts)]
+pub struct SyncCrew<'info> {
+    #[account(
+        mut,
+        seeds = [POOL_SEED, pool.mint.as_ref(), &pool.crew_id.to_le_bytes()],
+        bump = pool.bump
+    )]
+    pub pool: Box<Account<'info, Pool>>,
+    /// The global pool (crew_id 0) of the crew's mint: the source of truth.
+    #[account(
+        seeds = [POOL_SEED, pool.mint.as_ref(), &GLOBAL_CREW_SEED],
+        bump = global_pool.bump
+    )]
+    pub global_pool: Box<Account<'info, Pool>>,
 }
 
 #[derive(Accounts)]
@@ -271,7 +357,7 @@ pub struct Claim<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
-        seeds = [POOL_SEED, mint.key().as_ref()],
+        seeds = [POOL_SEED, mint.key().as_ref(), &pool.crew_id.to_le_bytes()],
         bump = pool.bump,
         has_one = mint,
         has_one = vault
@@ -360,7 +446,7 @@ pub struct WithdrawTreasury<'info> {
     pub authority: Signer<'info>,
     #[account(
         mut,
-        seeds = [POOL_SEED, mint.key().as_ref()],
+        seeds = [POOL_SEED, mint.key().as_ref(), &pool.crew_id.to_le_bytes()],
         bump = pool.bump,
         has_one = authority @ VaultError::NotAuthority,
         has_one = mint,

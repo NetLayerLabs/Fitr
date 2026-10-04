@@ -552,7 +552,7 @@ fn initialize_pool_guards() {
     // 4. mint with 10 decimals is rejected
     let admin = env.admin.insecure_clone();
     env.mint = create_mint(&mut env.svm, &admin, 10);
-    env.pool = pda(&[fitr_vault::POOL_SEED, env.mint.as_ref()]);
+    env.pool = pool_pda(&env.mint, 0);
     env.vault = pda(&[fitr_vault::VAULT_SEED, env.pool.as_ref()]);
     expect_err(env.send_admin(&[env.ix_init(&admin.pubkey(), p.clone())]), 6026);
 }
@@ -597,7 +597,7 @@ fn token_2022_mint_extensions() {
             &[&mint],
         )
         .unwrap();
-        let pool = pda(&[fitr_vault::POOL_SEED, mint.pubkey().as_ref()]);
+        let pool = pool_pda(&mint.pubkey(), 0);
         let vault = pda(&[fitr_vault::VAULT_SEED, pool.as_ref()]);
         let init = Instruction {
             program_id: fitr_vault::ID,

@@ -35,14 +35,12 @@ import {
 } from "@solana/kit";
 import {
   getAccountMetaFactory,
-  getAddressFromResolvedInstructionAccount,
   type InstructionAccountInput,
   type InstructionAccountInputAddress,
   type InstructionSignerInput,
   type ResolvedInstructionAccount,
   type ResolvedInstructionAccountMeta,
 } from "@solana/kit/program-client-core";
-import { findPoolPda } from "../pdas";
 import { FITR_VAULT_PROGRAM_ADDRESS } from "../programs";
 
 export const WITHDRAW_TREASURY_DISCRIMINATOR: ReadonlyUint8Array =
@@ -123,165 +121,6 @@ export function getWithdrawTreasuryInstructionDataCodec(): FixedSizeCodec<
     getWithdrawTreasuryInstructionDataEncoder(),
     getWithdrawTreasuryInstructionDataDecoder(),
   );
-}
-
-export type WithdrawTreasuryAsyncInput<
-  TAccountAuthority extends InstructionSignerInput = InstructionSignerInput,
-  TAccountPool extends InstructionAccountInput = InstructionAccountInput,
-  TAccountMint extends InstructionAccountInput = InstructionAccountInput,
-  TAccountVault extends InstructionAccountInput = InstructionAccountInput,
-  TAccountDestination extends InstructionAccountInput = InstructionAccountInput,
-  TAccountTokenProgram extends InstructionAccountInput =
-    InstructionAccountInput,
-> = {
-  authority: TAccountAuthority;
-  pool?: TAccountPool;
-  mint: TAccountMint;
-  vault: TAccountVault;
-  destination: TAccountDestination;
-  tokenProgram?: TAccountTokenProgram;
-  amount: WithdrawTreasuryInstructionDataArgs["amount"];
-};
-
-export async function getWithdrawTreasuryInstructionAsync<
-  TAccountAuthority extends InstructionSignerInput,
-  TAccountPool extends InstructionAccountInput,
-  TAccountMint extends InstructionAccountInput,
-  TAccountVault extends InstructionAccountInput,
-  TAccountDestination extends InstructionAccountInput,
-  TAccountTokenProgram extends InstructionAccountInput,
-  TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
->(
-  input: WithdrawTreasuryAsyncInput<
-    TAccountAuthority,
-    TAccountPool,
-    TAccountMint,
-    TAccountVault,
-    TAccountDestination,
-    TAccountTokenProgram
-  >,
-  config?: { programAddress?: TProgramAddress },
-): Promise<
-  WithdrawTreasuryInstruction<
-    TProgramAddress,
-    ResolvedInstructionAccountMeta<
-      TAccountAuthority,
-      InstructionAccountInputAddress<TAccountAuthority>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountPool,
-      InstructionAccountInputAddress<TAccountPool>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountMint,
-      InstructionAccountInputAddress<TAccountMint>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountVault,
-      InstructionAccountInputAddress<TAccountVault>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountDestination,
-      InstructionAccountInputAddress<TAccountDestination>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountTokenProgram,
-      InstructionAccountInputAddress<TAccountTokenProgram>
-    >
-  >
-> {
-  // Program address.
-  const programAddress = config?.programAddress ?? FITR_VAULT_PROGRAM_ADDRESS;
-
-  // Account meta helper.
-  const getAccountMeta = getAccountMetaFactory(programAddress, "programId");
-
-  // Original accounts.
-  const originalAccounts = {
-    authority: {
-      value: input.authority ?? null,
-      isSigner: true,
-      isWritable: false,
-    },
-    pool: { value: input.pool ?? null, isSigner: false, isWritable: true },
-    mint: { value: input.mint ?? null, isSigner: false, isWritable: false },
-    vault: { value: input.vault ?? null, isSigner: false, isWritable: true },
-    destination: {
-      value: input.destination ?? null,
-      isSigner: false,
-      isWritable: true,
-    },
-    tokenProgram: {
-      value: input.tokenProgram ?? null,
-      isSigner: false,
-      isWritable: false,
-    },
-  };
-  const accounts = originalAccounts as Record<
-    keyof typeof originalAccounts,
-    ResolvedInstructionAccount
-  >;
-
-  // Original args.
-  const args = { ...input };
-
-  // Resolve default values.
-  if (!accounts.pool.value) {
-    accounts.pool.value = await findPoolPda(
-      {
-        mint: getAddressFromResolvedInstructionAccount(
-          "mint",
-          accounts.mint.value,
-        ),
-      },
-      { programAddress },
-    );
-  }
-  if (!accounts.tokenProgram.value) {
-    accounts.tokenProgram.value =
-      "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" as Address<"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA">;
-  }
-
-  return Object.freeze({
-    accounts: [
-      getAccountMeta("authority", accounts.authority),
-      getAccountMeta("pool", accounts.pool),
-      getAccountMeta("mint", accounts.mint),
-      getAccountMeta("vault", accounts.vault),
-      getAccountMeta("destination", accounts.destination),
-      getAccountMeta("tokenProgram", accounts.tokenProgram),
-    ],
-    data: getWithdrawTreasuryInstructionDataEncoder().encode(
-      args as WithdrawTreasuryInstructionDataArgs,
-    ),
-    programAddress,
-  } as WithdrawTreasuryInstruction<
-    TProgramAddress,
-    ResolvedInstructionAccountMeta<
-      TAccountAuthority,
-      InstructionAccountInputAddress<TAccountAuthority>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountPool,
-      InstructionAccountInputAddress<TAccountPool>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountMint,
-      InstructionAccountInputAddress<TAccountMint>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountVault,
-      InstructionAccountInputAddress<TAccountVault>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountDestination,
-      InstructionAccountInputAddress<TAccountDestination>
-    >,
-    ResolvedInstructionAccountMeta<
-      TAccountTokenProgram,
-      InstructionAccountInputAddress<TAccountTokenProgram>
-    >
-  >);
 }
 
 export type WithdrawTreasuryInput<

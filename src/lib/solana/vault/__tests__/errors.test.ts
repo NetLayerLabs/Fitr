@@ -13,8 +13,8 @@ import {
 import * as generated from "../generated";
 
 describe("vault error table", () => {
-  it("maps every program error code 6000–6028 and matches the generated client", () => {
-    for (let code = 6000; code <= 6028; code++) {
+  it("maps every program error code 6000–6031 and matches the generated client", () => {
+    for (let code = 6000; code <= 6031; code++) {
       expect(vaultErrorMessage(code)).toBeTruthy();
       expect(VAULT_ERROR_NAMES[code]).toBeTruthy();
     }
@@ -23,10 +23,10 @@ describe("vault error table", () => {
       .map(([, v]) => v as number)
       .sort((a, b) => a - b);
     expect(genCodes[0]).toBe(6000);
-    expect(genCodes[genCodes.length - 1]).toBe(6028);
-    expect(genCodes).toHaveLength(29);
+    expect(genCodes[genCodes.length - 1]).toBe(6031);
+    expect(genCodes).toHaveLength(32);
     expect(vaultErrorMessage(5999)).toBeNull();
-    expect(vaultErrorMessage(6029)).toBeNull();
+    expect(vaultErrorMessage(6032)).toBeNull();
   });
 });
 

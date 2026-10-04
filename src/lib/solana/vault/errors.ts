@@ -5,7 +5,7 @@
 import { isSolanaError, SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM } from "@solana/kit";
 
 export const VAULT_ERROR_FIRST = 6000;
-export const VAULT_ERROR_LAST = 6028;
+export const VAULT_ERROR_LAST = 6031;
 
 export const VAULT_ERROR_NAMES: Readonly<Record<number, string>> = Object.freeze({
   6000: "Paused",
@@ -37,6 +37,9 @@ export const VAULT_ERROR_NAMES: Readonly<Record<number, string>> = Object.freeze
   6026: "UnsupportedMintDecimals",
   6027: "NotUpgradeAuthority",
   6028: "InvalidDestination",
+  6029: "CrewGoalMismatch",
+  6030: "InvalidCrew",
+  6031: "SponsorTapClosed",
 });
 
 const MESSAGES: Readonly<Record<number, string>> = Object.freeze({
@@ -69,6 +72,9 @@ const MESSAGES: Readonly<Record<number, string>> = Object.freeze({
   6026: "This token is not supported by the vault.",
   6027: "Only the program upgrade authority can do that.",
   6028: "Pick a different destination account.",
+  6029: "This crew has a fixed challenge: commit to the crew's exercise and goal.",
+  6030: "That crew setup is invalid. Check the name and the challenge.",
+  6031: "Sponsoring is not switched on for this pool yet, so your SKR was not taken.",
 });
 
 /** User copy for a vault error code, or null when `code` is not a vault error. */

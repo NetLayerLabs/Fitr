@@ -48,9 +48,15 @@ export type DayFinalizedEvent = {
   revokedStake: bigint;
   slashed: bigint;
   fee: bigint;
+  /** Drawn from the reserve into this day's bonus pool (sponsored amount; 0 when unsponsored). */
   sponsor: bigint;
   distributable: bigint;
+  /** Global pool, nobody completed: net forfeit moved to the reserve. */
   toReserve: bigint;
+  /** Crews: rollover released into this day's bonus pool (included in `distributable`). */
+  rolloverIn: bigint;
+  /** Crews, nobody completed: net forfeit moved to the crew rollover. */
+  toRollover: bigint;
 };
 
 export type DayFinalizedEventArgs = {
@@ -62,9 +68,15 @@ export type DayFinalizedEventArgs = {
   revokedStake: number | bigint;
   slashed: number | bigint;
   fee: number | bigint;
+  /** Drawn from the reserve into this day's bonus pool (sponsored amount; 0 when unsponsored). */
   sponsor: number | bigint;
   distributable: number | bigint;
+  /** Global pool, nobody completed: net forfeit moved to the reserve. */
   toReserve: number | bigint;
+  /** Crews: rollover released into this day's bonus pool (included in `distributable`). */
+  rolloverIn: number | bigint;
+  /** Crews, nobody completed: net forfeit moved to the crew rollover. */
+  toRollover: number | bigint;
 };
 
 /** Gets the encoder for {@link DayFinalizedEventArgs} event data. */
@@ -81,6 +93,8 @@ export function getDayFinalizedEventEncoder(): FixedSizeEncoder<DayFinalizedEven
       ["sponsor", getU64Encoder()],
       ["distributable", getU64Encoder()],
       ["toReserve", getU64Encoder()],
+      ["rolloverIn", getU64Encoder()],
+      ["toRollover", getU64Encoder()],
     ]),
     [getConstantEncoder(DAY_FINALIZED_EVENT_DISCRIMINATOR)],
   );
@@ -100,6 +114,8 @@ export function getDayFinalizedEventDecoder(): FixedSizeDecoder<DayFinalizedEven
       ["sponsor", getU64Decoder()],
       ["distributable", getU64Decoder()],
       ["toReserve", getU64Decoder()],
+      ["rolloverIn", getU64Decoder()],
+      ["toRollover", getU64Decoder()],
     ]),
     [getConstantDecoder(DAY_FINALIZED_EVENT_DISCRIMINATOR)],
   );

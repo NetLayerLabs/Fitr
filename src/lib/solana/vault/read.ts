@@ -18,7 +18,7 @@ import {
   type Rpc,
 } from "@solana/kit";
 import { getPoolAddresses, getDeviceLockAddress, vaultProgramAddress } from "./addresses";
-import { dayConfigFromPool, dayIndexAt, type DayConfig } from "./day";
+import { dayConfigFromPool, dayIndexAt, withGlobalPause, type DayConfig } from "./day";
 import {
   findCommitmentPda,
   findDayPda,
@@ -77,6 +77,8 @@ export interface FetchVaultSnapshotParams {
   sgtMint?: Address | null;
   programAddress?: Address;
   abortSignal?: AbortSignal;
+  /** Which pool: 0 (default) is the global pool, anything else a crew (anchor/SPEC.md §2.7). */
+  crewId?: bigint;
 }
 
 function startsWith(data: ReadonlyUint8Array, prefix: ReadonlyUint8Array): boolean {
@@ -105,17 +107,23 @@ export function decodeOwned<T>(
   }
 }
 
-/** The pool for `mint`, or null when the vault is not deployed / initialised for that mint. */
+/**
+ * The pool for `mint` (global pool, or the crew `opts.crewId`), or null when it does not exist
+ * (vault not deployed / initialised, or no such crew).
+ */
 export async function fetchPool(
   rpc: Rpc<GetAccountInfoApi>,
   mint: Address,
-  opts: { programAddress?: Address; abortSignal?: AbortSignal } = {},
+  opts: { programAddress?: Address; abortSignal?: AbortSignal; crewId?: bigint } = {},
 ): Promise<{ pool: Pool; poolAddress: Address; vaultAddress: Address } | null> {
   const programAddress = opts.programAddress ?? vaultProgramAddress();
-  const { pool: poolAddress, vault: vaultAddress } = await getPoolAddresses(mint, programAddress);
+  const crewId = opts.crewId ?? 0n;
+  const { pool: poolAddress, vault: vaultAddress } = await getPoolAddresses(mint, programAddress, crewId);
   const acc = await fetchEncodedAccount(rpc, poolAddress, { abortSignal: opts.abortSignal, commitment: "confirmed" });
   const pool = decodeOwned(acc, programAddress, getPoolDiscriminatorBytes(), getPoolDecoder());
-  return pool ? { pool, poolAddress, vaultAddress } : null;
+  // The PDA already binds (mint, crew_id); re-check the decoded fields anyway.
+  if (!pool || pool.mint !== mint || pool.crewId !== crewId) return null;
+  return { pool, poolAddress, vaultAddress };
 }
 
 /**
@@ -124,10 +132,15 @@ export async function fetchPool(
  */
 export async function fetchVaultSnapshot(rpc: VaultRpc, p: FetchVaultSnapshotParams): Promise<VaultSnapshot | null> {
   const programAddress = p.programAddress ?? vaultProgramAddress();
-  const found = await fetchPool(rpc, p.mint, { programAddress, abortSignal: p.abortSignal });
+  const isCrew = (p.crewId ?? 0n) !== 0n;
+  // A crew's windows also stretch (and its instructions stop) while the GLOBAL pool is paused.
+  const [found, global] = await Promise.all([
+    fetchPool(rpc, p.mint, { programAddress, abortSignal: p.abortSignal, crewId: p.crewId }),
+    isCrew ? fetchPool(rpc, p.mint, { programAddress, abortSignal: p.abortSignal }).catch(() => null) : Promise.resolve(null),
+  ]);
   if (!found) return null;
   const { pool, poolAddress, vaultAddress } = found;
-  const cfg = dayConfigFromPool(pool);
+  const cfg = global ? withGlobalPause(dayConfigFromPool(pool), global.pool, true) : dayConfigFromPool(pool);
   const today = dayIndexAt(p.nowSecs, cfg);
   const lookback = Math.max(0, Math.min(p.days ?? DEFAULT_LOOKBACK_DAYS, 30));
 

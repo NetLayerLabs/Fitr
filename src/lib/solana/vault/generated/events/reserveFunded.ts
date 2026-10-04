@@ -41,12 +41,30 @@ export type ReserveFundedEvent = {
   pool: Address;
   funder: Address;
   amount: bigint;
+  /** The pool's crew_id (0 = global pool). */
+  crewId: bigint;
+  /** Reserve after this deposit. */
+  reserve: bigint;
+  /**
+   * The pool's current per-day sponsor draw (0 = deposits are not drawn until the authority
+   * opens the tap with update_config).
+   */
+  dailySponsorAmount: bigint;
 };
 
 export type ReserveFundedEventArgs = {
   pool: Address;
   funder: Address;
   amount: number | bigint;
+  /** The pool's crew_id (0 = global pool). */
+  crewId: number | bigint;
+  /** Reserve after this deposit. */
+  reserve: number | bigint;
+  /**
+   * The pool's current per-day sponsor draw (0 = deposits are not drawn until the authority
+   * opens the tap with update_config).
+   */
+  dailySponsorAmount: number | bigint;
 };
 
 /** Gets the encoder for {@link ReserveFundedEventArgs} event data. */
@@ -56,6 +74,9 @@ export function getReserveFundedEventEncoder(): FixedSizeEncoder<ReserveFundedEv
       ["pool", getAddressEncoder()],
       ["funder", getAddressEncoder()],
       ["amount", getU64Encoder()],
+      ["crewId", getU64Encoder()],
+      ["reserve", getU64Encoder()],
+      ["dailySponsorAmount", getU64Encoder()],
     ]),
     [getConstantEncoder(RESERVE_FUNDED_EVENT_DISCRIMINATOR)],
   );
@@ -68,6 +89,9 @@ export function getReserveFundedEventDecoder(): FixedSizeDecoder<ReserveFundedEv
       ["pool", getAddressDecoder()],
       ["funder", getAddressDecoder()],
       ["amount", getU64Decoder()],
+      ["crewId", getU64Decoder()],
+      ["reserve", getU64Decoder()],
+      ["dailySponsorAmount", getU64Decoder()],
     ]),
     [getConstantDecoder(RESERVE_FUNDED_EVENT_DISCRIMINATOR)],
   );

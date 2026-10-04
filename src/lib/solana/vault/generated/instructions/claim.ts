@@ -43,12 +43,7 @@ import {
   type ResolvedInstructionAccount,
   type ResolvedInstructionAccountMeta,
 } from "@solana/kit/program-client-core";
-import {
-  findCommitmentPda,
-  findDayPda,
-  findPoolPda,
-  findProfilePda,
-} from "../pdas";
+import { findCommitmentPda, findDayPda, findProfilePda } from "../pdas";
 import { FITR_VAULT_PROGRAM_ADDRESS } from "../programs";
 
 export const CLAIM_DISCRIMINATOR: ReadonlyUint8Array = new Uint8Array([
@@ -152,7 +147,7 @@ export type ClaimAsyncInput<
     InstructionAccountInput,
 > = {
   user: TAccountUser;
-  pool?: TAccountPool;
+  pool: TAccountPool;
   mint: TAccountMint;
   vault: TAccountVault;
   /** Any token account of the stake mint (payout destination), except the vault itself. */
@@ -272,17 +267,6 @@ export async function getClaimInstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
-  if (!accounts.pool.value) {
-    accounts.pool.value = await findPoolPda(
-      {
-        mint: getAddressFromResolvedInstructionAccount(
-          "mint",
-          accounts.mint.value,
-        ),
-      },
-      { programAddress },
-    );
-  }
   if (!accounts.day.value) {
     accounts.day.value = await findDayPda(
       {

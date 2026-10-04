@@ -28,6 +28,7 @@ import {
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
+  type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
   type WritableAccount,
@@ -60,6 +61,7 @@ export type FinalizeDayInstruction<
   TAccountCranker extends string | AccountMeta<string> = string,
   TAccountPool extends string | AccountMeta<string> = string,
   TAccountDay extends string | AccountMeta<string> = string,
+  TAccountGlobalPool extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -73,6 +75,9 @@ export type FinalizeDayInstruction<
         ? WritableAccount<TAccountPool>
         : TAccountPool,
       TAccountDay extends string ? WritableAccount<TAccountDay> : TAccountDay,
+      TAccountGlobalPool extends string
+        ? ReadonlyAccount<TAccountGlobalPool>
+        : TAccountGlobalPool,
       ...TRemainingAccounts,
     ]
   >;
@@ -115,10 +120,16 @@ export type FinalizeDayAsyncInput<
   TAccountCranker extends InstructionSignerInput = InstructionSignerInput,
   TAccountPool extends InstructionAccountInput = InstructionAccountInput,
   TAccountDay extends InstructionAccountInput = InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput = InstructionAccountInput,
 > = {
   cranker: TAccountCranker;
   pool: TAccountPool;
   day?: TAccountDay;
+  /**
+   * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+   * `pool` for a global-pool day.
+   */
+  globalPool: TAccountGlobalPool;
   dayIndex: FinalizeDayInstructionDataArgs["dayIndex"];
 };
 
@@ -126,9 +137,15 @@ export async function getFinalizeDayInstructionAsync<
   TAccountCranker extends InstructionSignerInput,
   TAccountPool extends InstructionAccountInput,
   TAccountDay extends InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput,
   TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
 >(
-  input: FinalizeDayAsyncInput<TAccountCranker, TAccountPool, TAccountDay>,
+  input: FinalizeDayAsyncInput<
+    TAccountCranker,
+    TAccountPool,
+    TAccountDay,
+    TAccountGlobalPool
+  >,
   config?: { programAddress?: TProgramAddress },
 ): Promise<
   FinalizeDayInstruction<
@@ -144,6 +161,10 @@ export async function getFinalizeDayInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountDay,
       InstructionAccountInputAddress<TAccountDay>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >
 > {
@@ -162,6 +183,11 @@ export async function getFinalizeDayInstructionAsync<
     },
     pool: { value: input.pool ?? null, isSigner: false, isWritable: true },
     day: { value: input.day ?? null, isSigner: false, isWritable: true },
+    globalPool: {
+      value: input.globalPool ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -190,6 +216,7 @@ export async function getFinalizeDayInstructionAsync<
       getAccountMeta("cranker", accounts.cranker),
       getAccountMeta("pool", accounts.pool),
       getAccountMeta("day", accounts.day),
+      getAccountMeta("globalPool", accounts.globalPool),
     ],
     data: getFinalizeDayInstructionDataEncoder().encode(
       args as FinalizeDayInstructionDataArgs,
@@ -208,6 +235,10 @@ export async function getFinalizeDayInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountDay,
       InstructionAccountInputAddress<TAccountDay>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >);
 }
@@ -216,10 +247,16 @@ export type FinalizeDayInput<
   TAccountCranker extends InstructionSignerInput = InstructionSignerInput,
   TAccountPool extends InstructionAccountInput = InstructionAccountInput,
   TAccountDay extends InstructionAccountInput = InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput = InstructionAccountInput,
 > = {
   cranker: TAccountCranker;
   pool: TAccountPool;
   day: TAccountDay;
+  /**
+   * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+   * `pool` for a global-pool day.
+   */
+  globalPool: TAccountGlobalPool;
   dayIndex: FinalizeDayInstructionDataArgs["dayIndex"];
 };
 
@@ -227,9 +264,15 @@ export function getFinalizeDayInstruction<
   TAccountCranker extends InstructionSignerInput,
   TAccountPool extends InstructionAccountInput,
   TAccountDay extends InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput,
   TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
 >(
-  input: FinalizeDayInput<TAccountCranker, TAccountPool, TAccountDay>,
+  input: FinalizeDayInput<
+    TAccountCranker,
+    TAccountPool,
+    TAccountDay,
+    TAccountGlobalPool
+  >,
   config?: { programAddress?: TProgramAddress },
 ): FinalizeDayInstruction<
   TProgramAddress,
@@ -244,6 +287,10 @@ export function getFinalizeDayInstruction<
   ResolvedInstructionAccountMeta<
     TAccountDay,
     InstructionAccountInputAddress<TAccountDay>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountGlobalPool,
+    InstructionAccountInputAddress<TAccountGlobalPool>
   >
 > {
   // Program address.
@@ -261,6 +308,11 @@ export function getFinalizeDayInstruction<
     },
     pool: { value: input.pool ?? null, isSigner: false, isWritable: true },
     day: { value: input.day ?? null, isSigner: false, isWritable: true },
+    globalPool: {
+      value: input.globalPool ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -275,6 +327,7 @@ export function getFinalizeDayInstruction<
       getAccountMeta("cranker", accounts.cranker),
       getAccountMeta("pool", accounts.pool),
       getAccountMeta("day", accounts.day),
+      getAccountMeta("globalPool", accounts.globalPool),
     ],
     data: getFinalizeDayInstructionDataEncoder().encode(
       args as FinalizeDayInstructionDataArgs,
@@ -293,6 +346,10 @@ export function getFinalizeDayInstruction<
     ResolvedInstructionAccountMeta<
       TAccountDay,
       InstructionAccountInputAddress<TAccountDay>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >);
 }
@@ -306,6 +363,11 @@ export type ParsedFinalizeDayInstruction<
     cranker: TAccountMetas[0];
     pool: TAccountMetas[1];
     day: TAccountMetas[2];
+    /**
+     * The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as
+     * `pool` for a global-pool day.
+     */
+    globalPool: TAccountMetas[3];
   };
   data: FinalizeDayInstructionData;
 };
@@ -318,12 +380,12 @@ export function parseFinalizeDayInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedFinalizeDayInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 3) {
+  if (instruction.accounts.length < 4) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 3,
+        expectedAccountMetas: 4,
       },
     );
   }
@@ -339,6 +401,7 @@ export function parseFinalizeDayInstruction<
       cranker: getNextAccount(),
       pool: getNextAccount(),
       day: getNextAccount(),
+      globalPool: getNextAccount(),
     },
     data: getFinalizeDayInstructionDataDecoder().decode(instruction.data),
   };

@@ -9,6 +9,7 @@
 export * from "./commitment";
 export * from "./day";
 export * from "./device";
+export * from "./globalPool";
 export * from "./pool";
 export * from "./profile";
 export * from "./vault";

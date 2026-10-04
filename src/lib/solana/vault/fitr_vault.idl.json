@@ -148,6 +148,44 @@
               }
             ]
           }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as",
+            "`pool` for a global-pool day."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint",
+                "account": "Pool"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -214,6 +252,11 @@
               {
                 "kind": "account",
                 "path": "mint"
+              },
+              {
+                "kind": "account",
+                "path": "pool.crew_id",
+                "account": "Pool"
               }
             ]
           }
@@ -501,6 +544,11 @@
               {
                 "kind": "account",
                 "path": "mint"
+              },
+              {
+                "kind": "account",
+                "path": "pool.crew_id",
+                "account": "Pool"
               }
             ]
           }
@@ -508,7 +556,8 @@
         {
           "name": "mint",
           "relations": [
-            "pool"
+            "pool",
+            "global_pool"
           ]
         },
         {
@@ -633,6 +682,44 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "The global pool (crew_id 0) of `mint`, read live: its pause is a mint-wide kill switch, its",
+            "attestor is the one every new day snapshots, and its require_sgt also gates crews (audit",
+            "CREW-1). For a commit into the global pool this is the same account as `pool`."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -655,6 +742,165 @@
         {
           "name": "goal_target",
           "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "create_crew",
+      "docs": [
+        "Permissionless. Creates crew pool [\"pool\", mint, crew_id] and its vault, paid by `creator`.",
+        "Copies the global pool's whole config, including authority and attestor; the creator picks",
+        "only the id (!= 0), the name and an optional fixed exercise (+ optional fixed goal within the",
+        "pool's goal limits) and has no powers over the crew afterwards."
+      ],
+      "discriminator": [
+        176,
+        106,
+        87,
+        57,
+        118,
+        114,
+        236,
+        48
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "docs": [
+            "Pays the rent of the crew Pool and its vault. Only signer (MWA-signable)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "The global pool (crew_id 0) of `mint`: the config source."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "global_pool"
+          ]
+        },
+        {
+          "name": "pool",
+          "docs": [
+            "The crew pool. `init` fails if this crew_id already exists."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "path": "crew_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "crew_id",
+          "type": "u64"
+        },
+        {
+          "name": "name",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "exercise",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "Exercise"
+              }
+            }
+          }
+        },
+        {
+          "name": "goal_target",
+          "type": {
+            "option": "u32"
+          }
         }
       ]
     },
@@ -708,6 +954,44 @@
               }
             ]
           }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as",
+            "`pool` for a global-pool day."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint",
+                "account": "Pool"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -720,8 +1004,10 @@
     {
       "name": "fund_reserve",
       "docs": [
-        "Anyone (sponsor) can top up the reserve. Only drawn via each day's sponsor_cap snapshot of",
-        "daily_sponsor_amount (0 by default, never above max_stake)."
+        "Anyone (sponsor) can top up the reserve of any pool, global or crew (\"sponsored days\").",
+        "Only drawn via each day's sponsor_cap snapshot of that pool's daily_sponsor_amount (never",
+        "above max_stake), into days that have at least one completer. Rejected while that pool's",
+        "tap is 0, so a deposit can never sit in a reserve that nothing draws from (audit CREW-2)."
       ],
       "discriminator": [
         17,
@@ -798,7 +1084,7 @@
           "name": "program_data",
           "docs": [
             "This program's ProgramData account. Only the program's upgrade authority may create",
-            "a pool, so nobody can front-run the canonical [\"pool\", SKR] PDA after deploy.",
+            "the global pool, so nobody can front-run the canonical [\"pool\", SKR, 0] PDA after deploy.",
             "(Anchor runs `init` before other constraints; a failed check reverts the whole tx.)"
           ],
           "pda": {
@@ -900,6 +1186,19 @@
               {
                 "kind": "account",
                 "path": "mint"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
               }
             ]
           }
@@ -1074,7 +1373,8 @@
         {
           "name": "signer",
           "docs": [
-            "The pool authority or the day's snapshotted attestor."
+            "The pool authority, the global pool's authority or the day's snapshotted attestor",
+            "(checked in the handler)."
           ],
           "signer": true
         },
@@ -1170,6 +1470,44 @@
               }
             ]
           }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "The global pool (crew_id 0) of the pool's mint, read live (audit CREW-1). Same account as",
+            "`pool` for a global-pool day."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint",
+                "account": "Pool"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
         }
       ],
       "args": [
@@ -1239,6 +1577,92 @@
           "type": "u32"
         }
       ]
+    },
+    {
+      "name": "sync_crew",
+      "docs": [
+        "Permissionless crank. Copies the global pool's trust settings into crew `pool`: authority,",
+        "attestor and require_sgt, and clears any pending authority transfer. Lets one global",
+        "authority / attestor rotation reach every crew in batches, without a multisig transaction",
+        "per crew (audit CREW-1). Pausing needs no sync: the global pause is read live by every crew."
+      ],
+      "discriminator": [
+        11,
+        160,
+        124,
+        111,
+        114,
+        23,
+        32,
+        8
+      ],
+      "accounts": [
+        {
+          "name": "pool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint",
+                "account": "Pool"
+              },
+              {
+                "kind": "account",
+                "path": "pool.crew_id",
+                "account": "Pool"
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_pool",
+          "docs": [
+            "The global pool (crew_id 0) of the crew's mint: the source of truth."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pool.mint",
+                "account": "Pool"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
     },
     {
       "name": "update_config",
@@ -1381,6 +1805,11 @@
               {
                 "kind": "account",
                 "path": "mint"
+              },
+              {
+                "kind": "account",
+                "path": "pool.crew_id",
+                "account": "Pool"
               }
             ]
           }
@@ -1571,6 +2000,32 @@
         19,
         198,
         194
+      ]
+    },
+    {
+      "name": "CrewCreated",
+      "discriminator": [
+        245,
+        43,
+        11,
+        92,
+        189,
+        48,
+        39,
+        107
+      ]
+    },
+    {
+      "name": "CrewSynced",
+      "discriminator": [
+        33,
+        51,
+        207,
+        1,
+        133,
+        191,
+        42,
+        171
       ]
     },
     {
@@ -1823,6 +2278,21 @@
       "code": 6028,
       "name": "InvalidDestination",
       "msg": "Destination token account must not be the vault"
+    },
+    {
+      "code": 6029,
+      "name": "CrewGoalMismatch",
+      "msg": "Commitment does not match the crew's fixed exercise or goal"
+    },
+    {
+      "code": 6030,
+      "name": "InvalidCrew",
+      "msg": "Invalid crew: crew_id 0, empty or non-UTF-8 name, or a fixed goal without a fixed exercise"
+    },
+    {
+      "code": 6031,
+      "name": "SponsorTapClosed",
+      "msg": "This pool's sponsor tap is closed (daily_sponsor_amount is 0): a deposit would never be drawn"
     }
   ],
   "types": [
@@ -2236,6 +2706,92 @@
       }
     },
     {
+      "name": "CrewCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "docs": [
+              "The crew's pool PDA [\"pool\", mint, crew_id LE]."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "global_pool",
+            "docs": [
+              "The global pool the config was copied from."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "crew_id",
+            "type": "u64"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "exercise",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "Exercise"
+                }
+              }
+            }
+          },
+          {
+            "name": "goal_target",
+            "type": {
+              "option": "u32"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CrewSynced",
+      "docs": [
+        "sync_crew: the crew now mirrors the global pool's trust settings."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "crew_id",
+            "type": "u64"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "require_sgt",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
       "name": "DayFinalized",
       "type": {
         "kind": "struct",
@@ -2273,6 +2829,9 @@
           },
           {
             "name": "sponsor",
+            "docs": [
+              "Drawn from the reserve into this day's bonus pool (sponsored amount; 0 when unsponsored)."
+            ],
             "type": "u64"
           },
           {
@@ -2281,6 +2840,23 @@
           },
           {
             "name": "to_reserve",
+            "docs": [
+              "Global pool, nobody completed: net forfeit moved to the reserve."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "rollover_in",
+            "docs": [
+              "Crews: rollover released into this day's bonus pool (included in `distributable`)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "to_rollover",
+            "docs": [
+              "Crews, nobody completed: net forfeit moved to the crew rollover."
+            ],
             "type": "u64"
           }
         ]
@@ -2382,7 +2958,7 @@
           {
             "name": "distributable",
             "docs": [
-              "Bonus pool for completers: forfeited - fee + sponsor."
+              "Bonus pool for completers: forfeited - fee + sponsor (+ crew rollover)."
             ],
             "type": "u64"
           },
@@ -2435,11 +3011,26 @@
             "type": "u64"
           },
           {
+            "name": "global_paused_secs_base",
+            "docs": [
+              "Crew days: the GLOBAL pool's total paused seconds at creation (a global pause blocks every",
+              "crew, so it extends crew attest windows too). 0 and unused in the global pool."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "rollover",
+            "docs": [
+              "Crew days: pool.rollover added to this day's bonus pool at finalize (part of `distributable`)."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "type": {
               "array": [
                 "u8",
-                32
+                16
               ]
             }
           }
@@ -2760,7 +3351,11 @@
     {
       "name": "Pool",
       "docs": [
-        "Global config + accounting. PDA: [\"pool\", mint]. One pool per stake mint."
+        "Config + accounting of one pool. PDA: [\"pool\", mint, crew_id u64 LE].",
+        "crew_id 0 is the global public pool (initialize_pool, upgrade authority); every other id is a",
+        "crew pool created permissionlessly by create_crew, which copies the global pool's whole config",
+        "(same authority and attestor). Every other PDA (vault, day, commitment, profile, device) is",
+        "seeded by the pool address, so each pool has its own days, settlement, streaks and vault."
       ],
       "type": {
         "kind": "struct",
@@ -2785,7 +3380,8 @@
             "docs": [
               "Blocks commit, attest_completion, finalize_day and attestor-signed revoke_completion.",
               "Never blocks claim / close_missed / sweep. Time spent paused extends the attest window of",
-              "every day that existed during the pause (see `paused_secs_total`)."
+              "every day that existed during the pause (see `paused_secs_total`). The GLOBAL pool's flag is",
+              "also a mint-wide kill switch: while it is set, those instructions fail in every crew too."
             ],
             "type": "bool"
           },
@@ -2960,11 +3556,73 @@
             "type": "i64"
           },
           {
+            "name": "crew_id",
+            "docs": [
+              "0 for the global public pool, otherwise the crew id (a PDA seed, chosen by the creator)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "creator",
+            "docs": [
+              "Wallet that created the crew (paid its rent). No powers. Default pubkey for crew 0."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "Crew display name: UTF-8, zero-padded. All zeros for crew 0."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "has_fixed_exercise",
+            "docs": [
+              "true: every commitment in this pool must use `fixed_exercise`."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "fixed_exercise",
+            "docs": [
+              "Meaningful only when `has_fixed_exercise`."
+            ],
+            "type": {
+              "defined": {
+                "name": "Exercise"
+              }
+            }
+          },
+          {
+            "name": "fixed_goal_target",
+            "docs": [
+              "Non-zero: every commitment must use exactly this goal (requires `has_fixed_exercise`).",
+              "0 = free goal within goal_limits (goal minimums are always >= 1, so 0 is never a goal)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "rollover",
+            "docs": [
+              "Crews only (always 0 in the global pool): net forfeits of crew days that nobody completed,",
+              "waiting for the crew's next finalized day with at least one completer, which receives all",
+              "of it on top of its own forfeits (audit CREW-2 / ECON-MP-1). Never touched by the sponsor",
+              "tap, the authority or withdraw_treasury."
+            ],
+            "type": "u64"
+          },
+          {
             "name": "reserved",
             "type": {
               "array": [
                 "u8",
-                64
+                56
               ]
             }
           }
@@ -3021,6 +3679,12 @@
     },
     {
       "name": "ReserveFunded",
+      "docs": [
+        "A sponsor deposit (\"sponsored days\"). Works on any pool, global or crew. The reserve is only",
+        "drawn through each finalized day's sponsor_cap snapshot (pool.daily_sponsor_amount when the day",
+        "was created, <= max_stake), and only on days with at least one completer; DayFinalized.sponsor",
+        "is the amount a given day actually received."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -3034,6 +3698,28 @@
           },
           {
             "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "crew_id",
+            "docs": [
+              "The pool's crew_id (0 = global pool)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "reserve",
+            "docs": [
+              "Reserve after this deposit."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "daily_sponsor_amount",
+            "docs": [
+              "The pool's current per-day sponsor draw (0 = deposits are not drawn until the authority",
+              "opens the tap with update_config)."
+            ],
             "type": "u64"
           }
         ]

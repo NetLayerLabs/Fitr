@@ -1,5 +1,11 @@
 //! Seeded, model-based randomized invariant test (property/fuzz style, fully deterministic).
 //!
+//! MULTI-POOL: every scenario runs the global pool (crew 0) plus crews created along the way with
+//! create_crew (random ids incl. duplicates, random fixed exercise/goal, some invalid), each with its
+//! own independent model. Every step acts on one pool; the same wallets stake in several pools.
+//! Cross-pool attacks (another pool's vault / pool account) are injected and must fail. After every
+//! transaction ALL pools are checked, so an action in one pool can never change another pool.
+//!
 //! Each scenario draws a random pool config (day length 300..86_400 s, offset, cutoff, grace,
 //! fee, streak, stake and goal bounds, sponsor), N users and a random sequence of
 //! commit / attest / revoke / finalize / void / claim / close_missed / sweep / fund_reserve /
@@ -10,15 +16,15 @@
 //! An independent Rust model predicts whether each transaction must succeed; a mismatch fails the
 //! test. After EVERY transaction the on-chain state is compared field-by-field with the model and
 //! the SPEC.md invariants are asserted:
-//!   I1  vault.amount == outstanding + reserve + treasury_accrued (no direct donations in tests)
+//!   I1  vault.amount == outstanding + reserve + rollover + treasury_accrued (no direct donations)
 //!   I1b outstanding == sum over live DayStates of their remaining liability
 //!   I2  each commitment pays out at most once
-//!   I3  paid out for day d (principal + bonus) <= total_staked_d + sponsor_d
+//!   I3  paid out for day d (principal + bonus) <= total_staked_d + sponsor_d + rollover_d
 //!   I4  authority receives tokens only via withdraw_treasury, never more than fees accrued;
 //!       the attestor never receives tokens
 //!   I5  completed_count/stake/weight, fee, sponsor, distributable immutable after finalize
 //!   I6  bonus_paid <= distributable; completed/resolved <= committed; completed_stake <= total
-//!   I7  token conservation: users + vault + authority + funder == minted, at every step
+//!   I7  token conservation: users + all vaults + authority + funder == minted, at every step
 //!   I8  exact payouts: every balance equals the model's floor-division result to the base unit
 //! At the end every day is driven to settlement (a random subset of commitments stays unclaimed)
 //! and the vault must hold exactly reserve + treasury + the model's unclaimed liabilities.
@@ -128,6 +134,10 @@ struct MDay {
     sponsor_cap: u64,
     delay: i64,
     paused_base: i64,
+    /// Crew days: the global pool's total paused seconds at creation.
+    g_paused_base: i64,
+    /// Crew rollover released into this day at finalize (part of distributable).
+    rollover: u64,
     committed: u32,
     completed: u32,
     revoked: u32,
@@ -202,24 +212,38 @@ impl MProfile {
     }
 }
 
+/// Wallet balances shared by every pool of the scenario.
+#[derive(Clone, Debug)]
+struct Bank {
+    user_bal: Vec<u64>,
+    admin_bal: u64,
+    funder_bal: u64,
+    withdrawn: u64,
+    minted: u64,
+}
+
 #[derive(Clone, Debug)]
 struct Model {
+    crew_id: u64,
+    /// Crew rule: fixed exercise and (0 = free) fixed goal.
+    fixed: Option<(Exercise, u32)>,
     cfg: Cfg,
     paused_since: i64,
     total_paused: i64,
+    /// Live copy of the GLOBAL pool's pause state (crews read it on-chain; audit CREW-1).
+    g_paused: bool,
+    g_paused_since: i64,
+    g_total_paused: i64,
     reserve: u64,
+    /// Crews: net forfeits of zero-completer days waiting for the next day with a completer.
+    rollover: u64,
     treasury: u64,
     outstanding: u64,
     days: BTreeMap<u32, MDay>,
     commits: BTreeMap<(usize, u32), MCommit>,
     profiles: Vec<MProfile>,
-    user_bal: Vec<u64>,
     vault: u64,
-    admin_bal: u64,
-    funder_bal: u64,
     fees_total: u64,
-    withdrawn: u64,
-    minted: u64,
 }
 
 fn floor_share(dist: u64, w: u64, total: u64) -> u64 {
@@ -236,15 +260,67 @@ fn weight(amount: u64, basis: u64, streak: u16, bps: u16, max_bps: u16) -> u64 {
 }
 
 impl Model {
+    fn new(crew_id: u64, fixed: Option<(Exercise, u32)>, cfg: Cfg, n: usize) -> Self {
+        Model {
+            crew_id,
+            fixed,
+            cfg,
+            paused_since: 0,
+            total_paused: 0,
+            g_paused: false,
+            g_paused_since: 0,
+            g_total_paused: 0,
+            reserve: 0,
+            rollover: 0,
+            treasury: 0,
+            outstanding: 0,
+            days: BTreeMap::new(),
+            commits: BTreeMap::new(),
+            profiles: vec![MProfile::default(); n],
+            vault: 0,
+            fees_total: 0,
+        }
+    }
+    fn crew_allows(&self, ex: Exercise, goal: u32) -> bool {
+        match self.fixed {
+            None => true,
+            Some((fe, fg)) => ex == fe && (fg == 0 || goal == fg),
+        }
+    }
+    fn is_crew(&self) -> bool {
+        self.crew_id != 0
+    }
+    /// Copies the global model's pause state (call after every global pause change).
+    fn sync_global(&mut self, g: &Model) {
+        self.g_paused = g.cfg.paused;
+        self.g_paused_since = g.paused_since;
+        self.g_total_paused = g.total_paused;
+    }
+    /// commit / attest / finalize / attestor-revoke are blocked: own pause or, for crews, global pause.
+    fn blocked(&self) -> bool {
+        self.cfg.paused || (self.is_crew() && self.g_paused)
+    }
     fn paused_total(&self, now: i64) -> i64 {
         self.total_paused + if self.cfg.paused { (now - self.paused_since).max(0) } else { 0 }
     }
-    /// Attest/revoke window end: nominal deadline + time paused since the day was created.
+    fn g_paused_total(&self, now: i64) -> i64 {
+        self.g_total_paused + if self.g_paused { (now - self.g_paused_since).max(0) } else { 0 }
+    }
+    /// Attest/revoke window end: nominal deadline + time paused since the day was created
+    /// (own pauses, plus global pauses for a crew day).
     fn eff_deadline(&self, day: &MDay, now: i64) -> i64 {
-        day.deadline + (self.paused_total(now) - day.paused_base).max(0)
+        let g = if self.is_crew() { (self.g_paused_total(now) - day.g_paused_base).max(0) } else { 0 };
+        day.deadline + (self.paused_total(now) - day.paused_base).max(0) + g
+    }
+    /// A fixed-goal crew only accepts configs that keep its fixed goal inside the limits (CREW-3).
+    fn fixed_ok(&self, c: &Cfg) -> bool {
+        match self.fixed {
+            Some((e, fg)) if fg != 0 => fg >= c.goals[e as usize].min && fg <= c.goals[e as usize].max,
+            _ => true,
+        }
     }
     fn can_finalize(&self, day: &MDay, now: i64) -> bool {
-        !self.cfg.paused && !day.finalized && !day.voided && now > self.eff_deadline(day, now) + day.delay
+        !self.blocked() && !day.finalized && !day.voided && now > self.eff_deadline(day, now) + day.delay
     }
     fn set_paused(&mut self, v: bool, now: i64) {
         if v == self.cfg.paused {
@@ -260,21 +336,30 @@ impl Model {
     }
     fn finalize(&mut self, d: u32) -> u64 {
         let reserve = self.reserve;
+        let rollover = self.rollover;
+        let crew = self.is_crew();
         let day = self.days.get_mut(&d).unwrap();
         let slashed = day.total_staked - day.completed_stake - day.revoked_stake;
         let fee = (slashed as u128 * day.fee_bps as u128 / 10_000) as u64;
         let net = slashed - fee;
-        let (sponsor, dist, to_reserve) =
-            if day.completed == 0 { (0, 0, net) } else { (day.sponsor_cap.min(reserve), net + day.sponsor_cap.min(reserve), 0) };
+        // nobody completed: global -> reserve, crew -> rollover; else sponsor + whole rollover join
+        let (sponsor, roll_in, dist, to_reserve, to_rollover) = if day.completed == 0 {
+            if crew { (0, 0, 0, 0, net) } else { (0, 0, 0, net, 0) }
+        } else {
+            let sp = day.sponsor_cap.min(reserve);
+            (sp, rollover, net + sp + rollover, 0, 0)
+        };
         day.fee = fee;
         day.sponsor = sponsor;
+        day.rollover = roll_in;
         day.distributable = dist;
         day.finalized = true;
         day.frozen = Some((day.completed, day.completed_stake, day.completed_weight, fee, sponsor, dist));
-        self.outstanding = self.outstanding - fee - to_reserve + sponsor;
+        self.outstanding = self.outstanding - fee - to_reserve - to_rollover + sponsor + roll_in;
         self.treasury += fee;
         self.fees_total += fee;
         self.reserve = self.reserve - sponsor + to_reserve;
+        self.rollover = self.rollover - roll_in + to_rollover;
         fee
     }
     fn day_live(&self, d: u32) -> Option<&MDay> {
@@ -284,7 +369,7 @@ impl Model {
         self.commits.get(&(u, d)).filter(|c| c.live)
     }
 
-    fn pred_commit(&self, now: i64, u: usize, d: u32, amount: u64, ex: Exercise, goal: u32) -> bool {
+    fn pred_commit(&self, bank: &Bank, now: i64, u: usize, d: u32, amount: u64, ex: Exercise, goal: u32) -> bool {
         let c = &self.cfg;
         let today = c.today(now);
         let g = c.goals[ex as usize];
@@ -293,19 +378,21 @@ impl Model {
             Some(x) if x.live => !x.finalized && !x.voided,
             Some(_) => false, // swept: only possible after its deadline, so the window is closed anyway
         };
-        !c.paused
+        !self.blocked()
             && (d == today || d == today + 1)
             && now < c.start(d) + c.cutoff
             && amount >= c.min_stake
             && amount <= c.max_stake
             && goal >= g.min
             && goal <= g.max
+            && self.crew_allows(ex, goal)
             && !self.commits.contains_key(&(u, d))
             && day_ok
-            && self.user_bal[u] >= amount
+            && bank.user_bal[u] >= amount
     }
 
-    fn apply_commit(&mut self, now: i64, u: usize, d: u32, amount: u64, ex: Exercise, goal: u32) {
+    #[allow(clippy::too_many_arguments)]
+    fn apply_commit(&mut self, bank: &mut Bank, now: i64, u: usize, d: u32, amount: u64, ex: Exercise, goal: u32) {
         let c = self.cfg.clone();
         let day = self.days.entry(d).or_insert_with(|| MDay {
             live: true,
@@ -316,6 +403,7 @@ impl Model {
             sponsor_cap: c.sponsor,
             delay: c.delay,
             paused_base: self.total_paused,
+            g_paused_base: if self.crew_id != 0 { self.g_total_paused } else { 0 },
             rent_payer: u,
             ..Default::default()
         });
@@ -330,7 +418,7 @@ impl Model {
         p.exists = true;
         p.tc += 1;
         self.outstanding += amount;
-        self.user_bal[u] -= amount;
+        bank.user_bal[u] -= amount;
         self.vault += amount;
     }
 
@@ -352,7 +440,7 @@ impl Model {
         Some((c.amount, floor_share(day.distributable, c.weight, day.completed_weight)))
     }
 
-    fn apply_claim(&mut self, u: usize, d: u32, principal: u64, bonus: u64) {
+    fn apply_claim(&mut self, bank: &mut Bank, u: usize, d: u32, principal: u64, bonus: u64) {
         let day = self.days.get_mut(&d).unwrap();
         day.principal_paid += principal;
         day.bonus_paid += bonus;
@@ -362,7 +450,7 @@ impl Model {
         c.payouts += 1;
         self.outstanding -= principal + bonus;
         self.vault -= principal + bonus;
-        self.user_bal[u] += principal + bonus;
+        bank.user_bal[u] += principal + bonus;
         self.profiles[u].bonus += bonus;
     }
 }
@@ -404,11 +492,61 @@ impl World {
         }
     }
 
-    fn check(&self, m: &Model, what: &str) {
+    /// Checks every pool against its model, then the wallet balances (I4, I7, I8) globally.
+    fn check(&mut self, models: &[Model], bank: &Bank, what: &str) {
+        let cur = self.env.pool;
+        let mut vaults = 0u64;
+        let mut fees_total = 0u64;
+        for m in models {
+            self.env.use_crew(m.crew_id);
+            vaults += self.check_pool(m, what);
+            fees_total += m.fees_total;
+        }
+        self.env.pool = cur;
+        self.env.vault = vault_pda(&cur);
         let ctx = format!("seed {} step {} after {what}", self.seed, self.step);
         let env = &self.env;
+        // balances (I8), I4, I7
+        let mut sum = vaults;
+        for (i, ata) in self.atas.iter().enumerate() {
+            let b = env.bal(ata);
+            assert_eq!(b, bank.user_bal[i], "{ctx}: I8 user {i} balance");
+            sum += b;
+        }
+        let admin_bal = env.bal(&env.admin_ata);
+        assert_eq!(admin_bal, bank.admin_bal, "{ctx}: authority balance");
+        assert!(admin_bal == bank.withdrawn && bank.withdrawn <= fees_total, "{ctx}: I4");
+        let attestor_ata = anchor_spl::associated_token::get_associated_token_address(&env.attestor.pubkey(), &env.mint);
+        assert!(!exists(&env.svm, &attestor_ata), "{ctx}: I4 attestor holds tokens");
+        let fb = env.bal(&self.funder_ata);
+        assert_eq!(fb, bank.funder_bal, "{ctx}: funder balance");
+        sum += admin_bal + fb;
+        assert_eq!(sum, bank.minted, "{ctx}: I7 conservation");
+    }
+
+    /// Checks the pool the env points at against `m`; returns its vault balance.
+    fn check_pool(&self, m: &Model, what: &str) -> u64 {
+        let ctx = format!("seed {} step {} after {what} [crew {}]", self.seed, self.step, m.crew_id);
+        let env = &self.env;
         let p = env.pool_state();
-        assert_eq!((p.reserve, p.treasury_accrued, p.outstanding), (m.reserve, m.treasury, m.outstanding), "{ctx}: pool accounting");
+        let (fixed_ex, fixed_goal) = match m.fixed {
+            Some((e, g)) => (Some(e), g),
+            None => (None, 0),
+        };
+        assert_eq!(
+            (p.crew_id, p.has_fixed_exercise, p.has_fixed_exercise.then_some(p.fixed_exercise), p.fixed_goal_target),
+            (m.crew_id, m.fixed.is_some(), fixed_ex, fixed_goal),
+            "{ctx}: crew fields"
+        );
+        assert_eq!((p.authority, p.mint, p.vault), (env.admin.pubkey(), env.mint, env.vault), "{ctx}: pool keys");
+        assert_eq!(
+            (p.reserve, p.rollover, p.treasury_accrued, p.outstanding),
+            (m.reserve, m.rollover, m.treasury, m.outstanding),
+            "{ctx}: pool accounting"
+        );
+        if !m.is_crew() {
+            assert_eq!(p.rollover, 0, "{ctx}: the global pool never holds a rollover");
+        }
         let c = &m.cfg;
         assert_eq!(
             (p.min_stake, p.max_stake, p.fee_bps, p.streak_bonus_bps, p.max_streak_bonus_bps),
@@ -429,7 +567,7 @@ impl World {
         let vault = env.vault_balance();
         assert_eq!(vault, m.vault, "{ctx}: vault balance");
         // I1
-        assert_eq!(vault, p.outstanding + p.reserve + p.treasury_accrued, "{ctx}: I1");
+        assert_eq!(vault, p.outstanding + p.reserve + p.rollover + p.treasury_accrued, "{ctx}: I1");
         // days
         let mut liab = 0u64;
         for (d, md) in &m.days {
@@ -460,8 +598,12 @@ impl World {
                 "{ctx}: day {d} settlement"
             );
             assert_eq!(ds.rent_payer, self.users[md.rent_payer].pubkey(), "{ctx}: day {d} rent payer");
+            assert_eq!((ds.rollover, ds.global_paused_secs_base), (md.rollover, md.g_paused_base), "{ctx}: day {d} crew fields");
             // I3, I6
-            assert!(ds.principal_paid + ds.bonus_paid <= ds.total_staked + ds.sponsor, "{ctx}: I3 day {d}");
+            assert!(
+                ds.principal_paid + ds.bonus_paid <= ds.total_staked + ds.sponsor + ds.rollover,
+                "{ctx}: I3 day {d}"
+            );
             assert!(ds.bonus_paid <= ds.distributable, "{ctx}: I6 bonus day {d}");
             assert!(ds.completed_count <= ds.committed_count && ds.resolved_count <= ds.committed_count, "{ctx}: I6 counts");
             assert!(ds.completed_stake + ds.revoked_stake <= ds.total_staked, "{ctx}: I6 stake");
@@ -544,22 +686,7 @@ impl World {
             };
             assert_eq!(norm(got), norm(mp.clone()), "{ctx}: profile {i}");
         }
-        // balances (I8), I4, I7
-        let mut sum = vault;
-        for (i, ata) in self.atas.iter().enumerate() {
-            let b = env.bal(ata);
-            assert_eq!(b, m.user_bal[i], "{ctx}: I8 user {i} balance");
-            sum += b;
-        }
-        let admin_bal = env.bal(&env.admin_ata);
-        assert_eq!(admin_bal, m.admin_bal, "{ctx}: authority balance");
-        assert!(admin_bal == m.withdrawn && m.withdrawn <= m.fees_total, "{ctx}: I4");
-        let attestor_ata = anchor_spl::associated_token::get_associated_token_address(&env.attestor.pubkey(), &env.mint);
-        assert!(!exists(&env.svm, &attestor_ata), "{ctx}: I4 attestor holds tokens");
-        let fb = env.bal(&self.funder_ata);
-        assert_eq!(fb, m.funder_bal, "{ctx}: funder balance");
-        sum += admin_bal + fb;
-        assert_eq!(sum, m.minted, "{ctx}: I7 conservation");
+        vault
     }
 }
 
@@ -569,6 +696,7 @@ impl World {
 struct Stats {
     counts: BTreeMap<String, (usize, usize)>,
     scenarios: usize,
+    pools: usize,
     txs: usize,
     oks: usize,
     claims: usize,
@@ -644,37 +772,39 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
     }
     let (funder, funder_ata) = env.user(1_000_000);
     let minted = user_bal.iter().sum::<u64>() + 1_000_000 * SKR;
-    let mut m = Model {
-        cfg: cfg.clone(),
-        paused_since: 0,
-        total_paused: 0,
-        reserve: 0,
-        treasury: 0,
-        outstanding: 0,
-        days: BTreeMap::new(),
-        commits: BTreeMap::new(),
-        profiles: vec![MProfile::default(); n],
-        user_bal,
-        vault: 0,
-        admin_bal: 0,
-        funder_bal: 1_000_000 * SKR,
-        fees_total: 0,
-        withdrawn: 0,
-        minted,
-    };
+    let mut bank = Bank { user_bal, admin_bal: 0, funder_bal: 1_000_000 * SKR, withdrawn: 0, minted };
+    let mut models = vec![Model::new(0, None, cfg.clone(), n)];
     let start_day = cfg.today(T0) + 1;
     let mut now = cfg.start(start_day) + rng.irange(0, len - 1);
     env.warp(now);
     let mut w = World { env, counts: BTreeMap::new(), users, atas, funder, funder_ata, seed, step: 0, txs: 0, oks: 0 };
-    w.check(&m, "setup");
+    w.check(&models, &bank, "setup");
     let mut stats = Stats { scenarios: 1, ..Default::default() };
     let admin = w.env.admin.insecure_clone();
     let attestor = w.env.attestor.insecure_clone();
+    // one or two crews from the start, more may be created during the run
+    for _ in 0..rng.range(1, 2) {
+        let what = crew_action(&mut w, &mut rng, &mut models, n);
+        w.check(&models, &bank, &what);
+    }
 
     let steps = rng.range(60, 160) as usize;
     for step in 0..steps {
         w.step = step;
-        let roll = rng.range(0, 99);
+        let roll = rng.range(0, 104);
+        if roll >= 100 {
+            let what = if roll <= 101 && models.len() <= MAX_CREWS {
+                crew_action(&mut w, &mut rng, &mut models, n)
+            } else {
+                cross_pool_attack(&mut w, &mut rng, &models, now, n)
+            };
+            w.check(&models, &bank, &what);
+            continue;
+        }
+        // the pool this step acts on: the global pool or one of the crews
+        let k = if models.len() == 1 || rng.chance(40) { 0 } else { rng.range(1, models.len() as u64 - 1) as usize };
+        w.env.use_crew(models[k].crew_id);
+        let mut m = models[k].clone();
         let what: String;
         let u = rng.range(0, n as u64 - 1) as usize;
         let today = m.cfg.today(now);
@@ -713,13 +843,13 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
                     2..=5 => today,
                     _ => today + 1,
                 };
-                let (amount, ex, goal) = random_commit_args(&mut rng, &m.cfg);
-                let ok = m.pred_commit(now, u, d, amount, ex, goal);
+                let (amount, ex, goal) = random_commit_args(&mut rng, &m);
+                let ok = m.pred_commit(&bank, now, u, d, amount, ex, goal);
                 what = format!("commit(u{u}, d{d}, {amount}, {ex:?}, {goal}) ok={ok}");
                 let ix = w.env.ix_commit(&w.users[u].pubkey(), &w.atas[u], d, amount, ex, goal, None);
                 let payer = w.users[u].insecure_clone();
                 if w.exec(&[ix], &payer, ok, &what) {
-                    m.apply_commit(now, u, d, amount, ex, goal);
+                    m.apply_commit(&mut bank, now, u, d, amount, ex, goal);
                 }
             }
             // ---------------------------------------------------------- attest
@@ -750,7 +880,7 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
                     None => (now, 50),
                 };
                 let ok = by_attestor
-                    && !m.cfg.paused
+                    && !m.blocked()
                     && match (m.day_live(d), &mc) {
                         (Some(day), Some(c)) => {
                             !day.finalized
@@ -809,7 +939,7 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
                     _ => w.users[u].insecure_clone(),
                 };
                 // the attestor cannot revoke while paused; the authority can
-                let ok = (who >= 5 && who <= 8 || who <= 4 && !m.cfg.paused)
+                let ok = (who >= 5 && who <= 8 || who <= 4 && !m.blocked())
                     && match (m.day_live(d), m.commit_live(u, d)) {
                         (Some(day), Some(c)) => {
                             !day.finalized && !day.voided && now <= m.eff_deadline(day, now) && c.completed
@@ -871,7 +1001,7 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
                 let payer = w.users[u].insecure_clone();
                 if w.exec(&[ix], &payer, pred.is_some(), &what) {
                     let (pr, bo) = pred.unwrap();
-                    m.apply_claim(u, d, pr, bo);
+                    m.apply_claim(&mut bank, u, d, pr, bo);
                     stats.claims += 1;
                 }
             }
@@ -879,14 +1009,15 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
             68..=70 => {
                 let (u, d0) = pick_pair(&mut rng, &|&(u, d)| m.pred_claim(u, d).is_some());
                 let d = today + rng.range(0, 1) as u32;
-                let (amount, ex, goal) = random_commit_args(&mut rng, &m.cfg);
+                let (amount, ex, goal) = random_commit_args(&mut rng, &m);
                 let pred = m.pred_claim(u, d0);
                 let mut m2 = m.clone();
+                let mut bank2 = bank.clone();
                 let ok = match pred {
                     Some((pr, bo)) => {
-                        m2.apply_claim(u, d0, pr, bo);
-                        if m2.pred_commit(now, u, d, amount, ex, goal) {
-                            m2.apply_commit(now, u, d, amount, ex, goal);
+                        m2.apply_claim(&mut bank2, u, d0, pr, bo);
+                        if m2.pred_commit(&bank2, now, u, d, amount, ex, goal) {
+                            m2.apply_commit(&mut bank2, now, u, d, amount, ex, goal);
                             true
                         } else {
                             false
@@ -902,6 +1033,7 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
                 let payer = w.users[u].insecure_clone();
                 if w.exec(&ixs, &payer, ok, &what) {
                     m = m2;
+                    bank = bank2;
                     stats.claims += 1;
                 }
             }
@@ -955,19 +1087,24 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
                     }
                     day.live = false;
                     m.outstanding -= dust;
-                    m.reserve += dust;
+                    if m.is_crew() {
+                        m.rollover += dust;
+                    } else {
+                        m.reserve += dust;
+                    }
                 }
             }
             // ---------------------------------------------------------- fund_reserve
             81..=82 => {
                 let amount = if rng.chance(10) { 0 } else { rng.range(1, 50 * SKR) };
-                let ok = amount > 0 && m.funder_bal >= amount;
+                // a closed sponsor tap refuses deposits (audit CREW-2)
+                let ok = amount > 0 && m.cfg.sponsor > 0 && bank.funder_bal >= amount;
                 what = format!("fund_reserve({amount}) ok={ok}");
                 let funder = w.funder.insecure_clone();
                 let ix = w.env.ix_fund(&funder.pubkey(), &w.funder_ata, amount);
                 if w.exec(&[ix], &funder, ok, &what) {
                     m.reserve += amount;
-                    m.funder_bal -= amount;
+                    bank.funder_bal -= amount;
                     m.vault += amount;
                 }
             }
@@ -986,16 +1123,16 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
                 let ix = w.env.ix_withdraw(&signer.pubkey(), &dest, amount);
                 if w.exec(&[ix], &signer, ok, &what) {
                     m.treasury -= amount;
-                    m.admin_bal += amount;
+                    bank.admin_bal += amount;
                     m.vault -= amount;
-                    m.withdrawn += amount;
+                    bank.withdrawn += amount;
                 }
             }
             // ---------------------------------------------------------- update_config
             85..=88 => {
                 let (up, new_cfg) = random_update(&mut rng, &m.cfg);
                 let by_admin = rng.chance(95);
-                let ok = by_admin && new_cfg.valid();
+                let ok = by_admin && new_cfg.valid() && m.fixed_ok(&new_cfg);
                 what = format!("update_config({new_cfg:?}, admin {by_admin}) ok={ok}");
                 let signer = if by_admin { admin.insecure_clone() } else { w.users[u].insecure_clone() };
                 let ix = w.env.ix_update(&signer.pubkey(), up);
@@ -1013,113 +1150,242 @@ fn run_scenario(seed: u64, so: &[u8]) -> Stats {
                 what = format!("warp +{dt}");
             }
         }
-        w.check(&m, &what);
+        models[k] = m;
+        if k == 0 {
+            let g = models[0].clone();
+            for c in models.iter_mut().skip(1) {
+                c.sync_global(&g);
+            }
+        }
+        w.check(&models, &bank, &format!("[crew {}] {what}", models[k].crew_id));
     }
 
-    // ---------------------------------------------------------- drain: settle everything
+    // ---------------------------------------------------------- drain: settle every pool
     w.step = usize::MAX;
-    if m.cfg.paused {
-        // finalize is blocked while paused: unpause first (this also closes the pause interval)
-        let ix = w.env.ix_update(&admin.pubkey(), UpdateConfigParams { paused: Some(false), ..Default::default() });
-        w.exec(&[ix], &admin, true, "drain unpause");
-        m.set_paused(false, now);
-        w.check(&m, "drain unpause");
+    // finalize is blocked while paused: unpause first (this also closes the pause interval)
+    for k in 0..models.len() {
+        if models[k].cfg.paused {
+            w.env.use_crew(models[k].crew_id);
+            let ix = w.env.ix_update(&admin.pubkey(), UpdateConfigParams { paused: Some(false), ..Default::default() });
+            w.exec(&[ix], &admin, true, "drain unpause");
+            models[k].set_paused(false, now);
+            if k == 0 {
+                let g = models[0].clone();
+                for c in models.iter_mut().skip(1) {
+                    c.sync_global(&g);
+                }
+            }
+            w.check(&models, &bank, "drain unpause");
+        }
     }
-    let last_finalize = m.days.values().filter(|d| d.live).map(|d| m.eff_deadline(d, now) + d.delay).max().unwrap_or(now);
+    let last_finalize = models
+        .iter()
+        .flat_map(|m| m.days.values().filter(|d| d.live).map(move |d| m.eff_deadline(d, now) + d.delay))
+        .max()
+        .unwrap_or(now);
     now = now.max(last_finalize) + 1;
     w.env.warp(now);
     let cr = w.users[0].insecure_clone();
-    let open: Vec<u32> = m.days.iter().filter(|(_, x)| x.live && !x.finalized && !x.voided).map(|(d, _)| *d).collect();
-    for d in open {
-        let ix = w.env.ix_finalize(&cr.pubkey(), d);
-        w.exec(&[ix], &cr, true, "drain finalize");
-        stats.finalized_days += 1;
-        m.finalize(d);
-        w.check(&m, "drain finalize");
-    }
-    let live: Vec<(usize, u32)> = m.commits.iter().filter(|(_, c)| c.live).map(|(k, _)| *k).collect();
-    for (u, d) in live {
-        if !rng.chance(85) {
-            continue; // stays unclaimed
+    for k in 0..models.len() {
+        w.env.use_crew(models[k].crew_id);
+        let mut m = models[k].clone();
+        let open: Vec<u32> = m.days.iter().filter(|(_, x)| x.live && !x.finalized && !x.voided).map(|(d, _)| *d).collect();
+        for d in open {
+            let ix = w.env.ix_finalize(&cr.pubkey(), d);
+            w.exec(&[ix], &cr, true, "drain finalize");
+            stats.finalized_days += 1;
+            m.finalize(d);
+            models[k] = m.clone();
+            w.check(&models, &bank, "drain finalize");
         }
-        let payer = w.users[u].insecure_clone();
-        if let Some((pr, bo)) = m.pred_claim(u, d) {
-            let ix = w.env.ix_claim(&payer.pubkey(), &w.atas[u], d);
-            w.exec(&[ix], &payer, true, "drain claim");
-            m.apply_claim(u, d, pr, bo);
-            stats.claims += 1;
-        } else {
-            let ix = w.env.ix_close_missed(&payer.pubkey(), &payer.pubkey(), d);
-            w.exec(&[ix], &payer, true, "drain close_missed");
-            m.days.get_mut(&d).unwrap().resolved += 1;
-            m.commits.get_mut(&(u, d)).unwrap().live = false;
-            let prof = &mut m.profiles[u];
-            prof.tmiss += 1;
-            if !prof.has || d > prof.last {
-                prof.cur = 0;
+        let live: Vec<(usize, u32)> = m.commits.iter().filter(|(_, c)| c.live).map(|(k, _)| *k).collect();
+        for (u, d) in live {
+            if !rng.chance(85) {
+                continue; // stays unclaimed
             }
-        }
-        w.check(&m, "drain resolve");
-    }
-    let live_days: Vec<u32> = m.days.iter().filter(|(_, x)| x.live).map(|(d, _)| *d).collect();
-    for d in live_days {
-        let day = m.days[&d].clone();
-        let ok = day.resolved == day.committed;
-        let ix = w.env.ix_sweep(&cr.pubkey(), &w.users[day.rent_payer].pubkey(), d);
-        if w.exec(&[ix], &cr, ok, "drain sweep") {
-            stats.swept_days += 1;
-            let dust = if day.voided { 0 } else { day.distributable - day.bonus_paid };
-            if dust > 0 {
-                stats.dust_days += 1;
+            let payer = w.users[u].insecure_clone();
+            if let Some((pr, bo)) = m.pred_claim(u, d) {
+                let ix = w.env.ix_claim(&payer.pubkey(), &w.atas[u], d);
+                w.exec(&[ix], &payer, true, "drain claim");
+                m.apply_claim(&mut bank, u, d, pr, bo);
+                stats.claims += 1;
+            } else {
+                let ix = w.env.ix_close_missed(&payer.pubkey(), &payer.pubkey(), d);
+                w.exec(&[ix], &payer, true, "drain close_missed");
+                m.days.get_mut(&d).unwrap().resolved += 1;
+                m.commits.get_mut(&(u, d)).unwrap().live = false;
+                let prof = &mut m.profiles[u];
+                prof.tmiss += 1;
+                if !prof.has || d > prof.last {
+                    prof.cur = 0;
+                }
             }
-            m.days.get_mut(&d).unwrap().live = false;
-            m.outstanding -= dust;
-            m.reserve += dust;
+            models[k] = m.clone();
+            w.check(&models, &bank, "drain resolve");
         }
-        w.check(&m, "drain sweep");
-    }
-    let t = m.treasury;
-    let dest = w.env.admin_ata;
-    let ix = w.env.ix_withdraw(&admin.pubkey(), &dest, t);
-    w.exec(&[ix], &admin, true, "drain withdraw");
-    m.treasury = 0;
-    m.admin_bal += t;
-    m.vault -= t;
-    m.withdrawn += t;
-    w.check(&m, "drain withdraw");
+        let live_days: Vec<u32> = m.days.iter().filter(|(_, x)| x.live).map(|(d, _)| *d).collect();
+        for d in live_days {
+            let day = m.days[&d].clone();
+            let ok = day.resolved == day.committed;
+            let ix = w.env.ix_sweep(&cr.pubkey(), &w.users[day.rent_payer].pubkey(), d);
+            if w.exec(&[ix], &cr, ok, "drain sweep") {
+                stats.swept_days += 1;
+                let dust = if day.voided { 0 } else { day.distributable - day.bonus_paid };
+                if dust > 0 {
+                    stats.dust_days += 1;
+                }
+                m.days.get_mut(&d).unwrap().live = false;
+                m.outstanding -= dust;
+                if m.is_crew() {
+                    m.rollover += dust;
+                } else {
+                    m.reserve += dust;
+                }
+            }
+            models[k] = m.clone();
+            w.check(&models, &bank, "drain sweep");
+        }
+        let t = m.treasury;
+        let dest = w.env.admin_ata;
+        let ix = w.env.ix_withdraw(&admin.pubkey(), &dest, t);
+        w.exec(&[ix], &admin, true, "drain withdraw");
+        m.treasury = 0;
+        bank.admin_bal += t;
+        m.vault -= t;
+        bank.withdrawn += t;
+        models[k] = m.clone();
+        w.check(&models, &bank, "drain withdraw");
 
-    // ---------------------------------------------------------- final accounting, computed independently
-    // Unclaimed liability = for every still-open commitment: principal (+ its floor share if it
-    // completed on a finalized day); plus, per unswept finalized day, the rounding dust
-    // distributable - sum of ALL completers' floor shares.
-    let mut unclaimed = 0u64;
-    for (d, day) in m.days.iter().filter(|(_, x)| x.live) {
-        let completers: Vec<&MCommit> =
-            m.commits.iter().filter(|((_, dd), c)| dd == d && c.completed).map(|(_, c)| c).collect();
-        if day.voided {
-            unclaimed += m.commits.iter().filter(|((_, dd), c)| dd == d && c.live).map(|(_, c)| c.amount).sum::<u64>();
-        } else {
-            let shares: u64 = completers.iter().map(|c| floor_share(day.distributable, c.weight, day.completed_weight)).sum();
-            assert!(day.distributable - shares < completers.len().max(1) as u64, "dust < number of completers");
-            unclaimed += day.distributable - shares;
-            for c in completers.iter().filter(|c| c.live) {
-                unclaimed += c.amount + floor_share(day.distributable, c.weight, day.completed_weight);
+        // ------------------------------------------------------ final accounting, computed independently
+        // Unclaimed liability = for every still-open commitment: principal (+ its floor share if it
+        // completed on a finalized day); plus, per unswept finalized day, the rounding dust
+        // distributable - sum of ALL completers' floor shares.
+        let mut unclaimed = 0u64;
+        for (d, day) in m.days.iter().filter(|(_, x)| x.live) {
+            let completers: Vec<&MCommit> =
+                m.commits.iter().filter(|((_, dd), c)| dd == d && c.completed).map(|(_, c)| c).collect();
+            if day.voided {
+                unclaimed += m.commits.iter().filter(|((_, dd), c)| dd == d && c.live).map(|(_, c)| c.amount).sum::<u64>();
+            } else {
+                let shares: u64 =
+                    completers.iter().map(|c| floor_share(day.distributable, c.weight, day.completed_weight)).sum();
+                assert!(day.distributable - shares < completers.len().max(1) as u64, "dust < number of completers");
+                unclaimed += day.distributable - shares;
+                for c in completers.iter().filter(|c| c.live) {
+                    unclaimed += c.amount + floor_share(day.distributable, c.weight, day.completed_weight);
+                }
+                unclaimed +=
+                    m.commits.iter().filter(|((_, dd), c)| dd == d && c.live && c.revoked).map(|(_, c)| c.amount).sum::<u64>();
             }
-            unclaimed += m.commits.iter().filter(|((_, dd), c)| dd == d && c.live && c.revoked).map(|(_, c)| c.amount).sum::<u64>();
         }
+        let p = w.env.pool_state();
+        let crew = m.crew_id;
+        assert_eq!(p.outstanding, unclaimed, "seed {seed} crew {crew}: outstanding != independently computed unclaimed");
+        assert_eq!(
+            w.env.vault_balance(),
+            p.reserve + p.rollover + p.treasury_accrued + unclaimed,
+            "seed {seed} crew {crew}: final vault"
+        );
+        assert_eq!(p.treasury_accrued, 0);
     }
-    let p = w.env.pool_state();
-    assert_eq!(p.outstanding, unclaimed, "seed {seed}: outstanding != independently computed unclaimed");
-    assert_eq!(w.env.vault_balance(), p.reserve + p.treasury_accrued + unclaimed, "seed {seed}: final vault");
-    assert_eq!(p.treasury_accrued, 0);
+    stats.pools += models.len();
     stats.txs = w.txs;
     stats.oks = w.oks;
     stats.counts = w.counts;
     stats
 }
 
-fn random_commit_args(rng: &mut Rng, c: &Cfg) -> (u64, Exercise, u32) {
-    let ex = *rng.pick(&EXERCISES);
+/// Up to this many crews per scenario (besides the global pool).
+const MAX_CREWS: usize = 4;
+
+/// create_crew with a random (sometimes duplicate or zero) id, a random fixed exercise/goal and,
+/// rarely, an invalid name or goal. The crew's model copies the global model's CURRENT config.
+fn crew_action(w: &mut World, rng: &mut Rng, models: &mut Vec<Model>, n: usize) -> String {
+    let u = rng.range(0, n as u64 - 1) as usize;
+    let id = if rng.chance(12) { rng.pick(models).crew_id } else { rng.range(1, u64::MAX) };
+    let ex = if rng.chance(40) { None } else { Some(*rng.pick(&EXERCISES)) };
+    let g = models[0].cfg.clone();
+    let goal = match (ex, rng.range(0, 9)) {
+        (_, 0..=4) => None,
+        (None, 5) => Some(20), // a goal without an exercise: invalid
+        (None, _) => None,
+        (Some(e), 5) => Some(g.goals[e as usize].min - 1),
+        (Some(e), 6) => Some(g.goals[e as usize].max + 1),
+        (Some(e), _) => Some(rng.range(g.goals[e as usize].min as u64, g.goals[e as usize].max as u64) as u32),
+    };
+    let bad_name = rng.chance(5);
+    let name = if bad_name { [0u8; 32] } else { crew_name(&format!("crew {}", id % 10_000)) };
+    let goal_ok = match (ex, goal) {
+        (_, None) => true,
+        (None, Some(_)) => false,
+        (Some(e), Some(v)) => v >= g.goals[e as usize].min && v <= g.goals[e as usize].max,
+    };
+    let exists = models.iter().any(|m| m.crew_id == id);
+    let ok = id != 0 && !exists && !bad_name && goal_ok && !g.paused;
+    let what = format!("create_crew(u{u}, {id}, {ex:?}, {goal:?}, bad_name {bad_name}) ok={ok}");
+    let creator = w.users[u].insecure_clone();
+    let ix = w.env.ix_create_crew(&creator.pubkey(), id, name, ex, goal);
+    if w.exec(&[ix], &creator, ok, &what) {
+        let fixed = ex.map(|e| (e, goal.unwrap_or(0)));
+        let mut m = Model::new(id, fixed, Cfg { paused: false, ..g }, n);
+        m.sync_global(&models[0]);
+        models.push(m);
+    }
+    what
+}
+
+/// Mixes the accounts of two different pools in a token-moving or settling instruction. Must fail.
+fn cross_pool_attack(w: &mut World, rng: &mut Rng, models: &[Model], now: i64, n: usize) -> String {
+    if models.len() < 2 {
+        return "cross_pool skipped (one pool)".into();
+    }
+    let a = rng.range(0, models.len() as u64 - 1) as usize;
+    let b = (a + 1 + rng.range(0, models.len() as u64 - 2) as usize) % models.len();
+    let (ma, mb) = (&models[a], &models[b]);
+    let pb = pool_pda(&w.env.mint, mb.crew_id);
+    let vb = vault_pda(&pb);
+    w.env.use_crew(ma.crew_id);
+    let keys: Vec<(usize, u32)> = ma.commits.iter().filter(|(_, c)| c.live).map(|(k, _)| *k).collect();
+    let (u, d) = if keys.is_empty() {
+        (rng.range(0, n as u64 - 1) as usize, ma.cfg.today(now))
+    } else {
+        *rng.pick(&keys)
+    };
+    let user = w.users[u].insecure_clone();
+    let admin = w.env.admin.insecure_clone();
+    let kind = rng.range(0, 5);
+    let (mut ix, payer) = match kind {
+        0 | 1 => (w.env.ix_claim(&user.pubkey(), &w.atas[u], d), user),
+        2 => {
+            let (amount, ex, goal) = random_commit_args(rng, ma);
+            (w.env.ix_commit(&user.pubkey(), &w.atas[u], d, amount, ex, goal, None), user)
+        }
+        3 => (w.env.ix_withdraw(&admin.pubkey(), &w.env.admin_ata, mb.treasury.max(1)), admin),
+        4 => (w.env.ix_fund(&user.pubkey(), &w.atas[u], SKR), user),
+        _ => (w.env.ix_finalize(&user.pubkey(), d), user),
+    };
+    match kind {
+        0 | 3 => ix.accounts[3].pubkey = vb,          // pool a, vault b
+        1 => {
+            ix.accounts[1].pubkey = pb;              // pool b + vault b, day/commitment of pool a
+            ix.accounts[3].pubkey = vb;
+        }
+        2 | 4 => ix.accounts[4].pubkey = vb,         // pay into pool b's vault through pool a
+        _ => ix.accounts[1].pubkey = pb,             // settle pool a's day through pool b
+    }
+    let what = format!("cross_pool(kind {kind}, crew {} -> crew {}, u{u}, d{d})", ma.crew_id, mb.crew_id);
+    w.exec(&[ix], &payer, false, &what);
+    what
+}
+
+fn random_commit_args(rng: &mut Rng, m: &Model) -> (u64, Exercise, u32) {
+    let c = &m.cfg;
+    // in a crew with a fixed exercise/goal, mostly play by the crew's rule
+    let fixed = m.fixed.filter(|_| rng.chance(85));
+    let ex = match fixed {
+        Some((e, _)) => e,
+        None => *rng.pick(&EXERCISES),
+    };
     let amount = match rng.range(0, 19) {
         0 => c.min_stake - 1,
         1 => c.max_stake + 1,
@@ -1128,9 +1394,10 @@ fn random_commit_args(rng: &mut Rng, c: &Cfg) -> (u64, Exercise, u32) {
         _ => rng.range(c.min_stake, c.max_stake),
     };
     let g = c.goals[ex as usize];
-    let goal = match rng.range(0, 19) {
-        0 => g.min - 1,
-        1 => g.max + 1,
+    let goal = match (fixed, rng.range(0, 19)) {
+        (_, 0) => g.min - 1,
+        (_, 1) => g.max + 1,
+        (Some((_, fg)), _) if fg != 0 => fg,
         _ => rng.range(g.min as u64, g.max as u64) as u32,
     };
     (amount, ex, goal)
@@ -1216,6 +1483,7 @@ fn run_batch(batch: u64) {
         let seed = base.wrapping_add(batch * 1_000_000 + i);
         let s = run_scenario(seed, &so);
         total.scenarios += s.scenarios;
+        total.pools += s.pools;
         total.txs += s.txs;
         total.oks += s.oks;
         total.claims += s.claims;
@@ -1232,8 +1500,9 @@ fn run_batch(batch: u64) {
     let per_action: Vec<String> = total.counts.iter().map(|(k, (ok, all))| format!("{k} {ok}/{all}")).collect();
     println!("batch {batch} per action (ok/attempted): {}", per_action.join(", "));
     println!(
-        "batch {batch}: {} scenarios, {} txs ({} ok / {} rejected as predicted), {} claims, {} days finalized, {} voided, {} swept ({} with dust)",
+        "batch {batch}: {} scenarios ({} pools), {} txs ({} ok / {} rejected as predicted), {} claims, {} days finalized, {} voided, {} swept ({} with dust)",
         total.scenarios,
+        total.pools,
         total.txs,
         total.oks,
         total.txs - total.oks,
@@ -1244,6 +1513,11 @@ fn run_batch(batch: u64) {
         total.dust_days
     );
     assert!(total.oks > 0 && total.claims > 0 && total.finalized_days > 0);
+    assert!(total.pools > total.scenarios, "crews were created");
+    for action in ["create_crew", "cross_pool"] {
+        assert!(total.counts.get(action).map(|c| c.1 > 0).unwrap_or(false), "{action} exercised");
+    }
+    assert!(total.counts["create_crew"].0 > 0, "some crews created");
 }
 
 #[test]

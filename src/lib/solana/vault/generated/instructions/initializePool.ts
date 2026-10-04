@@ -53,7 +53,7 @@ import {
   type ResolvedInstructionAccount,
   type ResolvedInstructionAccountMeta,
 } from "@solana/kit/program-client-core";
-import { findPoolPda, findVaultPda } from "../pdas";
+import { findGlobalPoolPda, findVaultPda } from "../pdas";
 import { FITR_VAULT_PROGRAM_ADDRESS } from "../programs";
 import {
   getGoalLimitsDecoder,
@@ -229,7 +229,7 @@ export type InitializePoolAsyncInput<
   authority: TAccountAuthority;
   /**
    * This program's ProgramData account. Only the program's upgrade authority may create
-   * a pool, so nobody can front-run the canonical ["pool", SKR] PDA after deploy.
+   * the global pool, so nobody can front-run the canonical ["pool", SKR, 0] PDA after deploy.
    * (Anchor runs `init` before other constraints; a failed check reverts the whole tx.)
    */
   programData?: TAccountProgramData;
@@ -364,7 +364,7 @@ export async function getInitializePoolInstructionAsync<
     });
   }
   if (!accounts.pool.value) {
-    accounts.pool.value = await findPoolPda(
+    accounts.pool.value = await findGlobalPoolPda(
       {
         mint: getAddressFromResolvedInstructionAccount(
           "mint",
@@ -456,7 +456,7 @@ export type InitializePoolInput<
   authority: TAccountAuthority;
   /**
    * This program's ProgramData account. Only the program's upgrade authority may create
-   * a pool, so nobody can front-run the canonical ["pool", SKR] PDA after deploy.
+   * the global pool, so nobody can front-run the canonical ["pool", SKR, 0] PDA after deploy.
    * (Anchor runs `init` before other constraints; a failed check reverts the whole tx.)
    */
   programData: TAccountProgramData;
@@ -639,7 +639,7 @@ export type ParsedInitializePoolInstruction<
     authority: TAccountMetas[0];
     /**
      * This program's ProgramData account. Only the program's upgrade authority may create
-     * a pool, so nobody can front-run the canonical ["pool", SKR] PDA after deploy.
+     * the global pool, so nobody can front-run the canonical ["pool", SKR, 0] PDA after deploy.
      * (Anchor runs `init` before other constraints; a failed check reverts the whole tx.)
      */
     programData: TAccountMetas[1];

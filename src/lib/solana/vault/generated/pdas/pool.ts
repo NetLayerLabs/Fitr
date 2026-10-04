@@ -10,12 +10,14 @@ import {
   getAddressEncoder,
   getBytesEncoder,
   getProgramDerivedAddress,
+  getU64Encoder,
   type Address,
   type ProgramDerivedAddress,
 } from "@solana/kit";
 
 export type PoolSeeds = {
   mint: Address;
+  crewId: number | bigint;
 };
 
 export async function findPoolPda(
@@ -30,6 +32,7 @@ export async function findPoolPda(
     seeds: [
       getBytesEncoder().encode(new Uint8Array([112, 111, 111, 108])),
       getAddressEncoder().encode(seeds.mint),
+      getU64Encoder().encode(seeds.crewId),
     ],
   });
 }

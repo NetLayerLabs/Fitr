@@ -56,6 +56,7 @@ import {
   getClaimInstructionAsync,
   getCloseMissedInstructionAsync,
   getCommitInstructionAsync,
+  getCreateCrewInstructionAsync,
   getFinalizeDayInstructionAsync,
   getFundReserveInstruction,
   getInitializePoolInstructionAsync,
@@ -63,14 +64,16 @@ import {
   getRegisterDeviceInstructionAsync,
   getRevokeCompletionInstructionAsync,
   getSweepDayInstructionAsync,
+  getSyncCrewInstruction,
   getUpdateConfigInstruction,
   getVoidDayInstructionAsync,
-  getWithdrawTreasuryInstructionAsync,
+  getWithdrawTreasuryInstruction,
   parseAcceptAuthorityInstruction,
   parseAttestCompletionInstruction,
   parseClaimInstruction,
   parseCloseMissedInstruction,
   parseCommitInstruction,
+  parseCreateCrewInstruction,
   parseFinalizeDayInstruction,
   parseFundReserveInstruction,
   parseInitializePoolInstruction,
@@ -78,6 +81,7 @@ import {
   parseRegisterDeviceInstruction,
   parseRevokeCompletionInstruction,
   parseSweepDayInstruction,
+  parseSyncCrewInstruction,
   parseUpdateConfigInstruction,
   parseVoidDayInstruction,
   parseWithdrawTreasuryInstruction,
@@ -86,6 +90,7 @@ import {
   type ClaimAsyncInput,
   type CloseMissedAsyncInput,
   type CommitAsyncInput,
+  type CreateCrewAsyncInput,
   type FinalizeDayAsyncInput,
   type FundReserveInput,
   type InitializePoolAsyncInput,
@@ -94,6 +99,7 @@ import {
   type ParsedClaimInstruction,
   type ParsedCloseMissedInstruction,
   type ParsedCommitInstruction,
+  type ParsedCreateCrewInstruction,
   type ParsedFinalizeDayInstruction,
   type ParsedFundReserveInstruction,
   type ParsedInitializePoolInstruction,
@@ -101,6 +107,7 @@ import {
   type ParsedRegisterDeviceInstruction,
   type ParsedRevokeCompletionInstruction,
   type ParsedSweepDayInstruction,
+  type ParsedSyncCrewInstruction,
   type ParsedUpdateConfigInstruction,
   type ParsedVoidDayInstruction,
   type ParsedWithdrawTreasuryInstruction,
@@ -108,14 +115,16 @@ import {
   type RegisterDeviceAsyncInput,
   type RevokeCompletionAsyncInput,
   type SweepDayAsyncInput,
+  type SyncCrewInput,
   type UpdateConfigInput,
   type VoidDayAsyncInput,
-  type WithdrawTreasuryAsyncInput,
+  type WithdrawTreasuryInput,
 } from "../instructions";
 import {
   findCommitmentPda,
   findDayPda,
   findDevicePda,
+  findGlobalPoolPda,
   findPoolPda,
   findProfilePda,
   findVaultPda,
@@ -205,6 +214,8 @@ export enum FitrVaultEvent {
   CompletionAttested,
   CompletionRevoked,
   ConfigUpdated,
+  CrewCreated,
+  CrewSynced,
   DayFinalized,
   DaySwept,
   DayVoided,
@@ -295,6 +306,28 @@ export function identifyFitrVaultEvent(
     )
   ) {
     return FitrVaultEvent.ConfigUpdated;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([245, 43, 11, 92, 189, 48, 39, 107]),
+      ),
+      0,
+    )
+  ) {
+    return FitrVaultEvent.CrewCreated;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([33, 51, 207, 1, 133, 191, 42, 171]),
+      ),
+      0,
+    )
+  ) {
+    return FitrVaultEvent.CrewSynced;
   }
   if (
     containsBytes(
@@ -395,6 +428,7 @@ export enum FitrVaultInstruction {
   Claim,
   CloseMissed,
   Commit,
+  CreateCrew,
   FinalizeDay,
   FundReserve,
   InitializePool,
@@ -402,6 +436,7 @@ export enum FitrVaultInstruction {
   RegisterDevice,
   RevokeCompletion,
   SweepDay,
+  SyncCrew,
   UpdateConfig,
   VoidDay,
   WithdrawTreasury,
@@ -465,6 +500,17 @@ export function identifyFitrVaultInstruction(
     )
   ) {
     return FitrVaultInstruction.Commit;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([176, 106, 87, 57, 118, 114, 236, 48]),
+      ),
+      0,
+    )
+  ) {
+    return FitrVaultInstruction.CreateCrew;
   }
   if (
     containsBytes(
@@ -547,6 +593,17 @@ export function identifyFitrVaultInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([11, 160, 124, 111, 114, 23, 32, 8]),
+      ),
+      0,
+    )
+  ) {
+    return FitrVaultInstruction.SyncCrew;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([29, 158, 252, 191, 10, 83, 219, 99]),
       ),
       0,
@@ -601,6 +658,9 @@ export type ParsedFitrVaultInstruction<
       instructionType: FitrVaultInstruction.Commit;
     } & ParsedCommitInstruction<TProgram>)
   | ({
+      instructionType: FitrVaultInstruction.CreateCrew;
+    } & ParsedCreateCrewInstruction<TProgram>)
+  | ({
       instructionType: FitrVaultInstruction.FinalizeDay;
     } & ParsedFinalizeDayInstruction<TProgram>)
   | ({
@@ -621,6 +681,9 @@ export type ParsedFitrVaultInstruction<
   | ({
       instructionType: FitrVaultInstruction.SweepDay;
     } & ParsedSweepDayInstruction<TProgram>)
+  | ({
+      instructionType: FitrVaultInstruction.SyncCrew;
+    } & ParsedSyncCrewInstruction<TProgram>)
   | ({
       instructionType: FitrVaultInstruction.UpdateConfig;
     } & ParsedUpdateConfigInstruction<TProgram>)
@@ -671,6 +734,13 @@ export function parseFitrVaultInstruction<TProgram extends string>(
         ...parseCommitInstruction(instruction),
       };
     }
+    case FitrVaultInstruction.CreateCrew: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: FitrVaultInstruction.CreateCrew,
+        ...parseCreateCrewInstruction(instruction),
+      };
+    }
     case FitrVaultInstruction.FinalizeDay: {
       assertIsInstructionWithAccounts(instruction);
       return {
@@ -718,6 +788,13 @@ export function parseFitrVaultInstruction<TProgram extends string>(
       return {
         instructionType: FitrVaultInstruction.SweepDay,
         ...parseSweepDayInstruction(instruction),
+      };
+    }
+    case FitrVaultInstruction.SyncCrew: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: FitrVaultInstruction.SyncCrew,
+        ...parseSyncCrewInstruction(instruction),
       };
     }
     case FitrVaultInstruction.UpdateConfig: {
@@ -792,6 +869,10 @@ export type FitrVaultPluginInstructions = {
   commit: (
     input: CommitAsyncInput,
   ) => ReturnType<typeof getCommitInstructionAsync> & SelfPlanAndSendFunctions;
+  createCrew: (
+    input: CreateCrewAsyncInput,
+  ) => ReturnType<typeof getCreateCrewInstructionAsync> &
+    SelfPlanAndSendFunctions;
   finalizeDay: (
     input: FinalizeDayAsyncInput,
   ) => ReturnType<typeof getFinalizeDayInstructionAsync> &
@@ -819,6 +900,9 @@ export type FitrVaultPluginInstructions = {
     input: SweepDayAsyncInput,
   ) => ReturnType<typeof getSweepDayInstructionAsync> &
     SelfPlanAndSendFunctions;
+  syncCrew: (
+    input: SyncCrewInput,
+  ) => ReturnType<typeof getSyncCrewInstruction> & SelfPlanAndSendFunctions;
   updateConfig: (
     input: UpdateConfigInput,
   ) => ReturnType<typeof getUpdateConfigInstruction> & SelfPlanAndSendFunctions;
@@ -826,8 +910,8 @@ export type FitrVaultPluginInstructions = {
     input: VoidDayAsyncInput,
   ) => ReturnType<typeof getVoidDayInstructionAsync> & SelfPlanAndSendFunctions;
   withdrawTreasury: (
-    input: WithdrawTreasuryAsyncInput,
-  ) => ReturnType<typeof getWithdrawTreasuryInstructionAsync> &
+    input: WithdrawTreasuryInput,
+  ) => ReturnType<typeof getWithdrawTreasuryInstruction> &
     SelfPlanAndSendFunctions;
 };
 
@@ -835,6 +919,7 @@ export type FitrVaultPluginPdas = {
   day: typeof findDayPda;
   commitment: typeof findCommitmentPda;
   profile: typeof findProfilePda;
+  globalPool: typeof findGlobalPoolPda;
   pool: typeof findPoolPda;
   vault: typeof findVaultPda;
   device: typeof findDevicePda;
@@ -885,6 +970,11 @@ export function fitrVaultProgram() {
               client,
               getCommitInstructionAsync(input),
             ),
+          createCrew: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getCreateCrewInstructionAsync(input),
+            ),
           finalizeDay: (input) =>
             addSelfPlanAndSendFunctions(
               client,
@@ -920,6 +1010,8 @@ export function fitrVaultProgram() {
               client,
               getSweepDayInstructionAsync(input),
             ),
+          syncCrew: (input) =>
+            addSelfPlanAndSendFunctions(client, getSyncCrewInstruction(input)),
           updateConfig: (input) =>
             addSelfPlanAndSendFunctions(
               client,
@@ -933,13 +1025,14 @@ export function fitrVaultProgram() {
           withdrawTreasury: (input) =>
             addSelfPlanAndSendFunctions(
               client,
-              getWithdrawTreasuryInstructionAsync(input),
+              getWithdrawTreasuryInstruction(input),
             ),
         },
         pdas: {
           day: findDayPda,
           commitment: findCommitmentPda,
           profile: findProfilePda,
+          globalPool: findGlobalPoolPda,
           pool: findPoolPda,
           vault: findVaultPda,
           device: findDevicePda,

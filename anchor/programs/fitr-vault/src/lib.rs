@@ -63,6 +63,13 @@ pub mod fitr_vault {
         pool.finalize_delay_secs = p.finalize_delay_secs;
         pool.paused_since = 0;
         pool.total_paused_secs = 0;
+        pool.crew_id = GLOBAL_CREW_ID;
+        pool.creator = Pubkey::default();
+        pool.name = [0; 32];
+        pool.has_fixed_exercise = false;
+        pool.fixed_exercise = Exercise::Pushup;
+        pool.fixed_goal_target = 0;
+        pool.rollover = 0;
         pool.validate()?;
 
         emit!(PoolInitialized {
@@ -75,6 +82,104 @@ pub mod fitr_vault {
             fee_bps: pool.fee_bps,
             day_length_secs: pool.day_length_secs,
             day_offset_secs: pool.day_offset_secs,
+            require_sgt: pool.require_sgt,
+        });
+        Ok(())
+    }
+
+    /// Permissionless. Creates crew pool ["pool", mint, crew_id] and its vault, paid by `creator`.
+    /// Copies the global pool's whole config, including authority and attestor; the creator picks
+    /// only the id (!= 0), the name and an optional fixed exercise (+ optional fixed goal within the
+    /// pool's goal limits) and has no powers over the crew afterwards.
+    pub fn create_crew(
+        ctx: Context<CreateCrew>,
+        crew_id: u64,
+        name: [u8; 32],
+        exercise: Option<Exercise>,
+        goal_target: Option<u32>,
+    ) -> Result<()> {
+        require!(crew_id != GLOBAL_CREW_ID, VaultError::InvalidCrew);
+        require!(state::is_valid_crew_name(&name), VaultError::InvalidCrew);
+        let g = &ctx.accounts.global_pool;
+        require!(!g.paused, VaultError::Paused);
+        let fixed_goal_target = match (exercise, goal_target) {
+            (_, None) => 0,
+            (None, Some(_)) => return err!(VaultError::InvalidCrew),
+            (Some(ex), Some(goal)) => {
+                let l = g.goal_limits[ex.index()];
+                require!(goal >= l.min && goal <= l.max, VaultError::GoalOutOfBounds);
+                goal
+            }
+        };
+
+        let pool = &mut ctx.accounts.pool;
+        pool.version = ACCOUNT_VERSION;
+        pool.bump = ctx.bumps.pool;
+        pool.vault_bump = ctx.bumps.vault;
+        pool.paused = false;
+        pool.require_sgt = g.require_sgt;
+        pool.mint_decimals = g.mint_decimals;
+        pool.authority = g.authority;
+        pool.pending_authority = Pubkey::default();
+        pool.attestor = g.attestor;
+        pool.mint = g.mint;
+        pool.vault = ctx.accounts.vault.key();
+        pool.day_length_secs = g.day_length_secs;
+        pool.day_offset_secs = g.day_offset_secs;
+        pool.commit_cutoff_secs = g.commit_cutoff_secs;
+        pool.attest_grace_secs = g.attest_grace_secs;
+        pool.min_stake = g.min_stake;
+        pool.max_stake = g.max_stake;
+        pool.fee_bps = g.fee_bps;
+        pool.streak_bonus_bps = g.streak_bonus_bps;
+        pool.max_streak_bonus_bps = g.max_streak_bonus_bps;
+        pool.goal_limits = g.goal_limits;
+        pool.daily_sponsor_amount = g.daily_sponsor_amount;
+        pool.reserve = 0;
+        pool.treasury_accrued = 0;
+        pool.outstanding = 0;
+        pool.finalize_delay_secs = g.finalize_delay_secs;
+        pool.paused_since = 0;
+        pool.total_paused_secs = 0;
+        pool.crew_id = crew_id;
+        pool.creator = ctx.accounts.creator.key();
+        pool.name = name;
+        pool.has_fixed_exercise = exercise.is_some();
+        pool.fixed_exercise = exercise.unwrap_or(Exercise::Pushup);
+        pool.fixed_goal_target = fixed_goal_target;
+        pool.rollover = 0;
+        pool.validate()?;
+
+        emit!(CrewCreated {
+            pool: pool.key(),
+            global_pool: g.key(),
+            crew_id,
+            creator: pool.creator,
+            name,
+            exercise,
+            goal_target,
+        });
+        Ok(())
+    }
+
+    /// Permissionless crank. Copies the global pool's trust settings into crew `pool`: authority,
+    /// attestor and require_sgt, and clears any pending authority transfer. Lets one global
+    /// authority / attestor rotation reach every crew in batches, without a multisig transaction
+    /// per crew (audit CREW-1). Pausing needs no sync: the global pause is read live by every crew.
+    pub fn sync_crew(ctx: Context<SyncCrew>) -> Result<()> {
+        let g = &ctx.accounts.global_pool;
+        let pool = &mut ctx.accounts.pool;
+        require!(pool.is_crew(), VaultError::InvalidCrew);
+        pool.authority = g.authority;
+        pool.pending_authority = Pubkey::default();
+        pool.attestor = g.attestor;
+        pool.require_sgt = g.require_sgt;
+        pool.validate()?;
+        emit!(CrewSynced {
+            pool: pool.key(),
+            crew_id: pool.crew_id,
+            authority: pool.authority,
+            attestor: pool.attestor,
             require_sgt: pool.require_sgt,
         });
         Ok(())
@@ -193,7 +298,9 @@ pub mod fitr_vault {
         goal_target: u32,
     ) -> Result<()> {
         let pool = &ctx.accounts.pool;
-        require!(!pool.paused, VaultError::Paused);
+        // The global pool's state is read live, so pausing it stops every crew too (audit CREW-1).
+        let global = &ctx.accounts.global_pool;
+        require!(!pool.paused && !global.paused, VaultError::Paused);
         let (len, offset) = (pool.day_length_secs, pool.day_offset_secs);
         let now = Clock::get()?.unix_timestamp;
         let today = math::day_index_at(now, offset, len)?;
@@ -214,11 +321,13 @@ pub mod fitr_vault {
             goal_target >= limits.min && goal_target <= limits.max,
             VaultError::GoalOutOfBounds
         );
+        // A crew with a fixed exercise/goal only accepts that exact challenge.
+        require!(pool.crew_allows(exercise, goal_target), VaultError::CrewGoalMismatch);
 
         // --- Sybil gate: one commitment per Seeker device per day ---
         let user_key = ctx.accounts.user.key();
         let mut device_key = Pubkey::default();
-        if pool.require_sgt {
+        if pool.require_sgt || global.require_sgt {
             let (Some(sgt_token), Some(device)) = (&ctx.accounts.sgt_token, &mut ctx.accounts.device)
             else {
                 return err!(VaultError::SgtRequired);
@@ -251,10 +360,14 @@ pub mod fitr_vault {
                 .ok_or(VaultError::MathOverflow)?;
             // Trust snapshot: rotating the attestor, opening the sponsor tap or changing the
             // review window mid-day can never affect a day that already has stakes.
-            day.attestor = pool.attestor;
+            // Every day (crew days included) snapshots the GLOBAL pool's current attestor, so one
+            // global rotation reaches every crew day created afterwards (audit CREW-1).
+            day.attestor = global.attestor;
             day.sponsor_cap = pool.daily_sponsor_amount;
             day.finalize_delay_secs = pool.finalize_delay_secs;
             day.paused_secs_base = pool.total_paused_secs; // commit requires !paused
+            day.global_paused_secs_base = if pool.is_crew() { global.total_paused_secs } else { 0 };
+            day.rollover = 0;
         }
         require!(!day.finalized, VaultError::AlreadyFinalized);
         require!(!day.voided, VaultError::DayVoided);
@@ -324,12 +437,13 @@ pub mod fitr_vault {
         session_started_at: i64,
     ) -> Result<()> {
         let pool = &ctx.accounts.pool;
-        require!(!pool.paused, VaultError::Paused);
+        let global = &ctx.accounts.global_pool;
+        require!(!pool.paused && !global.paused, VaultError::Paused);
         let now = Clock::get()?.unix_timestamp;
         let day = &mut ctx.accounts.day;
         require!(!day.finalized, VaultError::AlreadyFinalized);
         require!(!day.voided, VaultError::DayVoided);
-        require!(now <= day.effective_attest_deadline(pool, now)?, VaultError::AttestWindowClosed);
+        require!(now <= day.effective_attest_deadline(pool, global, now)?, VaultError::AttestWindowClosed);
 
         let c = &mut ctx.accounts.commitment;
         require!(c.status == CommitmentStatus::Committed, VaultError::InvalidCommitmentState);
@@ -387,14 +501,16 @@ pub mod fitr_vault {
     pub fn revoke_completion(ctx: Context<RevokeCompletion>, day_index: u32) -> Result<()> {
         let now = Clock::get()?.unix_timestamp;
         let pool = &ctx.accounts.pool;
-        require!(
-            !pool.paused || ctx.accounts.signer.key() == pool.authority,
-            VaultError::Paused
-        );
+        let global = &ctx.accounts.global_pool;
+        let signer = ctx.accounts.signer.key();
+        // The global authority can always act on crews (it may have rotated before sync_crew ran).
+        let is_authority = signer == pool.authority || signer == global.authority;
+        require!(is_authority || signer == ctx.accounts.day.attestor, VaultError::NotAuthority);
+        require!((!pool.paused && !global.paused) || is_authority, VaultError::Paused);
         let day = &mut ctx.accounts.day;
         require!(!day.finalized, VaultError::AlreadyFinalized);
         require!(!day.voided, VaultError::DayVoided);
-        require!(now <= day.effective_attest_deadline(pool, now)?, VaultError::AttestWindowClosed);
+        require!(now <= day.effective_attest_deadline(pool, global, now)?, VaultError::AttestWindowClosed);
         let c = &mut ctx.accounts.commitment;
         require!(c.status == CommitmentStatus::Completed, VaultError::InvalidCommitmentState);
         day.completed_count = day.completed_count.checked_sub(1).ok_or(VaultError::MathOverflow)?;
@@ -421,13 +537,15 @@ pub mod fitr_vault {
     /// can never forfeit users whose attestation was pending; the authority voids or unpauses.
     /// Fixes the day's bonus pool.
     pub fn finalize_day(ctx: Context<FinalizeDay>, day_index: u32) -> Result<()> {
+        let global = &ctx.accounts.global_pool;
+        let global_paused = global.paused;
         let pool = &mut ctx.accounts.pool;
-        require!(!pool.paused, VaultError::Paused);
+        require!(!pool.paused && !global_paused, VaultError::Paused);
         let day = &mut ctx.accounts.day;
         require!(!day.finalized, VaultError::AlreadyFinalized);
         require!(!day.voided, VaultError::DayVoided);
         let now = Clock::get()?.unix_timestamp;
-        require!(now > day.finalize_after(pool, now)?, VaultError::DayNotOver);
+        require!(now > day.finalize_after(pool, global, now)?, VaultError::DayNotOver);
 
         let f = math::finalize_math(
             day.total_staked,
@@ -437,13 +555,18 @@ pub mod fitr_vault {
             day.fee_bps,
             day.sponsor_cap,
             pool.reserve,
+            pool.rollover,
+            pool.is_crew(),
         )?;
-        // outstanding: -fee (to treasury) -to_reserve (to reserve) +sponsor (from reserve)
+        // outstanding: -fee (to treasury) -to_reserve / -to_rollover (parked)
+        //              +sponsor (from reserve) +rollover_in (crew rollover released into this day)
         pool.outstanding = pool
             .outstanding
             .checked_sub(f.fee)
             .and_then(|v| v.checked_sub(f.to_reserve))
+            .and_then(|v| v.checked_sub(f.to_rollover))
             .and_then(|v| v.checked_add(f.sponsor))
+            .and_then(|v| v.checked_add(f.rollover_in))
             .ok_or(VaultError::MathOverflow)?;
         pool.treasury_accrued = pool.treasury_accrued.checked_add(f.fee).ok_or(VaultError::MathOverflow)?;
         pool.reserve = pool
@@ -451,8 +574,14 @@ pub mod fitr_vault {
             .checked_sub(f.sponsor)
             .and_then(|v| v.checked_add(f.to_reserve))
             .ok_or(VaultError::MathOverflow)?;
+        pool.rollover = pool
+            .rollover
+            .checked_sub(f.rollover_in)
+            .and_then(|v| v.checked_add(f.to_rollover))
+            .ok_or(VaultError::MathOverflow)?;
         day.fee = f.fee;
         day.sponsor = f.sponsor;
+        day.rollover = f.rollover_in;
         day.distributable = f.distributable;
         day.finalized = true;
         emit!(DayFinalized {
@@ -466,6 +595,8 @@ pub mod fitr_vault {
             sponsor: f.sponsor,
             distributable: f.distributable,
             to_reserve: f.to_reserve,
+            rollover_in: f.rollover_in,
+            to_rollover: f.to_rollover,
         });
         Ok(())
     }
@@ -502,8 +633,9 @@ pub mod fitr_vault {
         let payout = principal.checked_add(bonus).ok_or(VaultError::MathOverflow)?;
 
         let mint_key = ctx.accounts.mint.key();
+        let crew = ctx.accounts.pool.crew_seed();
         let bump = [ctx.accounts.pool.bump];
-        let signer_seeds: &[&[&[u8]]] = &[&[POOL_SEED, mint_key.as_ref(), &bump]];
+        let signer_seeds: &[&[&[u8]]] = &[&[POOL_SEED, mint_key.as_ref(), &crew, &bump]];
         token_interface::transfer_checked(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
@@ -567,15 +699,23 @@ pub mod fitr_vault {
         };
         let pool = &mut ctx.accounts.pool;
         pool.outstanding = pool.outstanding.checked_sub(dust).ok_or(VaultError::InsolventVault)?;
-        pool.reserve = pool.reserve.checked_add(dust).ok_or(VaultError::MathOverflow)?;
+        // Crew dust joins the crew rollover (it has an outlet); global dust joins the reserve.
+        if pool.is_crew() {
+            pool.rollover = pool.rollover.checked_add(dust).ok_or(VaultError::MathOverflow)?;
+        } else {
+            pool.reserve = pool.reserve.checked_add(dust).ok_or(VaultError::MathOverflow)?;
+        }
         emit!(DaySwept { pool: pool.key(), day_index, dust });
         Ok(())
     }
 
-    /// Anyone (sponsor) can top up the reserve. Only drawn via each day's sponsor_cap snapshot of
-    /// daily_sponsor_amount (0 by default, never above max_stake).
+    /// Anyone (sponsor) can top up the reserve of any pool, global or crew ("sponsored days").
+    /// Only drawn via each day's sponsor_cap snapshot of that pool's daily_sponsor_amount (never
+    /// above max_stake), into days that have at least one completer. Rejected while that pool's
+    /// tap is 0, so a deposit can never sit in a reserve that nothing draws from (audit CREW-2).
     pub fn fund_reserve(ctx: Context<FundReserve>, amount: u64) -> Result<()> {
         require!(amount > 0, VaultError::InvalidConfig);
+        require!(ctx.accounts.pool.daily_sponsor_amount > 0, VaultError::SponsorTapClosed);
         token_interface::transfer_checked(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
@@ -591,7 +731,14 @@ pub mod fitr_vault {
         )?;
         let pool = &mut ctx.accounts.pool;
         pool.reserve = pool.reserve.checked_add(amount).ok_or(VaultError::MathOverflow)?;
-        emit!(ReserveFunded { pool: pool.key(), funder: ctx.accounts.funder.key(), amount });
+        emit!(ReserveFunded {
+            pool: pool.key(),
+            funder: ctx.accounts.funder.key(),
+            amount,
+            crew_id: pool.crew_id,
+            reserve: pool.reserve,
+            daily_sponsor_amount: pool.daily_sponsor_amount,
+        });
         Ok(())
     }
 
@@ -599,8 +746,9 @@ pub mod fitr_vault {
     pub fn withdraw_treasury(ctx: Context<WithdrawTreasury>, amount: u64) -> Result<()> {
         require!(amount <= ctx.accounts.pool.treasury_accrued, VaultError::InsufficientFunds);
         let mint_key = ctx.accounts.mint.key();
+        let crew = ctx.accounts.pool.crew_seed();
         let bump = [ctx.accounts.pool.bump];
-        let signer_seeds: &[&[&[u8]]] = &[&[POOL_SEED, mint_key.as_ref(), &bump]];
+        let signer_seeds: &[&[&[u8]]] = &[&[POOL_SEED, mint_key.as_ref(), &crew, &bump]];
         token_interface::transfer_checked(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
@@ -621,6 +769,7 @@ pub mod fitr_vault {
         let liabilities = pool
             .outstanding
             .checked_add(pool.reserve)
+            .and_then(|v| v.checked_add(pool.rollover))
             .and_then(|v| v.checked_add(pool.treasury_accrued))
             .ok_or(VaultError::MathOverflow)?;
         require!(ctx.accounts.vault.amount >= liabilities, VaultError::InsolventVault);

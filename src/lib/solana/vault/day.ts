@@ -31,6 +31,11 @@ export interface DayConfig {
   finalizeDelaySecs?: number;
   /** Pool pause accounting; absent means "never paused". */
   pause?: PauseState;
+  /**
+   * Crew pools only: the GLOBAL pool's pause accounting. A global pause blocks every crew and
+   * extends crew days' attest windows too (SPEC §2.7, §3). Absent for the global pool itself.
+   */
+  globalPause?: PauseState;
 }
 
 export class DayMathError extends Error {}
@@ -54,6 +59,28 @@ export function dayConfigFromPool(
     };
   }
   return cfg;
+}
+
+/** Adds the global pool's pause state to a crew pool's DayConfig (no-op for the global pool). */
+export function withGlobalPause(
+  c: DayConfig,
+  global: Pick<Pool, "paused" | "pausedSince" | "totalPausedSecs">,
+  isCrew: boolean,
+): DayConfig {
+  if (!isCrew) return c;
+  return {
+    ...c,
+    globalPause: {
+      paused: global.paused,
+      pausedSince: Number(global.pausedSince),
+      totalPausedSecs: Number(global.totalPausedSecs),
+    },
+  };
+}
+
+/** True while commit / attest / finalize are blocked: the pool's own pause or a global pause. */
+export function isBlockedByPause(c: DayConfig): boolean {
+  return Boolean(c.pause?.paused || c.globalPause?.paused);
 }
 
 /** floor((ts - offset) / len). Throws (like ClockBeforeOffset) when ts < offset. */
@@ -91,22 +118,30 @@ export function attestDeadline(d: number, c: DayConfig): number {
 
 /** Seconds the pool has been paused in total at `nowSecs` (including an ongoing pause). */
 export function pausedSecsTotal(c: DayConfig, nowSecs: number): number {
-  const p = c.pause;
+  return pauseTotal(c.pause, nowSecs);
+}
+
+function pauseTotal(p: PauseState | undefined, nowSecs: number): number {
   if (!p) return 0;
   return p.totalPausedSecs + (p.paused ? Math.max(0, nowSecs - p.pausedSince) : 0);
 }
 
 /** The DayState fields that fix a live day's windows (SPEC §3). */
 export type DayWindowSnapshot = Pick<DayState, "attestDeadline"> &
-  Partial<Pick<DayState, "finalizeDelaySecs" | "pausedSecsBase">>;
+  Partial<Pick<DayState, "finalizeDelaySecs" | "pausedSecsBase" | "globalPausedSecsBase">>;
 
 /**
  * Last second (inclusive) attest/revoke are accepted for a live day: its snapshotted deadline
- * pushed back by the time the pool spent paused since the day was created.
+ * pushed back by the time the pool (and, for a crew day, the global pool) spent paused since the
+ * day was created. Mirrors DayState::effective_attest_deadline.
  */
 export function effectiveDeadlineOf(ds: DayWindowSnapshot, c: DayConfig, nowSecs: number): number {
   const base = Number(ds.pausedSecsBase ?? 0);
-  return Number(ds.attestDeadline) + Math.max(0, pausedSecsTotal(c, nowSecs) - base);
+  const own = Math.max(0, pausedSecsTotal(c, nowSecs) - base);
+  const global = c.globalPause
+    ? Math.max(0, pauseTotal(c.globalPause, nowSecs) - Number(ds.globalPausedSecsBase ?? 0))
+    : 0;
+  return Number(ds.attestDeadline) + own + global;
 }
 
 /** finalize_day is accepted once now > this (and the pool is not paused). */
@@ -115,10 +150,11 @@ export function finalizeAfterOf(ds: DayWindowSnapshot, c: DayConfig, nowSecs: nu
 }
 
 /** The rules a day created now would snapshot (no DayState yet). */
-function currentRules(c: DayConfig): Pick<DayState, "finalizeDelaySecs" | "pausedSecsBase"> {
+function currentRules(c: DayConfig): Pick<DayState, "finalizeDelaySecs" | "pausedSecsBase" | "globalPausedSecsBase"> {
   return {
     finalizeDelaySecs: BigInt(c.finalizeDelaySecs ?? 0),
     pausedSecsBase: BigInt(c.pause?.totalPausedSecs ?? 0),
+    globalPausedSecsBase: BigInt(c.globalPause?.totalPausedSecs ?? 0),
   };
 }
 
@@ -133,7 +169,7 @@ export function canFinalizeAt(
   nowSecs: number,
   snapshot?: number | bigint | DayWindowSnapshot,
 ): boolean {
-  if (c.pause?.paused) return false;
+  if (isBlockedByPause(c)) return false;
   const ds: DayWindowSnapshot =
     snapshot === undefined
       ? { attestDeadline: BigInt(attestDeadline(d, c)), ...currentRules(c) }

@@ -48,7 +48,7 @@ import {
 import {
   findCommitmentPda,
   findDayPda,
-  findPoolPda,
+  findGlobalPoolPda,
   findProfilePda,
 } from "../pdas";
 import { FITR_VAULT_PROGRAM_ADDRESS } from "../programs";
@@ -83,6 +83,7 @@ export type CommitInstruction<
     "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
   TAccountSystemProgram extends string | AccountMeta<string> =
     "11111111111111111111111111111111",
+  TAccountGlobalPool extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -122,6 +123,9 @@ export type CommitInstruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
+      TAccountGlobalPool extends string
+        ? ReadonlyAccount<TAccountGlobalPool>
+        : TAccountGlobalPool,
       ...TRemainingAccounts,
     ]
   >;
@@ -189,9 +193,10 @@ export type CommitAsyncInput<
     InstructionAccountInput,
   TAccountSystemProgram extends InstructionAccountInput =
     InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput = InstructionAccountInput,
 > = {
   user: TAccountUser;
-  pool?: TAccountPool;
+  pool: TAccountPool;
   mint: TAccountMint;
   userToken: TAccountUserToken;
   vault: TAccountVault;
@@ -209,6 +214,12 @@ export type CommitAsyncInput<
   device?: TAccountDevice;
   tokenProgram?: TAccountTokenProgram;
   systemProgram?: TAccountSystemProgram;
+  /**
+   * The global pool (crew_id 0) of `mint`, read live: its pause is a mint-wide kill switch, its
+   * attestor is the one every new day snapshots, and its require_sgt also gates crews (audit
+   * CREW-1). For a commit into the global pool this is the same account as `pool`.
+   */
+  globalPool?: TAccountGlobalPool;
   dayIndex: CommitInstructionDataArgs["dayIndex"];
   amount: CommitInstructionDataArgs["amount"];
   exercise: CommitInstructionDataArgs["exercise"];
@@ -228,6 +239,7 @@ export async function getCommitInstructionAsync<
   TAccountDevice extends InstructionAccountInput,
   TAccountTokenProgram extends InstructionAccountInput,
   TAccountSystemProgram extends InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput,
   TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
 >(
   input: CommitAsyncInput<
@@ -242,7 +254,8 @@ export async function getCommitInstructionAsync<
     TAccountSgtToken,
     TAccountDevice,
     TAccountTokenProgram,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountGlobalPool
   >,
   config?: { programAddress?: TProgramAddress },
 ): Promise<
@@ -295,6 +308,10 @@ export async function getCommitInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountSystemProgram,
       InstructionAccountInputAddress<TAccountSystemProgram>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >
 > {
@@ -342,6 +359,11 @@ export async function getCommitInstructionAsync<
       isSigner: false,
       isWritable: false,
     },
+    globalPool: {
+      value: input.globalPool ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -352,17 +374,6 @@ export async function getCommitInstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
-  if (!accounts.pool.value) {
-    accounts.pool.value = await findPoolPda(
-      {
-        mint: getAddressFromResolvedInstructionAccount(
-          "mint",
-          accounts.mint.value,
-        ),
-      },
-      { programAddress },
-    );
-  }
   if (!accounts.day.value) {
     accounts.day.value = await findDayPda(
       {
@@ -414,6 +425,17 @@ export async function getCommitInstructionAsync<
     accounts.systemProgram.value =
       "11111111111111111111111111111111" as Address<"11111111111111111111111111111111">;
   }
+  if (!accounts.globalPool.value) {
+    accounts.globalPool.value = await findGlobalPoolPda(
+      {
+        mint: getAddressFromResolvedInstructionAccount(
+          "mint",
+          accounts.mint.value,
+        ),
+      },
+      { programAddress },
+    );
+  }
 
   return Object.freeze({
     accounts: [
@@ -429,6 +451,7 @@ export async function getCommitInstructionAsync<
       getAccountMeta("device", accounts.device),
       getAccountMeta("tokenProgram", accounts.tokenProgram),
       getAccountMeta("systemProgram", accounts.systemProgram),
+      getAccountMeta("globalPool", accounts.globalPool),
     ],
     data: getCommitInstructionDataEncoder().encode(
       args as CommitInstructionDataArgs,
@@ -483,6 +506,10 @@ export async function getCommitInstructionAsync<
     ResolvedInstructionAccountMeta<
       TAccountSystemProgram,
       InstructionAccountInputAddress<TAccountSystemProgram>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >);
 }
@@ -502,6 +529,7 @@ export type CommitInput<
     InstructionAccountInput,
   TAccountSystemProgram extends InstructionAccountInput =
     InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput = InstructionAccountInput,
 > = {
   user: TAccountUser;
   pool: TAccountPool;
@@ -522,6 +550,12 @@ export type CommitInput<
   device?: TAccountDevice;
   tokenProgram?: TAccountTokenProgram;
   systemProgram?: TAccountSystemProgram;
+  /**
+   * The global pool (crew_id 0) of `mint`, read live: its pause is a mint-wide kill switch, its
+   * attestor is the one every new day snapshots, and its require_sgt also gates crews (audit
+   * CREW-1). For a commit into the global pool this is the same account as `pool`.
+   */
+  globalPool: TAccountGlobalPool;
   dayIndex: CommitInstructionDataArgs["dayIndex"];
   amount: CommitInstructionDataArgs["amount"];
   exercise: CommitInstructionDataArgs["exercise"];
@@ -541,6 +575,7 @@ export function getCommitInstruction<
   TAccountDevice extends InstructionAccountInput,
   TAccountTokenProgram extends InstructionAccountInput,
   TAccountSystemProgram extends InstructionAccountInput,
+  TAccountGlobalPool extends InstructionAccountInput,
   TProgramAddress extends Address = typeof FITR_VAULT_PROGRAM_ADDRESS,
 >(
   input: CommitInput<
@@ -555,7 +590,8 @@ export function getCommitInstruction<
     TAccountSgtToken,
     TAccountDevice,
     TAccountTokenProgram,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountGlobalPool
   >,
   config?: { programAddress?: TProgramAddress },
 ): CommitInstruction<
@@ -607,6 +643,10 @@ export function getCommitInstruction<
   ResolvedInstructionAccountMeta<
     TAccountSystemProgram,
     InstructionAccountInputAddress<TAccountSystemProgram>
+  >,
+  ResolvedInstructionAccountMeta<
+    TAccountGlobalPool,
+    InstructionAccountInputAddress<TAccountGlobalPool>
   >
 > {
   // Program address.
@@ -653,6 +693,11 @@ export function getCommitInstruction<
       isSigner: false,
       isWritable: false,
     },
+    globalPool: {
+      value: input.globalPool ?? null,
+      isSigner: false,
+      isWritable: false,
+    },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -686,6 +731,7 @@ export function getCommitInstruction<
       getAccountMeta("device", accounts.device),
       getAccountMeta("tokenProgram", accounts.tokenProgram),
       getAccountMeta("systemProgram", accounts.systemProgram),
+      getAccountMeta("globalPool", accounts.globalPool),
     ],
     data: getCommitInstructionDataEncoder().encode(
       args as CommitInstructionDataArgs,
@@ -740,6 +786,10 @@ export function getCommitInstruction<
     ResolvedInstructionAccountMeta<
       TAccountSystemProgram,
       InstructionAccountInputAddress<TAccountSystemProgram>
+    >,
+    ResolvedInstructionAccountMeta<
+      TAccountGlobalPool,
+      InstructionAccountInputAddress<TAccountGlobalPool>
     >
   >);
 }
@@ -769,6 +819,12 @@ export type ParsedCommitInstruction<
     device?: TAccountMetas[9] | undefined;
     tokenProgram: TAccountMetas[10];
     systemProgram: TAccountMetas[11];
+    /**
+     * The global pool (crew_id 0) of `mint`, read live: its pause is a mint-wide kill switch, its
+     * attestor is the one every new day snapshots, and its require_sgt also gates crews (audit
+     * CREW-1). For a commit into the global pool this is the same account as `pool`.
+     */
+    globalPool: TAccountMetas[12];
   };
   data: CommitInstructionData;
 };
@@ -781,12 +837,12 @@ export function parseCommitInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>,
 ): ParsedCommitInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 12) {
+  if (instruction.accounts.length < 13) {
     throw new SolanaError(
       SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS,
       {
         actualAccountMetas: instruction.accounts.length,
-        expectedAccountMetas: 12,
+        expectedAccountMetas: 13,
       },
     );
   }
@@ -817,6 +873,7 @@ export function parseCommitInstruction<
       device: getNextOptionalAccount(),
       tokenProgram: getNextAccount(),
       systemProgram: getNextAccount(),
+      globalPool: getNextAccount(),
     },
     data: getCommitInstructionDataDecoder().decode(instruction.data),
   };

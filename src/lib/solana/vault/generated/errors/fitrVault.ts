@@ -72,12 +72,19 @@ export const FITR_VAULT_ERROR__UNSUPPORTED_MINT_DECIMALS = 0x178a; // 6026
 export const FITR_VAULT_ERROR__NOT_UPGRADE_AUTHORITY = 0x178b; // 6027
 /** InvalidDestination: Destination token account must not be the vault */
 export const FITR_VAULT_ERROR__INVALID_DESTINATION = 0x178c; // 6028
+/** CrewGoalMismatch: Commitment does not match the crew's fixed exercise or goal */
+export const FITR_VAULT_ERROR__CREW_GOAL_MISMATCH = 0x178d; // 6029
+/** InvalidCrew: Invalid crew: crew_id 0, empty or non-UTF-8 name, or a fixed goal without a fixed exercise */
+export const FITR_VAULT_ERROR__INVALID_CREW = 0x178e; // 6030
+/** SponsorTapClosed: This pool's sponsor tap is closed (daily_sponsor_amount is 0): a deposit would never be drawn */
+export const FITR_VAULT_ERROR__SPONSOR_TAP_CLOSED = 0x178f; // 6031
 
 export type FitrVaultError =
   | typeof FITR_VAULT_ERROR__ALREADY_FINALIZED
   | typeof FITR_VAULT_ERROR__ATTEST_WINDOW_CLOSED
   | typeof FITR_VAULT_ERROR__CLOCK_BEFORE_OFFSET
   | typeof FITR_VAULT_ERROR__COMMIT_WINDOW_CLOSED
+  | typeof FITR_VAULT_ERROR__CREW_GOAL_MISMATCH
   | typeof FITR_VAULT_ERROR__DAY_NOT_OVER
   | typeof FITR_VAULT_ERROR__DAY_NOT_RESOLVED
   | typeof FITR_VAULT_ERROR__DAY_VOIDED
@@ -88,6 +95,7 @@ export type FitrVaultError =
   | typeof FITR_VAULT_ERROR__INSUFFICIENT_FUNDS
   | typeof FITR_VAULT_ERROR__INVALID_COMMITMENT_STATE
   | typeof FITR_VAULT_ERROR__INVALID_CONFIG
+  | typeof FITR_VAULT_ERROR__INVALID_CREW
   | typeof FITR_VAULT_ERROR__INVALID_DAY
   | typeof FITR_VAULT_ERROR__INVALID_DESTINATION
   | typeof FITR_VAULT_ERROR__INVALID_SESSION_TIME
@@ -100,6 +108,7 @@ export type FitrVaultError =
   | typeof FITR_VAULT_ERROR__NOT_UPGRADE_AUTHORITY
   | typeof FITR_VAULT_ERROR__PAUSED
   | typeof FITR_VAULT_ERROR__SGT_REQUIRED
+  | typeof FITR_VAULT_ERROR__SPONSOR_TAP_CLOSED
   | typeof FITR_VAULT_ERROR__STAKE_OUT_OF_BOUNDS
   | typeof FITR_VAULT_ERROR__UNSUPPORTED_MINT_DECIMALS
   | typeof FITR_VAULT_ERROR__UNSUPPORTED_MINT_EXTENSION;
@@ -111,6 +120,7 @@ if (process.env["NODE_ENV"] !== "production") {
     [FITR_VAULT_ERROR__ATTEST_WINDOW_CLOSED]: `Attestation window for this day has closed`,
     [FITR_VAULT_ERROR__CLOCK_BEFORE_OFFSET]: `Clock value is before the pool day offset`,
     [FITR_VAULT_ERROR__COMMIT_WINDOW_CLOSED]: `Commit window for this day has closed`,
+    [FITR_VAULT_ERROR__CREW_GOAL_MISMATCH]: `Commitment does not match the crew's fixed exercise or goal`,
     [FITR_VAULT_ERROR__DAY_NOT_OVER]: `Day cannot be finalized before the attestation deadline`,
     [FITR_VAULT_ERROR__DAY_NOT_RESOLVED]: `Not all commitments for this day are resolved`,
     [FITR_VAULT_ERROR__DAY_VOIDED]: `Day has been voided`,
@@ -121,6 +131,7 @@ if (process.env["NODE_ENV"] !== "production") {
     [FITR_VAULT_ERROR__INSUFFICIENT_FUNDS]: `Amount exceeds available balance`,
     [FITR_VAULT_ERROR__INVALID_COMMITMENT_STATE]: `Commitment is not in the required state`,
     [FITR_VAULT_ERROR__INVALID_CONFIG]: `Config value out of bounds`,
+    [FITR_VAULT_ERROR__INVALID_CREW]: `Invalid crew: crew_id 0, empty or non-UTF-8 name, or a fixed goal without a fixed exercise`,
     [FITR_VAULT_ERROR__INVALID_DAY]: `Day index is not today or tomorrow`,
     [FITR_VAULT_ERROR__INVALID_DESTINATION]: `Destination token account must not be the vault`,
     [FITR_VAULT_ERROR__INVALID_SESSION_TIME]: `Session timestamp is outside the allowed window`,
@@ -133,6 +144,7 @@ if (process.env["NODE_ENV"] !== "production") {
     [FITR_VAULT_ERROR__NOT_UPGRADE_AUTHORITY]: `Signer is not the program upgrade authority`,
     [FITR_VAULT_ERROR__PAUSED]: `Pool is paused`,
     [FITR_VAULT_ERROR__SGT_REQUIRED]: `Seeker Genesis Token required`,
+    [FITR_VAULT_ERROR__SPONSOR_TAP_CLOSED]: `This pool's sponsor tap is closed (daily_sponsor_amount is 0): a deposit would never be drawn`,
     [FITR_VAULT_ERROR__STAKE_OUT_OF_BOUNDS]: `Stake amount is outside the pool's min/max stake`,
     [FITR_VAULT_ERROR__UNSUPPORTED_MINT_DECIMALS]: `Stake mint has more decimals than supported`,
     [FITR_VAULT_ERROR__UNSUPPORTED_MINT_EXTENSION]: `Mint has a Token-2022 extension this vault does not support`,

@@ -63,4 +63,12 @@ pub enum VaultError {
     NotUpgradeAuthority,
     #[msg("Destination token account must not be the vault")]
     InvalidDestination,
+    // ---- crews: append only ----
+    #[msg("Commitment does not match the crew's fixed exercise or goal")]
+    CrewGoalMismatch,
+    #[msg("Invalid crew: crew_id 0, empty or non-UTF-8 name, or a fixed goal without a fixed exercise")]
+    InvalidCrew,
+    // ---- crews hardening: append only ----
+    #[msg("This pool's sponsor tap is closed (daily_sponsor_amount is 0): a deposit would never be drawn")]
+    SponsorTapClosed,
 }

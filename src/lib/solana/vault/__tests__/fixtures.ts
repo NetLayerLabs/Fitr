@@ -53,7 +53,14 @@ export function makePool(over: Partial<Pool> = {}): Pool {
     finalizeDelaySecs: 0n,
     pausedSince: 0n,
     totalPausedSecs: 0n,
-    reserved: new Uint8Array(64),
+    crewId: 0n,
+    creator: ZERO,
+    name: new Uint8Array(32),
+    hasFixedExercise: false,
+    fixedExercise: Exercise.Pushup,
+    fixedGoalTarget: 0,
+    rollover: 0n,
+    reserved: new Uint8Array(56),
     ...over,
   };
 }
@@ -89,7 +96,9 @@ export function makeDayState(day: number, over: Partial<DayState> = {}, pool: Ad
     pausedSecsBase: 0n,
     revokedCount: 0,
     revokedStake: 0n,
-    reserved: new Uint8Array(32),
+    globalPausedSecsBase: 0n,
+    rollover: 0n,
+    reserved: new Uint8Array(16),
     ...over,
   };
 }

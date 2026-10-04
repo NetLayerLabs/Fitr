@@ -73,6 +73,7 @@ describe("commit instruction", () => {
       FITR_VAULT_PROGRAM_ADDRESS,
       TOKEN_PROGRAM_ADDRESS,
       address("11111111111111111111111111111111"),
+      pool, // global_pool: the global pool commits into itself
     ]);
     expect(signerAddresses([ix])).toEqual([USER]);
   });
@@ -149,7 +150,7 @@ describe("compute units", () => {
     expect(estimateComputeUnits({ commit })).toBe(120_000);
     expect(
       estimateComputeUnits({ settle: { day: 1, kind: "claim", needsFinalize: true }, commit, registerDevice: true }),
-    ).toBe(Math.ceil((10_200 + 31_100 + 58_700 + 21_200) * 1.2));
+    ).toBe(Math.ceil((16_100 + 31_100 + 60_000 + 21_200) * 1.2));
   });
 
   it("right-sizes from simulation", () => {
@@ -164,11 +165,11 @@ describe("attest instruction (server)", () => {
   it("has the attestor as its only signer and rejects bad hashes", async () => {
     const attestor = createNoopSigner(address("GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te"));
     const { pool } = await getPoolAddresses(MINT);
-    const ix = await buildAttestIx({ attestor, pool, user: USER, dayIndex: D0, reps: 21, sessionHash: new Uint8Array(32), sessionStartedAt: 1 });
+    const ix = await buildAttestIx({ attestor, pool, globalPool: pool, user: USER, dayIndex: D0, reps: 21, sessionHash: new Uint8Array(32), sessionStartedAt: 1 });
     expect(signerAddresses([ix])).toEqual([attestor.address]);
     expect(ix.accounts!.some((a) => a.address === USER)).toBe(true);
     await expect(
-      buildAttestIx({ attestor, pool, user: USER, dayIndex: D0, reps: 1, sessionHash: new Uint8Array(31), sessionStartedAt: 1 }),
+      buildAttestIx({ attestor, pool, globalPool: pool, user: USER, dayIndex: D0, reps: 1, sessionHash: new Uint8Array(31), sessionStartedAt: 1 }),
     ).rejects.toThrow(/32 bytes/);
     expect(getAddressEncoder().encode(USER)).toHaveLength(32);
   });

@@ -13,6 +13,8 @@ import {
   dayStart,
   DayMathError,
   toUnixSecs,
+  isBlockedByPause,
+  withGlobalPause,
   type DayConfig,
 } from "../day";
 import { D0, T0, makePool } from "./fixtures";
@@ -126,5 +128,33 @@ describe("windows", () => {
 
   it("toUnixSecs floors milliseconds", () => {
     expect(toUnixSecs(1_790_294_400_999)).toBe(T0);
+  });
+});
+
+describe("crew days and the global pause (SPEC §2.7, mirrors DayState::pause_extension)", () => {
+  const ds = { attestDeadline: 1_000n, finalizeDelaySecs: 10n, pausedSecsBase: 0n, globalPausedSecsBase: 0n };
+  const base = { ...cfg(DAY), pause: { paused: false, pausedSince: 0, totalPausedSecs: 0 } };
+
+  it("adds global pause time to crew days only", () => {
+    const g = { paused: true, pausedSince: 100n, totalPausedSecs: 0n };
+    const crew = withGlobalPause(base, g, true);
+    expect(effectiveDeadlineOf(ds, crew, 150)).toBe(1_050);
+    expect(isBlockedByPause(crew)).toBe(true);
+    expect(canFinalizeAt(0, crew, 10_000, ds)).toBe(false);
+    // the global pool's own config is untouched
+    expect(withGlobalPause(base, g, false)).toBe(base);
+    expect(effectiveDeadlineOf(ds, base, 150)).toBe(1_000);
+  });
+
+  it("counts only global pauses after the day's snapshot, plus the crew's own", () => {
+    const crew = withGlobalPause(
+      { ...base, pause: { paused: false, pausedSince: 0, totalPausedSecs: 50 } },
+      { paused: false, pausedSince: 0n, totalPausedSecs: 200n },
+      true,
+    );
+    expect(effectiveDeadlineOf(ds, crew, 500)).toBe(1_250);
+    expect(effectiveDeadlineOf({ ...ds, globalPausedSecsBase: 200n }, crew, 500)).toBe(1_050);
+    expect(finalizeAfterOf(ds, crew, 500)).toBe(1_260);
+    expect(canFinalizeAt(0, crew, 1_261, ds)).toBe(true);
   });
 });
