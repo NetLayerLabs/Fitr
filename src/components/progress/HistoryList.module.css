@@ -1,0 +1,289 @@
+.loading {
+  color: var(--text-muted);
+}
+
+/* ---------- Empty state ---------- */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.emptyTitle {
+  font-size: var(--text-xl);
+}
+
+/* Programmatic focus target after "Delete all"; not interactive. */
+.emptyTitle:focus {
+  outline: none;
+}
+
+.emptyText {
+  max-width: 32ch;
+  color: var(--text-muted);
+}
+
+.cta {
+  margin-top: var(--space-2);
+}
+
+/* ---------- Summary ---------- */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+/* The grid stretches the three tiles to one height; the value is pinned to the bottom so the
+   numbers line up even when a label wraps ("Current streak" takes two lines on a 390px phone,
+   more with a larger text size). */
+.summaryTile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.summaryTile dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.summaryTile dd {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-heavy);
+  letter-spacing: var(--tracking-tight);
+}
+
+.summaryUnit {
+  align-self: flex-end;
+  padding-bottom: 5px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.flame {
+  color: var(--accent);
+}
+
+/* ---------- Day groups ---------- */
+
+.days {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dayTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+}
+
+.dayBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+/* Subtitle of the day heading: tucked up under it, quieter than the session rows. */
+.dayTotals {
+  margin-top: calc(var(--space-2) * -1);
+  margin-bottom: var(--space-1);
+  color: var(--text-subtle);
+  font-size: var(--text-xs);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: var(--space-3) var(--space-4);
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.rowIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  color: var(--text-muted);
+}
+
+.rowIcon[data-met] {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.rowBody {
+  min-width: 0;
+}
+
+.rowTitle {
+  font-weight: 700;
+}
+
+.rowMeta {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.rowGoal {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.rowGoal svg {
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+.rowValue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+
+.rowNumber {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+
+.rowUnit {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+/* ---------- Clear history ---------- */
+
+.clearArea {
+  padding-top: var(--space-2);
+}
+
+.clearButton,
+.dangerButton,
+.cancelButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--tap);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+}
+
+.clearButton {
+  color: var(--text-muted);
+}
+
+.clearButton:hover {
+  color: var(--danger);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-lg);
+  background: var(--danger-dim);
+}
+
+.confirmText {
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.confirmActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.dangerButton {
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+  color: var(--on-danger);
+}
+
+.cancelButton {
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-elevated);
+  color: var(--text);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
