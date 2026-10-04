@@ -1,0 +1,27 @@
+[toolchain]
+anchor_version = "0.31.1"
+solana_version = "2.1.0"
+package_manager = "npm"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+fitr_vault = "9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY"
+
+[programs.localnet]
+fitr_vault = "9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY"
+
+[programs.mainnet]
+fitr_vault = "9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "cd programs/fitr-vault && CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS=fallback cargo test"
