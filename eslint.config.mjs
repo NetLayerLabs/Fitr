@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored MediaPipe wasm glue + models, copied by scripts/fetch-pose-assets.mjs (gitignored).
+    "public/mediapipe/**",
+    // Anchor workspace, Android shell and generated vault client are not app source.
+    "anchor/**",
+    "android/**",
+    "src/lib/solana/vault/generated/**",
   ]),
 ]);
 
