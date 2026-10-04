@@ -61,5 +61,5 @@ exit 1
 REMOTE
 
 echo "==> public check"
-curl -fsS -o /dev/null -w "app.fitr.day %{http_code}\n" https://app.fitr.day/
+curl -fsS -o /dev/null -A "Solana Mobile Web Shell FitrApp/deploy-check" -w "app.fitr.day (as the Android app) %{http_code}\n" https://app.fitr.day/
 curl -fsS -o /dev/null -w "fitr.day %{http_code}\n" https://fitr.day/

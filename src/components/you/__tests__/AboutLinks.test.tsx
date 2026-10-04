@@ -11,6 +11,6 @@ describe("AboutLinks", () => {
     expect(screen.getByRole("link", { name: /How verification works/ }).getAttribute("href")).toBe("/you/verification");
     expect(screen.getByRole("link", { name: /Privacy/ }).getAttribute("href")).toBe("/you/privacy");
     expect(screen.getByRole("link", { name: /Credits & licenses/ }).getAttribute("href")).toBe("/you/credits");
-    expect(screen.getByText("Fitr version 1.2.3")).toBeTruthy();
+    expect(screen.getByText("Fitr web 1.2.3")).toBeTruthy();
   });
 });

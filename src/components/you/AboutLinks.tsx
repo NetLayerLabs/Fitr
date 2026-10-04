@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRightIcon, LockIcon, ShieldIcon, TrophyIcon } from "@/components/icons/Icons";
+import AppVersion from "./AppVersion";
 import styles from "./You.module.css";
 
 const LINKS = [
@@ -33,7 +34,7 @@ export default function AboutLinks({ version }: { version: string }) {
           </li>
         ))}
       </ul>
-      <p className={styles.version}>Fitr version {version}</p>
+      <AppVersion webVersion={version} />
     </>
   );
 }
