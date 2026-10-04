@@ -2,7 +2,8 @@
 
 .container {
   width: 100%;
-  max-width: calc(1120px + 2 * var(--gutter));
+  /* Half the side whitespace of a fixed 1120px column: the column grows by half of the spare width. */
+  max-width: calc((100% + 1120px) / 2 + 2 * var(--gutter));
   margin-inline: auto;
   padding-inline: calc(var(--safe-left) + var(--gutter)) calc(var(--safe-right) + var(--gutter));
 }
