@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { CheckIcon, ExerciseIcon, FlameIcon, HistoryIcon, TrashIcon } from "@/components/icons/Icons";
+import ExerciseThumb from "@/components/workouts/ExerciseThumb";
+import { CheckIcon, FlameIcon, HistoryIcon, TrashIcon } from "@/components/icons/Icons";
 import Button from "@/components/ui/Button";
 import { formatClock, formatValue, timeOfDayFormat } from "@/components/workout/format";
 import { useHydrated, useNow, useSessions } from "@/hooks/useSessions";
@@ -52,7 +53,7 @@ function SessionRow({ session }: { session: WorkoutSession }) {
   return (
     <li className={styles.row}>
       <span className={styles.rowIcon} data-met={session.goalMet ? "" : undefined}>
-        <ExerciseIcon kind={session.exercise} size={24} />
+        <ExerciseThumb kind={session.exercise} size={44} />
       </span>
       <div className={styles.rowBody}>
         <p className={styles.rowTitle}>{info.name}</p>

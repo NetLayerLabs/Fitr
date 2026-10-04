@@ -1,0 +1,28 @@
+.thumb {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-elevated);
+  box-shadow: inset 0 0 0 1px var(--border-subtle, var(--border));
+}
+
+.icon {
+  color: var(--accent);
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 40%;
+}
+
+/* Floor poses sit low in the square photo: zoom in on the body so it reads at small sizes. */
+.thumb[data-framing="floor"] .img {
+  object-position: 50% 78%;
+  transform: scale(1.55);
+  transform-origin: 50% 70%;
+}

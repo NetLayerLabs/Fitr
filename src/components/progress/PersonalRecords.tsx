@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ExerciseIcon } from "@/components/icons/Icons";
+import ExerciseThumb from "@/components/workouts/ExerciseThumb";
+
 import { formatClock } from "@/components/workout/format";
 import { EXERCISES } from "@/lib/exercises";
 import type { PersonalRecord } from "@/lib/storage/awards";
@@ -24,9 +25,7 @@ export default function PersonalRecords({ records }: { records: readonly Persona
         const timed = r.unit === "seconds";
         return (
           <li key={r.exercise} className={styles.record}>
-            <span className={styles.recordIcon} aria-hidden="true">
-              <ExerciseIcon kind={r.exercise} size={22} />
-            </span>
+            <ExerciseThumb kind={r.exercise} size={40} />
             <div className={styles.recordBody}>
               <p className={styles.recordName}>{info.name}</p>
               <p className={styles.recordMeta}>

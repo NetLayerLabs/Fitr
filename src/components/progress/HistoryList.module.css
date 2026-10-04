@@ -171,14 +171,19 @@
   place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   background: var(--surface-strong);
   color: var(--text-muted);
 }
 
-.rowIcon[data-met] {
-  background: var(--accent-dim);
-  color: var(--accent);
+.rowIcon {
+  overflow: visible;
+  background: transparent;
+}
+
+/* Goal met: lime ring around the exercise photo. */
+.rowIcon[data-met] > * {
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .rowBody {

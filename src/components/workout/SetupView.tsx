@@ -4,6 +4,9 @@ import { ArrowLeftIcon, CameraIcon, ExerciseIcon, PlayIcon, ShieldIcon } from "@
 import { EXERCISES } from "@/lib/exercises";
 import type { ExerciseKind } from "@/lib/pose/types";
 import { formatGoal } from "./format";
+import ArtPhoto from "@/components/workouts/ArtPhoto";
+import { exerciseArt } from "@/lib/exerciseArt";
+import guide from "./FormGuide.module.css";
 import styles from "./WorkoutScreen.module.css";
 
 export type CameraFacing = "user" | "environment";
@@ -47,6 +50,7 @@ export default function SetupView({
   verified = false,
 }: SetupViewProps) {
   const info = EXERCISES[exercise];
+  const art = exerciseArt(exercise);
   const shownGoal = goal ?? info.defaultGoal;
 
   return (
@@ -59,10 +63,20 @@ export default function SetupView({
       </header>
 
       <div className={styles.hero}>
-        <span className={styles.heroIcon} aria-hidden="true">
-          <ExerciseIcon kind={exercise} size={36} />
-        </span>
-        <h1 className={styles.heroTitle}>{info.name}</h1>
+        {art ? (
+          <div className={guide.hero} data-framing={art.framing}>
+            {/* Above the fold: the one eager, high-priority image on this screen. */}
+            <ArtPhoto art={art} priority className={guide.heroPhoto} sizes="(max-width: 600px) 100vw, 600px" />
+            <h1 className={`${styles.heroTitle} ${guide.heroTitle}`}>{info.name}</h1>
+          </div>
+        ) : (
+          <>
+            <span className={styles.heroIcon} aria-hidden="true">
+              <ExerciseIcon kind={exercise} size={36} />
+            </span>
+            <h1 className={styles.heroTitle}>{info.name}</h1>
+          </>
+        )}
         <p className={styles.heroTagline}>{info.tagline}</p>
         <dl className={styles.heroStats}>
           <div className={styles.heroStat}>

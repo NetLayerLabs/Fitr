@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon, ExerciseIcon } from "@/components/icons/Icons";
+import { CheckIcon } from "@/components/icons/Icons";
+import ExerciseThumb from "@/components/workouts/ExerciseThumb";
 import { formatGoal, spokenValue } from "@/components/workout/format";
 import { useHydrated, useNow, useSessions } from "@/hooks/useSessions";
 import { EXERCISE_LIST } from "@/lib/exercises";
@@ -34,9 +35,7 @@ export default function TodayActivity() {
             const hit = value >= info.defaultGoal;
             return (
               <li key={info.kind} className={styles.row}>
-                <span className={styles.icon} aria-hidden="true">
-                  <ExerciseIcon kind={info.kind} size={20} />
-                </span>
+                <ExerciseThumb kind={info.kind} size={36} />
                 <span className={styles.name}>{info.name}</span>
                 <span className={styles.value}>
                   <span aria-hidden="true">{formatGoal(value, info.unit)}</span>

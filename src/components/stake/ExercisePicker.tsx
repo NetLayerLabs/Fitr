@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ExerciseIcon } from "@/components/icons/Icons";
+import ExerciseThumb from "@/components/workouts/ExerciseThumb";
+
 import { Chip, ChipRow } from "@/components/ui/Chip";
 import { categoryLabel, filterExercises, type CategoryFilter } from "@/components/workouts/catalog";
 import { EXERCISE_CATEGORIES, EXERCISES } from "@/lib/exercises";
@@ -41,7 +42,7 @@ export default function ExercisePicker({ value, onChange }: ExercisePickerProps)
               className={`${styles.exercise} ${selected ? styles.exerciseSelected : ""}`}
               onClick={() => onChange(info.kind)}
             >
-              <ExerciseIcon kind={info.kind} size={26} />
+              <ExerciseThumb kind={info.kind} size={40} />
               <span className={styles.exerciseName}>{info.name}</span>
               <span className={styles.exerciseUnit}>{info.unit === "seconds" ? "Timed hold" : "Reps"}</span>
             </button>
