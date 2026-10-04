@@ -1,0 +1,101 @@
+.band {
+  /* Inverted scheme (as in LimeMoment): shared Buttons render black-on-lime. */
+  --bg: var(--lime-400);
+  --surface: var(--lime-300);
+  --surface-elevated: var(--lime-300);
+  --surface-strong: var(--lime-200);
+  --border: var(--on-accent-muted);
+  --border-subtle: var(--on-accent-muted);
+  --border-strong: var(--ink-950);
+  --text: var(--ink-950);
+  --text-muted: var(--on-accent-muted);
+  --text-subtle: var(--on-accent-muted);
+  --accent: var(--ink-950);
+  --accent-hover: var(--ink-850);
+  --accent-pressed: var(--ink-800);
+  --accent-dim: var(--ink-dim);
+  --on-accent: var(--lime-400);
+  --focus-color: var(--ink-950);
+  --shadow-accent: none;
+
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--space-10);
+  background: var(--lime-400);
+  color: var(--ink-950);
+}
+
+/* A giant ring echoing the Fitr mark, cropped off the right edge. */
+.band::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -180px;
+  width: 520px;
+  height: 520px;
+  border: 56px solid rgb(10 11 13 / 0.06);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.band ::selection {
+  background: var(--ink-950);
+  color: var(--lime-400);
+}
+
+.inner {
+  position: relative;
+  display: grid;
+  gap: var(--space-8);
+  align-items: end;
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-heavy);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: var(--space-3);
+  font-size: clamp(2.5rem, 1.5rem + 4.4vw, 4.75rem);
+  font-weight: var(--weight-black);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+}
+
+.lede {
+  margin-top: var(--space-4);
+  max-width: 40ch;
+  color: var(--on-accent-muted);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  line-height: 1.5;
+}
+
+.actions {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 360px;
+}
+
+.note {
+  text-align: center;
+  color: var(--on-accent-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 900px) {
+  .band {
+    padding-block: 112px;
+  }
+
+  .inner {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: var(--space-10);
+  }
+}

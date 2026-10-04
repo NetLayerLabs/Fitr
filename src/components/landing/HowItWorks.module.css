@@ -1,0 +1,123 @@
+.steps {
+  display: grid;
+  gap: var(--space-3);
+  counter-reset: step;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: var(--hairline) solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.035), rgb(255 255 255 / 0.01));
+  overflow: hidden;
+}
+
+.step::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(198 244 50 / 0.45), transparent);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease-out);
+}
+
+.step:hover::after {
+  opacity: 1;
+}
+
+.stepTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.index {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-black);
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--border-strong);
+}
+
+.stepTitle {
+  font-size: var(--text-2xl);
+  letter-spacing: -0.03em;
+}
+
+.body {
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.detail {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: var(--hairline) solid var(--border-subtle);
+  color: var(--text-subtle);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+@media (max-width: 639px) {
+  .step {
+    padding: var(--space-5);
+    gap: var(--space-2);
+  }
+
+  .stepTop {
+    margin-bottom: var(--space-1);
+  }
+
+  .icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .index {
+    font-size: var(--text-3xl);
+  }
+
+  .stepTitle {
+    font-size: var(--text-xl);
+  }
+
+  .detail {
+    padding-top: var(--space-3);
+  }
+}
+
+@media (min-width: 640px) {
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1040px) {
+  .steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  /* The last step is the payoff: it carries the lime. */
+  .step:last-child {
+    border-color: rgb(198 244 50 / 0.3);
+    background: linear-gradient(180deg, rgb(198 244 50 / 0.1), rgb(198 244 50 / 0.02));
+  }
+}
