@@ -7,22 +7,12 @@ import styles from "./You.module.css";
 const noopSubscribe = () => () => {};
 
 /**
- * "Fitr 1.1.0 (build 3) · web 0.3.0" inside the Android app (version from the native bridge,
- * reported as "<versionName>+<versionCode>"), or "Fitr web 0.3.0" in a browser.
+ * "Fitr 1.1.0": the Android app's version (from the native bridge, reported as
+ * "<versionName>+<versionCode>"). Outside the app (local development) it falls back to the
+ * web package version.
  */
 export default function AppVersion({ webVersion }: { webVersion: string }) {
   const native = useSyncExternalStore(noopSubscribe, () => nativeVersion() ?? "", () => "");
-  const [name, code] = native.split("+");
-  return (
-    <p className={styles.version}>
-      {native ? (
-        <>
-          Fitr {name}
-          {code ? ` (build ${code})` : ""} · web {webVersion}
-        </>
-      ) : (
-        <>Fitr web {webVersion}</>
-      )}
-    </p>
-  );
+  const name = native.split("+")[0];
+  return <p className={styles.version}>Fitr {name || webVersion}</p>;
 }
