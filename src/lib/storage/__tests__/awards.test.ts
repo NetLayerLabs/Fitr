@@ -9,7 +9,8 @@ import {
   computeAwards,
   computeProgressStats,
   personalRecords,
-  streakCalendar,
+  monthCalendar,
+  CALENDAR_FIRST_MONTH,
   totalReps,
   weekStartDay,
 } from "../awards";
@@ -89,25 +90,32 @@ describe("computeProgressStats", () => {
   });
 });
 
-describe("streakCalendar", () => {
-  it("builds 5 Monday-first weeks ending with the current week", () => {
+describe("monthCalendar", () => {
+  it("lays out a month Monday first, blank before the 1st and after the last day", () => {
     const now = at(2026, 10, 7, 18);
-    const rows = streakCalendar([session(at(2026, 10, 6), { reps: 20, goalMet: true }), session(at(2026, 10, 5), { reps: 3 })], now);
-    expect(rows).toHaveLength(5);
-    expect(rows.every((r) => r.length === 7)).toBe(true);
-    const last = rows[4];
-    expect(last[0].day).toBe(localDayIndex(at(2026, 10, 5)));
-    expect(last[0]).toMatchObject({ active: true, goalMet: false });
-    expect(last[1]).toMatchObject({ active: true, goalMet: true });
-    expect(last[2]).toMatchObject({ isToday: true, isFuture: false });
-    expect(last[3].isFuture).toBe(true);
-    expect(rows[0][0].day).toBe(localDayIndex(at(2026, 9, 7)));
+    const cal = monthCalendar([session(at(2026, 10, 6), { reps: 20, goalMet: true }), session(at(2026, 10, 5), { reps: 3 })], now, 2026, 9);
+    expect(cal.weeks).toHaveLength(5);
+    expect(cal.weeks.every((r) => r.length === 7)).toBe(true);
+    // 1 October 2026 is a Thursday.
+    expect(cal.weeks[0].slice(0, 3)).toEqual([null, null, null]);
+    expect(cal.weeks[0][3]?.day).toBe(localDayIndex(at(2026, 10, 1)));
+    const days = cal.weeks.flat().filter((d) => d !== null);
+    expect(days).toHaveLength(31);
+    expect(days[4]).toMatchObject({ active: true, goalMet: false });
+    expect(days[5]).toMatchObject({ active: true, goalMet: true });
+    expect(days[6]).toMatchObject({ isToday: true, isFuture: false });
+    expect(days[7].isFuture).toBe(true);
+    expect(cal.goalDays).toBe(1);
   });
 
   it("never marks future days, even with clock-skewed sessions", () => {
     const now = at(2026, 10, 7);
-    const rows = streakCalendar([session(at(2026, 10, 9), { goalMet: true })], now);
-    expect(rows[4][4]).toMatchObject({ isFuture: true, goalMet: false, active: false });
+    const days = monthCalendar([session(at(2026, 10, 9), { goalMet: true })], now, 2026, 9).weeks.flat();
+    expect(days.find((d) => d?.day === localDayIndex(at(2026, 10, 9)))).toMatchObject({ isFuture: true, goalMet: false });
+  });
+
+  it("starts the calendar at October 2026", () => {
+    expect(CALENDAR_FIRST_MONTH).toEqual({ year: 2026, month: 9 });
   });
 });
 

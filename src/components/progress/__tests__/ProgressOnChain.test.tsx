@@ -34,7 +34,7 @@ describe("ProgressOnChain", () => {
   it("passes the profile's verified-day count for the connected wallet", () => {
     m.owner = "Wallet111";
     m.vault = { status: "ready", snapshot: { profile: { totalCompleted: 4 } }, error: null, refresh: () => {} };
-    render(<ProgressOnChain calendarWeeks={6} />);
-    expect(m.props.at(-1)).toMatchObject({ verifiedOnChainDays: 4, calendarWeeks: 6 });
+    render(<ProgressOnChain />);
+    expect(m.props.at(-1)).toMatchObject({ verifiedOnChainDays: 4 });
   });
 });

@@ -81,37 +81,48 @@ export interface CalendarDay {
   isFuture: boolean;
 }
 
-/**
- * `weeks` rows of 7 days (Monday first), oldest week first, ending with the current week.
- * Days after today are included (flagged isFuture) so every row is a full week.
- */
-export function streakCalendar(
-  sessions: readonly WorkoutSession[],
-  nowMs: number,
-  weeks = 5,
-): CalendarDay[][] {
+/** The first month the calendar shows: October 2026, when Fitr launched (month is 0-based). */
+export const CALENDAR_FIRST_MONTH = { year: 2026, month: 9 } as const;
+
+export interface CalendarMonth {
+  year: number;
+  /** 0-based, like Date#getMonth. */
+  month: number;
+  /** Rows of 7 (Monday first); null for the cells before the 1st and after the last day. */
+  weeks: (CalendarDay | null)[][];
+  /** Days in this month with the goal met. */
+  goalDays: number;
+}
+
+/** One calendar month as Monday-first weeks. */
+export function monthCalendar(sessions: readonly WorkoutSession[], nowMs: number, year: number, month: number): CalendarMonth {
   const today = localDayIndex(nowMs);
   const counted = countedDays(sessions);
   const active = new Set(sessions.map(sessionDay));
-  const first = weekStartDay(today) - (weeks - 1) * 7;
-  const rows: CalendarDay[][] = [];
-  for (let w = 0; w < weeks; w++) {
-    const row: CalendarDay[] = [];
-    for (let d = 0; d < 7; d++) {
-      const day = first + w * 7 + d;
-      const isFuture = day > today;
-      row.push({
-        day,
-        dayStartMs: dayIndexToLocalMidnight(day),
-        goalMet: !isFuture && counted.has(day),
-        active: !isFuture && active.has(day),
-        isToday: day === today,
-        isFuture,
-      });
-    }
-    rows.push(row);
+  const firstDate = new Date(year, month, 1);
+  const first = localDayIndex(firstDate.getTime());
+  const length = new Date(year, month + 1, 0).getDate();
+  const lead = (firstDate.getDay() + 6) % 7;
+  const cells: (CalendarDay | null)[] = Array.from({ length: lead }, () => null);
+  let goalDays = 0;
+  for (let i = 0; i < length; i++) {
+    const day = first + i;
+    const isFuture = day > today;
+    const goalMet = !isFuture && counted.has(day);
+    if (goalMet) goalDays++;
+    cells.push({
+      day,
+      dayStartMs: dayIndexToLocalMidnight(day),
+      goalMet,
+      active: !isFuture && active.has(day),
+      isToday: day === today,
+      isFuture,
+    });
   }
-  return rows;
+  while (cells.length % 7) cells.push(null);
+  const weeks: (CalendarDay | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return { year, month, weeks, goalDays };
 }
 
 /* ------------------------------------------------------------------------------------------ */

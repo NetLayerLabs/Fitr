@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useHydrated, useNow, useSessions } from "@/hooks/useSessions";
-import { computeAwards, computeProgressStats, personalRecords, streakCalendar } from "@/lib/storage/awards";
+import { computeAwards, computeProgressStats, personalRecords } from "@/lib/storage/awards";
 import AwardsGrid from "./AwardsGrid";
 import HistoryList from "./HistoryList";
 import PersonalRecords from "./PersonalRecords";
@@ -16,12 +16,10 @@ export interface ProgressDashboardProps {
    * "Verified on-chain" award; leave undefined until the vault read is wired in.
    */
   verifiedOnChainDays?: number;
-  /** Calendar rows (weeks), default 5. */
-  calendarWeeks?: number;
 }
 
 /** The Progress tab: stats, streak calendar, records, awards, then the full history. */
-export default function ProgressDashboard({ verifiedOnChainDays, calendarWeeks = 5 }: ProgressDashboardProps) {
+export default function ProgressDashboard({ verifiedOnChainDays }: ProgressDashboardProps) {
   const sessions = useSessions();
   const hydrated = useHydrated();
   const now = useNow();
@@ -31,11 +29,10 @@ export default function ProgressDashboard({ verifiedOnChainDays, calendarWeeks =
     if (!ready) return null;
     return {
       stats: computeProgressStats(sessions, now),
-      weeks: streakCalendar(sessions, now, calendarWeeks),
       records: personalRecords(sessions),
       awards: computeAwards(sessions, { verifiedOnChainDays }),
     };
-  }, [ready, sessions, now, calendarWeeks, verifiedOnChainDays]);
+  }, [ready, sessions, now, verifiedOnChainDays]);
 
   if (!derived) {
     return (
@@ -53,7 +50,7 @@ export default function ProgressDashboard({ verifiedOnChainDays, calendarWeeks =
         <h2 id="progress-calendar-heading" className={styles.sectionTitle}>
           Streak calendar
         </h2>
-        <StreakCalendar weeks={derived.weeks} headingId="progress-calendar-heading" />
+        <StreakCalendar sessions={sessions} nowMs={now} headingId="progress-calendar-heading" />
       </section>
 
       <section className={styles.section} aria-labelledby="progress-records-heading">

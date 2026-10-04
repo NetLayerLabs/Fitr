@@ -74,8 +74,12 @@ describe("ProgressDashboard", () => {
     expect(screen.getByRole("group", { name: "Total reps" }).textContent).toMatch(/55/);
 
     const calendar = screen.getByRole("table", { name: "Streak calendar" });
-    expect(within(calendar).getAllByRole("row")).toHaveLength(6); // header + 5 weeks
-    expect(calendar.querySelectorAll("[data-goal]").length).toBe(2);
+    // This month, Monday-first weeks (header + 4 to 6 weeks); yesterday shows only if it is this month too.
+    const rows = within(calendar).getAllByRole("row").length;
+    expect(rows).toBeGreaterThanOrEqual(5);
+    expect(rows).toBeLessThanOrEqual(7);
+    expect(calendar.querySelectorAll("[data-goal]").length).toBe(new Date().getDate() > 1 ? 2 : 1);
+    expect(screen.getByRole("button", { name: "Next month" })).toHaveProperty("disabled", true);
     expect(within(calendar).getByText(/\(today\): goal met/)).toBeTruthy();
 
     const records = screen.getByRole("region", { name: "Personal records" });

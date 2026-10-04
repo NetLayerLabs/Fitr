@@ -101,6 +101,36 @@
   background: var(--surface);
 }
 
+.calendarNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.calendarMonth {
+  margin: 0;
+  color: var(--text);
+  font-weight: var(--weight-bold);
+}
+
+.calendarNavButton {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.calendarNavButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .calendar {
   width: 100%;
   border-collapse: separate;
