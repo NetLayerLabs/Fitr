@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget-picker preview for launchers without previewLayout support (Android < 12). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:width="250dp" android:height="140dp" android:drawable="@drawable/widget_bg" />
+    <item
+        android:width="56dp"
+        android:height="56dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_fitr_mark" />
+</layer-list>

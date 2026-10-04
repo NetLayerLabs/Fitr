@@ -16,3 +16,19 @@ Notes:
 - The keystore and its passwords are never committed (`.gitignore` blocks `*.keystore`/`*.jks`).
 - External links outside `fitr.day` open in the system browser; `solana-wallet:` links open the
   installed wallet (Mobile Wallet Adapter).
+
+## Native pack (1.1.0)
+
+- `FitrNativeBridge.kt`: `window.FitrNative`, exactly the contract in `src/lib/native/bridge.ts`.
+  Injected only while the main frame is on the app origin (`NativeRoutes.isAppOrigin`); calls are
+  refused otherwise; popups never get it. Methods hop to the main thread.
+- `FitrSpeech.kt`: voice coach via Android TextToSpeech (device locale, English fallback; stopped
+  in `onStop`, released in `onDestroy`).
+- `Reminders.kt`: "Daily clock-in" channel, POST_NOTIFICATIONS on Android 13+, inexact
+  `setAndAllowWhileIdle` alarms per offset, persisted plan re-armed by `BootReceiver`.
+- `FitrWidget.kt` + `res/layout/widget_today.xml`: "Fitr — Today" widget (state from the page,
+  self-refreshing countdown with non-waking alarms + 30 min `updatePeriodMillis`).
+- `res/xml/shortcuts.xml`: Start push-ups, Start squats, Commit, Progress.
+- `NativeRoutes.kt`: one entry for App Links (`app.fitr.day` paths, `fitr.day/c/*` invites),
+  shortcuts, notifications and the widget (`onCreate` / `onNewIntent`, `launchMode=singleTask`).
+- UA: `... Solana Mobile Web Shell FitrApp/<versionName>`.

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the Fitr icon. Each shortcut is an App Link on app.fitr.day, routed by
+     NativeRoutes.targetUrl like any other deep link. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="start_pushups"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_pushup"
+        android:shortcutShortLabel="@string/shortcut_pushups_short"
+        android:shortcutLongLabel="@string/shortcut_pushups_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://app.fitr.day/workout/pushup"
+            android:targetClass="day.fitr.MainActivity"
+            android:targetPackage="day.fitr" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="start_squats"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_squat"
+        android:shortcutShortLabel="@string/shortcut_squats_short"
+        android:shortcutLongLabel="@string/shortcut_squats_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://app.fitr.day/workout/squat"
+            android:targetClass="day.fitr.MainActivity"
+            android:targetPackage="day.fitr" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="commit"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_commit"
+        android:shortcutShortLabel="@string/shortcut_commit_short"
+        android:shortcutLongLabel="@string/shortcut_commit_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://app.fitr.day/commit"
+            android:targetClass="day.fitr.MainActivity"
+            android:targetPackage="day.fitr" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="progress"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_progress"
+        android:shortcutShortLabel="@string/shortcut_progress_short"
+        android:shortcutLongLabel="@string/shortcut_progress_long"
+        android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://app.fitr.day/progress"
+            android:targetClass="day.fitr.MainActivity"
+            android:targetPackage="day.fitr" />
+    </shortcut>
+</shortcuts>

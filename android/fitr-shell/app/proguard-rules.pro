@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Fitr native pack: window.FitrNative (FitrNativeBridge) is called from JavaScript by name.
+-keepattributes JavascriptInterface
+-keepclassmembers class day.fitr.FitrNativeBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}

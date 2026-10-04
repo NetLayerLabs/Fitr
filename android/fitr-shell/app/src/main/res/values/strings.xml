@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">Fitr</string>
+
+    <!-- Reminders -->
+    <string name="channel_clock_in">Daily clock-in</string>
+    <string name="channel_clock_in_description">A heads-up before your daily stake deadline.</string>
+
+    <!-- Home-screen widget -->
+    <string name="widget_name">Fitr — Today</string>
+    <string name="widget_description">Today\'s goal, time left and your streak.</string>
+
+    <!-- App shortcuts -->
+    <string name="shortcut_pushups_short">Push-ups</string>
+    <string name="shortcut_pushups_long">Start push-ups</string>
+    <string name="shortcut_squats_short">Squats</string>
+    <string name="shortcut_squats_long">Start squats</string>
+    <string name="shortcut_commit_short">Commit</string>
+    <string name="shortcut_commit_long">Commit today\'s goal</string>
+    <string name="shortcut_progress_short">Progress</string>
+    <string name="shortcut_progress_long">Your progress</string>
+    <string name="shortcut_disabled">Open Fitr to continue</string>
 </resources>

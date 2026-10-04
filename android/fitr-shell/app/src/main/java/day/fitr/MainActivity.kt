@@ -2,6 +2,7 @@ package day.fitr
 
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -37,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +56,18 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import day.fitr.ui.theme.WebShellTheme
 import org.json.JSONObject
 
+/** A request to load [url] in the WebView; [seq] makes repeated requests for one URL distinct. */
+data class NavRequest(
+    val url: String,
+    val seq: Int,
+)
+
 class MainActivity : ComponentActivity() {
+    private lateinit var speech: FitrSpeech
+    private lateinit var bridge: FitrNativeBridge
+    private var navRequest by mutableStateOf<NavRequest?>(null)
+    private var navSeq = 0
+
     // Fitr file-chooser patch (profile photo): <input type="file"> opens the system picker.
     // Registered as a property so it exists before the activity is STARTED.
     private var pendingFileCallback: ValueCallback<Array<Uri>>? = null
@@ -92,11 +105,40 @@ class MainActivity : ComponentActivity() {
                 allowedOriginUrl = normalizeHttpUrl().orEmpty(),
                 isDebug = BuildConfig.DEBUG,
             )
+        // Fitr native pack: voice coach + window.FitrNative (must exist before STARTED).
+        speech = FitrSpeech(this)
+        bridge = FitrNativeBridge(this, speech)
+        // App Links, shortcuts, notifications and the widget all open a path through here.
+        val initialUrl = NativeRoutes.targetUrl(intent)
         setContent {
             WebShellTheme {
-                WebShellScreen(cameraGate, ::showFileChooser)
+                WebShellScreen(cameraGate, ::showFileChooser, bridge, initialUrl, navRequest)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val url = NativeRoutes.targetUrl(intent) ?: return
+        navRequest = NavRequest(url, ++navSeq)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bridge.onResume()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // The workout pauses when Fitr leaves the screen; so does the coach.
+        speech.stop()
+    }
+
+    override fun onDestroy() {
+        bridge.detach()
+        speech.release()
+        super.onDestroy()
     }
 }
 
@@ -105,6 +147,9 @@ class MainActivity : ComponentActivity() {
 fun WebShellScreen(
     cameraGate: CameraPermissionGate,
     onShowFileChooser: (ValueCallback<Array<Uri>>, WebChromeClient.FileChooserParams) -> Boolean,
+    bridge: FitrNativeBridge,
+    initialUrl: String?,
+    navRequest: NavRequest?,
 ) {
     val context = LocalContext.current
     val startUrl = remember { normalizeHttpUrl() }
@@ -148,7 +193,8 @@ fun WebShellScreen(
                 val originalUa = settings.userAgentString
                 settings.userAgentString =
                     appendUserAgentMarker(
-                        baseUserAgent = originalUa,
+                        baseUserAgent = appendUserAgentMarker(originalUa),
+                        marker = "FitrApp/${BuildConfig.VERSION_NAME}",
                     )
 
                 if (BuildConfig.DEBUG) {
@@ -173,6 +219,16 @@ fun WebShellScreen(
 
                 webViewClient =
                     object : WebShellViewClient(context, scopeHostProvider = { scopeHost }) {
+                        override fun onPageStarted(
+                            view: WebView,
+                            url: String?,
+                            favicon: android.graphics.Bitmap?,
+                        ) {
+                            // Fitr native pack: window.FitrNative only on the app's own origin.
+                            bridge.onMainFrameUrl(view, url)
+                            super.onPageStarted(view, url, favicon)
+                        }
+
                         override fun onPageFinished(
                             view: WebView,
                             url: String?,
@@ -196,9 +252,21 @@ fun WebShellScreen(
                         }
                     }
 
-                loadUrl(startUrl)
+                val firstUrl = initialUrl ?: startUrl
+                bridge.attach(this, firstUrl)
+                loadUrl(firstUrl)
             }
         }
+
+    // Deep link / shortcut / notification / widget while the app is already open.
+    LaunchedEffect(navRequest) {
+        val request = navRequest ?: return@LaunchedEffect
+        if (webView.url != request.url) {
+            hasError = false
+            isLoading = true
+            webView.loadUrl(request.url)
+        }
+    }
     val swipeRefreshLayout =
         remember(webView, refreshIndicatorColor, refreshIndicatorBackgroundColor) {
             SwipeRefreshLayout(context).apply {
@@ -351,8 +419,10 @@ private fun decodeJavascriptStringResult(rawResult: String?): String {
         .getOrDefault(rawResult)
 }
 
-private fun appendUserAgentMarker(baseUserAgent: String): String {
-    val marker = "Solana Mobile Web Shell"
+private fun appendUserAgentMarker(
+    baseUserAgent: String,
+    marker: String = "Solana Mobile Web Shell",
+): String {
     if (marker.isEmpty()) return baseUserAgent.trim()
     return if (baseUserAgent.contains(marker)) {
         baseUserAgent.trim()
