@@ -1,0 +1,145 @@
+/* Uses the global design tokens (src/app/globals.css) with literal fallbacks that mirror them,
+   so the page still renders on-brand if it is ever served without the global stylesheet. */
+
+.page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding:
+    calc(var(--safe-top, 0px) + var(--space-9, 56px))
+    var(--gutter, 20px)
+    calc(var(--safe-bottom, 0px) + var(--space-7, 32px));
+  background: var(--bg, #0a0b0d);
+  color: var(--text, #f5f6f7);
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.mark {
+  width: 72px;
+  height: 72px;
+  margin-bottom: var(--space-7, 32px);
+  overflow: visible;
+}
+
+.track,
+.arc {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.track {
+  stroke: var(--accent-dim, rgba(198, 244, 50, 0.12));
+}
+
+.arc {
+  stroke: var(--accent, #c6f432);
+  opacity: 0.35;
+}
+
+.knob {
+  fill: var(--accent, #c6f432);
+  transform-origin: 12.412px 36.319px;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.glyph {
+  fill: var(--text, #f5f6f7);
+  opacity: 0.85;
+}
+
+.eyebrow {
+  margin-bottom: var(--space-3, 12px);
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent, #c6f432);
+}
+
+.title {
+  margin-bottom: var(--space-4, 16px);
+  font-size: var(--text-4xl, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+}
+
+.body {
+  margin-bottom: var(--space-2, 8px);
+  font-size: var(--text-lg, 1.125rem);
+}
+
+.note {
+  margin-bottom: var(--space-8, 40px);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-muted, #a3a9b2);
+}
+
+.actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+
+.primary,
+.secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-lg, 56px);
+  padding: 0 var(--space-6, 24px);
+  border-radius: var(--radius-pill, 999px);
+  font-weight: 700;
+  transition: transform var(--dur-fast, 120ms) var(--ease-out, ease-out);
+}
+
+.primary {
+  background: var(--accent, #c6f432);
+  color: var(--on-accent, #0a0b0d);
+}
+
+.secondary {
+  border: 1px solid var(--border, #2c3036);
+  background: var(--surface-elevated, #1a1d21);
+  color: var(--text, #f5f6f7);
+}
+
+.primary:active,
+.secondary:active {
+  transform: scale(0.97);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring, 0 0 0 3px #0a0b0d, 0 0 0 5px #c6f432);
+  border-radius: var(--radius-pill, 999px);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob {
+    animation: none;
+  }
+}
