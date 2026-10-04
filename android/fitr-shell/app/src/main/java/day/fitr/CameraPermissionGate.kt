@@ -15,7 +15,7 @@ import androidx.core.content.ContextCompat
  * CAMERA permission.
  *
  * Policy (deliberately narrow):
- * - Only the shell's own origin (the start URL's scheme/host/port, https://fitr.day in release)
+ * - Only the shell's own origin (the start URL's scheme/host/port, https://app.fitr.day in release)
  *   may get anything. Every other origin, including iframes from other sites, is denied.
  * - Only [PermissionRequest.RESOURCE_VIDEO_CAPTURE] is ever granted. Fitr asks for
  *   `{ video, audio: false }`; microphone, protected media and MIDI requests are denied.

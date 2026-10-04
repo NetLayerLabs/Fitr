@@ -1,7 +1,7 @@
 {
   "fallbackType": "webview",
   "generatorApp": "solana-mobile",
-  "host": "fitr.day",
+  "host": "app.fitr.day",
   "launcherName": "Fitr",
   "name": "Fitr",
   "packageId": "day.fitr",
