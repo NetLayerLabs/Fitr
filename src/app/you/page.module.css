@@ -1,0 +1,11 @@
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding:
+    calc(var(--safe-top) + var(--space-4))
+    calc(var(--safe-right) + var(--gutter))
+    var(--space-8)
+    calc(var(--safe-left) + var(--gutter));
+}

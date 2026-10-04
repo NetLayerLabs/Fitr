@@ -1,0 +1,104 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.viewport {
+  position: relative;
+  overflow: hidden;
+  width: min(280px, 100%);
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.viewport:active {
+  cursor: grabbing;
+}
+
+.viewport:focus-visible {
+  outline: var(--focus-ring, 2px solid var(--accent));
+  outline-offset: 3px;
+}
+
+.image {
+  position: absolute;
+  max-width: none;
+  height: auto;
+  pointer-events: none;
+}
+
+/* Darken everything outside the circle; lime ring marks exactly what is kept. */
+.mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 999px rgba(0, 0, 0, 0.62);
+  pointer-events: none;
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(280px, 100%);
+}
+
+.zoomLabel {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.slider {
+  flex: 1;
+  min-height: var(--tap);
+  accent-color: var(--accent);
+}
+
+.hint,
+.loading {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.error {
+  color: var(--danger);
+  text-align: center;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.primary,
+.secondary {
+  min-height: var(--tap);
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.secondary {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text);
+}
