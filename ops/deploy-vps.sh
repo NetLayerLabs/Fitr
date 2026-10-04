@@ -2,7 +2,7 @@
 # Safe deploy of the Fitr web app to the shared VPS (nginx in front, systemd unit fitr.service,
 # app on 127.0.0.1:3077). Never touches other services.
 #
-#   1. Build locally; abort on any failure (no partial deploys).
+#   1. Typecheck, lint, test and build locally; abort on any failure (no partial deploys).
 #   2. Upload to /opt/fitr/app.new (node_modules hard-linked from the live app, so no reinstall).
 #   3. Swap app.new -> app (previous kept as app.prev), restart only fitr.service.
 #   4. Health-check http://127.0.0.1:3077/; if it fails, swap back and restart.
@@ -14,6 +14,11 @@ set -euo pipefail
 
 HOST="${FITR_HOST:-root@38.49.213.208}"
 cd "$(dirname "$0")/.."
+
+echo "==> checks (typecheck, lint, tests)"
+npm run typecheck >/tmp/fitr-check.log 2>&1 || { tail -20 /tmp/fitr-check.log; echo "TYPECHECK FAILED - nothing deployed"; exit 1; }
+npm run lint >>/tmp/fitr-check.log 2>&1 || { tail -20 /tmp/fitr-check.log; echo "LINT FAILED - nothing deployed"; exit 1; }
+npx vitest run >>/tmp/fitr-check.log 2>&1 || { grep -E "FAIL|Tests " /tmp/fitr-check.log | tail -20; echo "TESTS FAILED - nothing deployed"; exit 1; }
 
 echo "==> building"
 NEXT_PUBLIC_SOLANA_CLUSTER="${NEXT_PUBLIC_SOLANA_CLUSTER:-mainnet}" npm run build >/tmp/fitr-build.log 2>&1 || {
