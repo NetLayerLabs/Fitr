@@ -1,0 +1,227 @@
+.title {
+  margin: 0;
+  font-family: var(--font-display, var(--font-sans));
+  font-size: clamp(2rem, 9vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+/*
+ * Photo header: the athlete shot bleeds to the screen edges and its near-black studio fades into
+ * the page on every side, so it sits in the ambient background rather than in a box. The title is
+ * pulled up over the faded floor.
+ */
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin: calc(-1 * var(--space-3)) calc(-1 * var(--page-pad-right, var(--gutter))) 0
+    calc(-1 * var(--page-pad-left, var(--gutter)));
+}
+
+.heroPhoto {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0, #000 12%, #000 66%, rgba(0, 0, 0, 0.5) 84%, transparent 100%),
+    linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 0, #000 12%, #000 66%, rgba(0, 0, 0, 0.5) 84%, transparent 100%),
+    linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-composite: intersect;
+}
+
+/* Floor poses: drop the empty top quarter so the header is not mostly black. */
+.hero[data-framing="floor"] .heroPhoto {
+  aspect-ratio: 4 / 3;
+  object-position: 50% 100%;
+}
+
+.heroTitle {
+  position: relative;
+  margin-top: calc(-1 * var(--space-7));
+  padding: 0 var(--page-pad-right, var(--gutter)) 0 var(--page-pad-left, var(--gutter));
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.85);
+}
+
+.demoLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.demoDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-dim);
+}
+
+.demo {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.demoFrame {
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(120% 90% at 50% 100%, var(--accent-dim), transparent 60%),
+    var(--surface);
+  aspect-ratio: 4 / 3;
+}
+
+.demoMedia {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.toggle {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.toggleButton {
+  min-height: var(--tap);
+  padding: 0 var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toggleButton[aria-checked="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.toggleButton:focus-visible {
+  border-radius: var(--radius-pill);
+}
+
+.caption {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.caption a {
+  color: var(--text);
+}
+
+.cues {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cue {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.cue p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.cueIcon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.placement {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.placementFloor {
+  stroke: var(--border-strong);
+  stroke-width: 2;
+}
+
+.placementPhone {
+  fill: var(--surface-strong);
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.placementLens {
+  fill: var(--accent);
+}
+
+.placementStand {
+  stroke: var(--text-muted);
+  stroke-width: 3;
+}
+
+.placementSight {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+
+.placementLabel {
+  fill: var(--accent);
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.placementBody {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.dontShow {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+.placementHead {
+  fill: var(--text);
+}
