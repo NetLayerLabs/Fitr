@@ -16,34 +16,56 @@ describe("LandingPage", () => {
     expect(h1s[0].textContent).toBe("Put your word on the line.");
   });
 
-  it("offers the APK download and the browser app, with the device note", () => {
+  it("offers only the APK download, with the device note, and no way into the web app", () => {
     render(<LandingPage />);
     const downloads = screen.getAllByRole("link", { name: "Download for Android" });
     expect(downloads.length).toBeGreaterThanOrEqual(2);
     for (const a of downloads) expect(a.getAttribute("href")).toBe("https://fitr.day/download/fitr.apk");
-    for (const a of screen.getAllByRole("link", { name: "Open in browser" })) {
-      expect(a.getAttribute("href")).toBe("https://app.fitr.day");
-    }
+    const navPill = screen.getByRole("link", { name: "Download the Android app" });
+    expect(navPill.getAttribute("href")).toBe("https://fitr.day/download/fitr.apk");
+    expect(navPill.textContent).toBe("Download");
+    expect(screen.queryByRole("link", { name: /open (in browser|app)/i })).toBeNull();
     expect(screen.getAllByText("Seeker & Android 9+ · APK").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("only links to in-page anchors or absolute fitr.day / app.fitr.day URLs", () => {
+  it("only links to in-page anchors or absolute fitr.day URLs, never app.fitr.day", () => {
     const { container } = render(<LandingPage />);
     const hrefs = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href") ?? "");
     expect(hrefs.length).toBeGreaterThan(0);
     for (const href of hrefs) {
-      expect(href.startsWith("#") || href.startsWith("https://app.fitr.day") || href.startsWith("https://fitr.day/")).toBe(true);
+      expect(href.startsWith("#") || href.startsWith("https://fitr.day/")).toBe(true);
     }
+    expect(container.innerHTML).not.toContain("https://app.fitr.day");
     expect(hrefs).toContain(LANDING_LINKS.privacy);
     expect(hrefs).toContain(LANDING_LINKS.verification);
+    expect(hrefs).toContain(LANDING_LINKS.credits);
+    expect(hrefs).toContain("https://fitr.day/pool");
+    // Every in-page anchor resolves to an element on the page.
+    for (const href of hrefs.filter((h) => h.startsWith("#"))) {
+      expect(container.querySelector(href), href).not.toBeNull();
+    }
   });
 
-  it("shows every exercise as a card linking into the app", () => {
+  it("links the public pool dashboard as Live pool stats", () => {
+    render(<LandingPage />);
+    const links = screen.getAllByRole("link", { name: /live pool stats/i });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    for (const a of links) expect(a.getAttribute("href")).toBe("https://fitr.day/pool");
+  });
+
+  it("explains sideloading in three steps, including the Play Protect prompt", () => {
+    render(<LandingPage />);
+    const steps = within(screen.getByRole("list", { name: "Install on Seeker" })).getAllByRole("listitem");
+    expect(steps).toHaveLength(3);
+    expect(steps[2].textContent).toMatch(/More details.*Install anyway/);
+  });
+
+  it("shows every exercise as a non-interactive card", () => {
     render(<LandingPage />);
     const section = screen.getByRole("region", { name: /exercises/i });
+    expect(within(section).queryAllByRole("link")).toHaveLength(0);
     for (const info of EXERCISE_LIST) {
-      const link = within(section).getByRole("link", { name: new RegExp(info.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) });
-      expect(link.getAttribute("href")).toBe(`https://app.fitr.day/workout/${info.kind}`);
+      expect(within(section).getByText(info.name)).toBeTruthy();
     }
   });
 

@@ -36,6 +36,7 @@ describe("BottomNav", () => {
     ["/you", "You"],
     ["/history", "Progress"],
     ["/wallet", "You"],
+    ["/crew/123", "Commit"],
   ])("marks exactly one tab current at %s", (path, label) => {
     renderAt(path);
     const current = screen.getAllByRole("link").filter((l) => l.getAttribute("aria-current") === "page");

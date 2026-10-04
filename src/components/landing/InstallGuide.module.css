@@ -1,0 +1,63 @@
+/* Lives inside the lime FinalCta band: inherits its inverted tokens (ink on lime). */
+
+.guide {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: var(--hairline) solid var(--border);
+}
+
+.title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-heavy);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  padding: 0;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.num {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-heavy);
+  font-variant-numeric: tabular-nums;
+}
+
+.stepTitle {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-heavy);
+  line-height: 1.4;
+}
+
+.stepBody {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.5;
+}
+
+.stepBody strong {
+  color: var(--text);
+  font-weight: var(--weight-bold);
+}

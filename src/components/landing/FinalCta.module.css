@@ -21,6 +21,7 @@
   position: relative;
   overflow: hidden;
   padding-block: var(--space-10);
+  scroll-margin-top: 64px;
   background: var(--lime-400);
   color: var(--ink-950);
 }
@@ -48,7 +49,7 @@
   position: relative;
   display: grid;
   gap: var(--space-8);
-  align-items: end;
+  align-items: center;
 }
 
 .eyebrow {

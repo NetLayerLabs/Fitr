@@ -1,0 +1,11 @@
+.doc {
+  flex: 1;
+  max-width: calc(720px + 2 * var(--gutter));
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-10);
+}
+
+/* The embedded app page brings its own gutters and safe-area padding; the container has them. */
+.doc > div {
+  padding: 0;
+}

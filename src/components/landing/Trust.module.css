@@ -225,3 +225,27 @@
     padding: var(--space-7);
   }
 }
+
+/* Link to the public pool dashboard (fitr.day/pool), pinned to the bottom of its card. */
+.poolLink {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  margin-top: auto;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.poolLink:hover {
+  color: var(--accent-hover);
+}
+
+.poolLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

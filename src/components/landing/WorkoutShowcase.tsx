@@ -1,7 +1,5 @@
-import { ChevronRightIcon } from "@/components/icons/Icons";
 import { exerciseArt } from "@/lib/exerciseArt";
 import { EXERCISE_CATEGORIES, exercisesByCategory, type ExerciseInfo } from "@/lib/exercises";
-import { LANDING_LINKS } from "./links";
 import section from "./section.module.css";
 import styles from "./WorkoutShowcase.module.css";
 
@@ -9,7 +7,10 @@ function goalLabel(info: ExerciseInfo): string {
   return info.unit === "seconds" ? `from ${info.minGoal} s` : `from ${info.minGoal} reps`;
 }
 
-/** All 16 exercises as photo cards, grouped by category (a swipeable rail on phones). */
+/**
+ * All 16 exercises as photo cards, grouped by category (a swipeable rail on phones). The cards
+ * are informational: the app itself runs only inside the Android app, so there is nothing to link.
+ */
 export default function WorkoutShowcase() {
   const groups = exercisesByCategory();
   const cards = groups.flatMap((g) => g.exercises.map((info) => ({ info, category: g.label })));
@@ -45,7 +46,7 @@ export default function WorkoutShowcase() {
             const art = exerciseArt(info.kind);
             return (
               <li key={info.kind} className={styles.cell}>
-                <a href={`${LANDING_LINKS.app}/workout/${info.kind}`} className={styles.card}>
+                <div className={styles.card}>
                   {art ? (
                     // eslint-disable-next-line @next/next/no-img-element -- pre-sized static art (see ArtPhoto)
                     <img
@@ -62,12 +63,9 @@ export default function WorkoutShowcase() {
                   <span className={styles.meta}>
                     <span className={styles.category}>{category}</span>
                     <span className={styles.name}>{info.name}</span>
-                    <span className={styles.goal}>
-                      Goal {goalLabel(info)}
-                      <ChevronRightIcon size={16} className={styles.chev} />
-                    </span>
+                    <span className={styles.goal}>Goal {goalLabel(info)}</span>
                   </span>
-                </a>
+                </div>
               </li>
             );
           })}

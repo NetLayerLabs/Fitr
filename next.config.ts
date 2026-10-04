@@ -7,6 +7,32 @@ import type { NextConfig } from "next";
  */
 const SW_REMOTE_ORIGINS = ["https://cdn.jsdelivr.net", "https://storage.googleapis.com"];
 
+/** Hosts that serve the public landing site (fitr.day). */
+const MARKETING_HOSTS = ["fitr.day", "www.fitr.day"];
+/** fitr.day path → the /landing route that renders it. */
+const MARKETING_ROUTES: Record<string, string> = {
+  "/": "/landing",
+  "/verification": "/landing/verification",
+  "/privacy": "/landing/privacy",
+  "/credits": "/landing/credits",
+};
+
+/**
+ * App screens have no business on the public site: fitr.day only serves the landing, its info
+ * pages and the public share / invite / Blink / dashboard routes. nginx is the real gate; these
+ * redirects keep a stray fitr.day/<app route> from rendering the app in a browser.
+ */
+const MARKETING_APP_REDIRECTS: ReadonlyArray<{ source: string; destination: string }> = [
+  { source: "/you/verification", destination: "/verification" },
+  { source: "/you/privacy", destination: "/privacy" },
+  { source: "/you/credits", destination: "/credits" },
+  { source: "/landing", destination: "/" },
+  { source: "/landing/:path+", destination: "/:path+" },
+  ...["/commit", "/workouts", "/workout/:path*", "/progress", "/you", "/you/:path*", "/crew/:path*", "/offline", "/history", "/history/:path*", "/wallet", "/wallet/:path*"].map(
+    (source) => ({ source, destination: "/" }),
+  ),
+];
+
 const nextConfig: NextConfig = {
   // Old tab routes from before the five-tab redesign. Permanent (308) so installed shells,
   // bookmarks and the TWA land on the new tabs. Query strings carry over automatically.
@@ -16,10 +42,15 @@ const nextConfig: NextConfig = {
   // client navigation stay consistent.
   async rewrites() {
     return {
-      beforeFiles: [
-        { source: "/", has: [{ type: "host", value: "fitr.day" }], destination: "/landing" },
-        { source: "/", has: [{ type: "host", value: "www.fitr.day" }], destination: "/landing" },
-      ],
+      // Public info pages on the marketing host (keep in sync with LANDING_ROUTES in
+      // src/components/landing/links.ts). On app.fitr.day these paths are not rewritten.
+      beforeFiles: MARKETING_HOSTS.flatMap((host) =>
+        Object.entries(MARKETING_ROUTES).map(([source, destination]) => ({
+          source,
+          has: [{ type: "host" as const, value: host }],
+          destination,
+        })),
+      ),
       afterFiles: [],
       fallback: [],
     };
@@ -27,6 +58,9 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      ...MARKETING_HOSTS.flatMap((host) =>
+        MARKETING_APP_REDIRECTS.map((r) => ({ ...r, has: [{ type: "host" as const, value: host }], permanent: false })),
+      ),
       { source: "/history", destination: "/progress", permanent: true },
       { source: "/history/:path*", destination: "/progress", permanent: true },
       { source: "/wallet", destination: "/you", permanent: true },

@@ -22,7 +22,7 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", label: "Today", Icon: TodayIcon },
   { href: "/workouts", label: "Workouts", Icon: WorkoutsIcon },
-  { href: "/commit", label: "Commit", Icon: CommitIcon, primary: true },
+  { href: "/commit", label: "Commit", Icon: CommitIcon, primary: true, also: ["/crew"] },
   { href: "/progress", label: "Progress", Icon: ProgressIcon, also: ["/history"] },
   { href: "/you", label: "You", Icon: YouIcon, also: ["/wallet"] },
 ];

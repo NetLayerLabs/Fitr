@@ -1,13 +1,14 @@
 import Button from "@/components/ui/Button";
+import InstallGuide from "./InstallGuide";
 import { DownloadIcon } from "./LandingIcons";
 import { APK_NOTE, LANDING_LINKS } from "./links";
 import section from "./section.module.css";
 import styles from "./FinalCta.module.css";
 
-/** Full-bleed lime "moment": black ink on lime, the last push to commit. */
+/** Full-bleed lime "moment": black ink on lime, the download and how to install it. */
 export default function FinalCta() {
   return (
-    <section className={styles.band} aria-labelledby="cta-title" data-lime-moment="">
+    <section id="install" className={styles.band} aria-labelledby="cta-title" data-lime-moment="">
       <div className={`${section.container} ${styles.inner}`}>
         <div className={styles.copy}>
           <p className={styles.eyebrow}>Tomorrow starts today</p>
@@ -15,8 +16,8 @@ export default function FinalCta() {
             Show up. Every day. On the record.
           </h2>
           <p className={styles.lede}>
-            Set your first goal in a minute. Train free on any phone, and stake when you&apos;re ready
-            to mean it.
+            Fitr is an Android app. Train free on any Android phone, and stake on your Seeker when
+            you&apos;re ready to mean it.
           </p>
         </div>
         <div className={styles.actions}>
@@ -30,10 +31,8 @@ export default function FinalCta() {
           >
             Download for Android
           </Button>
-          <Button variant="secondary" size="lg" href={LANDING_LINKS.app} prefetch={false} block>
-            Open in browser
-          </Button>
           <p className={styles.note}>{APK_NOTE}</p>
+          <InstallGuide />
         </div>
       </div>
     </section>

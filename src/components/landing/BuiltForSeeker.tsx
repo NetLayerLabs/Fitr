@@ -36,7 +36,7 @@ export default function BuiltForSeeker() {
             </h2>
             <p className={section.lede}>
               Staking is exclusive to the Solana Seeker, so every pool is one real phone and one real
-              person. Workouts and rep tracking are free on any Android phone or browser.
+              person. Workouts and rep tracking are free on any Android phone.
             </p>
           </div>
           <ul className={styles.points} role="list">

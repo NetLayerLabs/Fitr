@@ -4,8 +4,8 @@ import section from "./section.module.css";
 import styles from "./LandingFooter.module.css";
 
 const LINKS = [
-  { href: LANDING_LINKS.app, label: "Open app" },
   { href: LANDING_LINKS.apk, label: "Android APK" },
+  { href: LANDING_LINKS.pool, label: "Live pool stats" },
   { href: LANDING_LINKS.verification, label: "Verification" },
   { href: LANDING_LINKS.privacy, label: "Privacy" },
   { href: LANDING_LINKS.credits, label: "Credits" },

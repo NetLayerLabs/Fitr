@@ -81,7 +81,6 @@
   border-radius: var(--radius-lg);
   background: #070809;
   isolation: isolate;
-  transition: border-color var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
 }
 
 .card::after {
@@ -99,7 +98,6 @@
   height: 100%;
   object-fit: cover;
   object-position: 50% 30%;
-  transition: transform var(--dur-slow) var(--ease-out);
 }
 
 /* Floor poses sit low in the square: show the athlete, not the empty studio above. */
@@ -135,40 +133,9 @@
 }
 
 .goal {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   color: var(--text-muted);
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
-}
-
-.chev {
-  color: var(--text-subtle);
-  transition: transform var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
-}
-
-.card:hover {
-  border-color: rgb(198 244 50 / 0.35);
-}
-
-.card:hover .photo {
-  transform: scale(1.05);
-}
-
-.card:hover .floor {
-  transform: scale(1.24);
-}
-
-.card:hover .chev {
-  color: var(--accent);
-  transform: translateX(2px);
-}
-
-.card:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-  border-radius: var(--radius-lg);
 }
 
 @media (min-width: 640px) {

@@ -9,7 +9,7 @@ import section from "./section.module.css";
 import styles from "./Hero.module.css";
 import { SkrLogo } from "@/components/brand/SkrAmount";
 
-/** Hero: the promise, the two ways in, and a phone mid-workout in front of the athlete. */
+/** Hero: the promise, the Android download, and a phone mid-workout in front of the athlete. */
 export default function Hero() {
   const pushup = exerciseArt("pushup");
   return (
@@ -42,8 +42,8 @@ export default function Hero() {
               </Button>
               <p className={styles.note}>{APK_NOTE}</p>
             </div>
-            <Button variant="secondary" size="lg" href={LANDING_LINKS.app} prefetch={false} className={styles.secondaryCta}>
-              Open in browser
+            <Button variant="secondary" size="lg" href="#install" prefetch={false} className={styles.secondaryCta}>
+              How to install
             </Button>
           </div>
           <ul className={styles.facts} role="list">

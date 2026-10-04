@@ -1,5 +1,5 @@
 import { CheckIcon, ShieldIcon } from "@/components/icons/Icons";
-import { ChainIcon, EyeOffIcon, PercentIcon } from "./LandingIcons";
+import { ArrowUpRightIcon, ChainIcon, EyeOffIcon, PercentIcon } from "./LandingIcons";
 import { LANDING_LINKS } from "./links";
 import section from "./section.module.css";
 import styles from "./Trust.module.css";
@@ -86,6 +86,10 @@ export default function Trust() {
               Every stake, verification and payout is a public transaction. Stakes sit in the vault
               program. Fitr can&apos;t touch them.
             </p>
+            <a href={LANDING_LINKS.pool} className={styles.poolLink}>
+              Live pool stats
+              <ArrowUpRightIcon size={16} strokeWidth={2.25} />
+            </a>
           </article>
 
           <article className={`${styles.card} ${styles.settle} ${section.reveal}`} aria-labelledby="settle-title">
