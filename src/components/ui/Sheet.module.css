@@ -1,0 +1,106 @@
+.dialog {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: var(--z-sheet);
+  width: 100%;
+  max-width: var(--app-max-width);
+  max-height: calc(100dvh - var(--safe-top) - var(--space-7));
+  margin: auto auto 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  overflow: visible;
+}
+
+.dialog::backdrop {
+  background: var(--scrim);
+  animation: fade var(--dur) var(--ease-out);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+  padding: var(--space-2) var(--gutter) calc(var(--safe-bottom) + var(--space-6));
+  border: var(--hairline) solid var(--border);
+  border-bottom: 0;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-sheet);
+  animation: rise var(--dur-slow) var(--ease-out);
+}
+
+.grabber {
+  align-self: center;
+  width: 40px;
+  height: 4px;
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-xl);
+}
+
+.close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin-right: calc(-1 * var(--space-2));
+  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.close:hover {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-pill);
+}
+
+.body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .dialog::backdrop {
+    animation: none;
+  }
+}

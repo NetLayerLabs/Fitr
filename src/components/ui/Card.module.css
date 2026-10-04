@@ -1,0 +1,45 @@
+.card {
+  position: relative;
+  display: block;
+  border-radius: var(--radius-xl);
+  border: var(--hairline) solid transparent;
+}
+
+.md {
+  padding: var(--space-5);
+}
+
+.lg {
+  padding: var(--space-7) var(--space-6);
+}
+
+.default {
+  background: var(--surface);
+  border-color: var(--border-subtle);
+}
+
+.elevated {
+  background: var(--surface-elevated);
+  border-color: var(--border);
+  box-shadow: var(--shadow-raised);
+}
+
+/* Lime block: black ink. Nested primary buttons invert to black pills (same trick as LimeMoment). */
+.lime {
+  --text: var(--ink-950);
+  --text-muted: var(--on-accent-muted);
+  --text-subtle: var(--on-accent-muted);
+  --border: var(--on-accent-muted);
+  --border-subtle: var(--on-accent-muted);
+  --surface-elevated: var(--lime-300);
+  --surface-strong: var(--lime-200);
+  --accent: var(--ink-950);
+  --accent-hover: var(--ink-850);
+  --accent-pressed: var(--ink-800);
+  --on-accent: var(--lime-400);
+  --focus-color: var(--ink-950);
+  --bg: var(--lime-400);
+
+  background: var(--lime-400);
+  color: var(--ink-950);
+}

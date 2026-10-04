@@ -1,0 +1,175 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: var(--tap);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.005em;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
+  user-select: none;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-pill);
+}
+
+.button:active:not(:disabled):not(.disabled) {
+  transform: scale(var(--press-scale));
+}
+
+.button:disabled,
+.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------- Sizes ---------- */
+
+.md {
+  min-height: var(--tap);
+  padding: 0 var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.lg {
+  min-height: var(--tap-lg);
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
+}
+
+/* The ▶ cap sits inside the pill with a 4px inset, so the padding on that side shrinks. */
+.md.withCap {
+  padding-right: var(--space-1);
+  gap: var(--space-3);
+}
+
+.lg.withCap {
+  padding-right: var(--space-1);
+  gap: var(--space-4);
+}
+
+.block {
+  display: flex;
+  width: 100%;
+}
+
+.withCap.block .label {
+  flex: 1;
+  text-align: left;
+}
+
+/* ---------- Variants ---------- */
+
+.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.primary:hover:not(:disabled):not(.disabled) {
+  background: var(--accent-hover);
+}
+
+.primary:active:not(:disabled):not(.disabled) {
+  background: var(--accent-pressed);
+}
+
+.secondary {
+  background: var(--surface-elevated);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.secondary:hover:not(:disabled):not(.disabled) {
+  background: var(--surface-strong);
+  border-color: var(--border-strong);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--text);
+}
+
+.ghost:hover:not(:disabled):not(.disabled) {
+  background: var(--surface-elevated);
+}
+
+.danger {
+  background: var(--danger-dim);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.danger:hover:not(:disabled):not(.disabled) {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+
+/* ---------- Parts ---------- */
+
+.icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cap {
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  transition: transform var(--dur) var(--ease-spring);
+}
+
+.md .cap {
+  width: 40px;
+  height: 40px;
+}
+
+.lg .cap {
+  width: 48px;
+  height: 48px;
+}
+
+.primary .cap {
+  background: var(--on-accent);
+  color: var(--accent);
+}
+
+.secondary .cap,
+.ghost .cap {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.danger .cap {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+
+/* Optical centering: the ▶ glyph's mass sits left of its box. */
+.cap svg {
+  transform: translateX(1px);
+  fill: currentColor;
+}
+
+.button:hover:not(:disabled):not(.disabled) .cap {
+  transform: translateX(2px);
+}
