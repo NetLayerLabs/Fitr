@@ -3,6 +3,7 @@ import { CheckIcon } from "@/components/icons/Icons";
 import { STANDING_ART, exerciseArt } from "@/lib/exerciseArt";
 import { EXERCISE_LIST } from "@/lib/exercises";
 import { DownloadIcon } from "./LandingIcons";
+import HeroStage from "./HeroStage";
 import PhoneMock from "./PhoneMock";
 import { APK_NOTE, LANDING_LINKS } from "./links";
 import section from "./section.module.css";
@@ -59,25 +60,34 @@ export default function Hero() {
           </ul>
         </div>
 
-        <div className={styles.stage}>
+        <HeroStage className={styles.stage}>
           <div className={styles.halo} aria-hidden="true" />
-          {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized static art (see ArtPhoto) */}
-          <img
-            className={styles.athlete}
-            src={STANDING_ART.src}
-            srcSet={`${STANDING_ART.thumb} 420w, ${STANDING_ART.src} 960w`}
-            sizes="(min-width: 900px) 560px, 100vw"
-            width={960}
-            height={960}
-            alt={STANDING_ART.alt}
-            fetchPriority="high"
-            decoding="async"
-            draggable={false}
-          />
+          <div className={styles.athlete}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized static art (see ArtPhoto) */}
+            <img
+              src={STANDING_ART.src}
+              srcSet={`${STANDING_ART.thumb} 420w, ${STANDING_ART.src} 960w`}
+              sizes="(min-width: 900px) 560px, 100vw"
+              width={960}
+              height={960}
+              alt={STANDING_ART.alt}
+              fetchPriority="high"
+              decoding="async"
+              draggable={false}
+            />
+            <span className={styles.sweep} aria-hidden="true" />
+          </div>
+          <div className={styles.pedestal} aria-hidden="true">
+            <span className={styles.ringOuter} />
+            <span className={styles.ringInner}>
+              <span className={styles.ringDot} />
+            </span>
+          </div>
           {pushup ? <PhoneMock art={pushup} className={styles.phone} /> : null}
 
           <div className={`${styles.float} ${styles.floatTop}`} aria-hidden="true">
             <span className={styles.floatIcon}>
+              <span className={styles.ping} />
               <CheckIcon size={16} strokeWidth={2.75} />
             </span>
             <span>
@@ -91,7 +101,7 @@ export default function Hero() {
               100 <span className={styles.floatPlus}>+40.7</span> <SkrLogo />
             </span>
           </div>
-        </div>
+        </HeroStage>
       </div>
     </section>
   );

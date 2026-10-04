@@ -164,3 +164,14 @@
     padding: var(--space-5);
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .photo {
+    transition: transform 900ms var(--ease-out), filter 900ms var(--ease-out);
+  }
+
+  .card:hover .photo {
+    transform: scale(1.07);
+    filter: brightness(1.12);
+  }
+}

@@ -96,3 +96,29 @@
     display: block;
   }
 }
+
+/* Reading progress: a lime hairline under the bar that fills as the page scrolls. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .bar::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 -1px;
+      height: 2px;
+      background: linear-gradient(90deg, rgb(198 244 50 / 0.2), var(--accent));
+      box-shadow: 0 0 10px rgb(198 244 50 / 0.6);
+      transform-origin: 0 50%;
+      animation: progress linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+}
+
+@keyframes progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

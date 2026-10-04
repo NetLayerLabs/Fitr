@@ -46,7 +46,8 @@ export default function WorkoutShowcase() {
             const art = exerciseArt(info.kind);
             return (
               <li key={info.kind} className={styles.cell}>
-                <div className={styles.card}>
+                <div className={`${styles.card} ${section.spot}`} data-spotlight="">
+                  <span className={`${section.glare} ${section.glareOver}`} aria-hidden="true" />
                   {art ? (
                     // eslint-disable-next-line @next/next/no-img-element -- pre-sized static art (see ArtPhoto)
                     <img

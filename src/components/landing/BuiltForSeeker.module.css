@@ -191,3 +191,82 @@
     transform: rotate(2deg);
   }
 }
+
+.approve {
+  position: relative;
+  overflow: hidden;
+}
+
+.fingerprint {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet {
+    animation: drift 8s var(--ease-in-out) infinite alternate;
+  }
+
+  .glow {
+    animation: glowPulse 5s var(--ease-in-out) infinite alternate;
+  }
+
+  .approve::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.6) 50%, transparent 65%);
+    background-size: 250% 100%;
+    background-position: 140% 0;
+    animation: approveSheen 3.6s var(--ease-in-out) 1s infinite;
+  }
+
+  .fingerprint::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    opacity: 0;
+    animation: scanRing 2.4s var(--ease-out) infinite;
+  }
+}
+
+@keyframes drift {
+  from {
+    translate: 0 6px;
+    rotate: -0.6deg;
+  }
+  to {
+    translate: 0 -8px;
+    rotate: 0.6deg;
+  }
+}
+
+@keyframes glowPulse {
+  to {
+    opacity: 0.6;
+    scale: 1.08;
+  }
+}
+
+@keyframes approveSheen {
+  0% {
+    background-position: 140% 0;
+  }
+  45%,
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+@keyframes scanRing {
+  0% {
+    opacity: 0.9;
+    scale: 0.8;
+  }
+  80%,
+  100% {
+    opacity: 0;
+    scale: 1.7;
+  }
+}

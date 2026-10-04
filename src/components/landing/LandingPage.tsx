@@ -4,6 +4,7 @@ import Hero from "./Hero";
 import HowItWorks from "./HowItWorks";
 import LandingFooter from "./LandingFooter";
 import LandingNav from "./LandingNav";
+import Spotlight from "./Spotlight";
 import Trust from "./Trust";
 import WorkoutShowcase from "./WorkoutShowcase";
 import styles from "./LandingPage.module.css";
@@ -15,6 +16,7 @@ import styles from "./LandingPage.module.css";
 export default function LandingPage() {
   return (
     <div className={styles.page} data-page="landing">
+      <Spotlight />
       <LandingNav />
       <Hero />
       <HowItWorks />

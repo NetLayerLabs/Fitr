@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { CheckIcon, ShieldIcon } from "@/components/icons/Icons";
 import { ArrowUpRightIcon, ChainIcon, EyeOffIcon, PercentIcon } from "./LandingIcons";
 import { LANDING_LINKS } from "./links";
@@ -34,7 +35,8 @@ export default function Trust() {
         </div>
 
         <div className={styles.bento}>
-          <article className={`${styles.card} ${styles.cheat} ${section.reveal}`}>
+          <article className={`${styles.card} ${styles.cheat} ${section.reveal} ${section.spot}`} data-spotlight="">
+            <span className={section.glare} aria-hidden="true" />
             <span className={styles.icon}>
               <ShieldIcon size={22} />
             </span>
@@ -66,7 +68,8 @@ export default function Trust() {
             </ul>
           </article>
 
-          <article className={`${styles.card} ${section.reveal}`}>
+          <article className={`${styles.card} ${section.reveal} ${section.spot}`} data-spotlight="">
+            <span className={section.glare} aria-hidden="true" />
             <span className={styles.icon}>
               <EyeOffIcon size={22} />
             </span>
@@ -77,7 +80,8 @@ export default function Trust() {
             </p>
           </article>
 
-          <article className={`${styles.card} ${section.reveal}`}>
+          <article className={`${styles.card} ${section.reveal} ${section.spot}`} data-spotlight="">
+            <span className={section.glare} aria-hidden="true" />
             <span className={styles.icon}>
               <ChainIcon size={22} />
             </span>
@@ -92,7 +96,8 @@ export default function Trust() {
             </a>
           </article>
 
-          <article className={`${styles.card} ${styles.settle} ${section.reveal}`} aria-labelledby="settle-title">
+          <article className={`${styles.card} ${styles.settle} ${section.reveal} ${section.spot}`} aria-labelledby="settle-title" data-spotlight="">
+            <span className={section.glare} aria-hidden="true" />
             <div className={styles.settleCopy}>
               <span className={styles.icon}>
                 <PercentIcon size={22} />
@@ -113,7 +118,7 @@ export default function Trust() {
               </figcaption>
               <div className={styles.dots} aria-hidden="true">
                 {Array.from({ length: EXAMPLE.people }, (_, i) => (
-                  <span key={i} className={i < EXAMPLE.showed ? styles.dotOn : styles.dotOff} />
+                  <span key={i} className={i < EXAMPLE.showed ? styles.dotOn : styles.dotOff} style={{ "--i": i } as CSSProperties} />
                 ))}
               </div>
               <dl className={styles.rows}>

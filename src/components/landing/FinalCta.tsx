@@ -27,6 +27,7 @@ export default function FinalCta() {
             href={LANDING_LINKS.apk}
             prefetch={false}
             icon={<DownloadIcon size={20} strokeWidth={2.25} />}
+            className={styles.cta}
             block
           >
             Download for Android

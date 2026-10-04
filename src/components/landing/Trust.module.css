@@ -249,3 +249,35 @@
   outline: none;
   box-shadow: var(--focus-ring);
 }
+
+/* The example day breathes: the seven finishers light up in a wave, the no-shows flicker. */
+@media (prefers-reduced-motion: no-preference) {
+  .dotOn {
+    animation: wave 2.8s var(--ease-in-out) infinite;
+    animation-delay: calc(var(--i, 0) * 110ms);
+  }
+
+  .dotOff {
+    animation: flicker 2.8s steps(2, jump-none) infinite;
+    animation-delay: calc(var(--i, 0) * 110ms);
+  }
+}
+
+@keyframes wave {
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 12px rgb(198 244 50 / 0.35);
+  }
+  25% {
+    transform: scale(1.18);
+    box-shadow: 0 0 22px rgb(198 244 50 / 0.75);
+  }
+}
+
+@keyframes flicker {
+  50% {
+    opacity: 0.45;
+  }
+}

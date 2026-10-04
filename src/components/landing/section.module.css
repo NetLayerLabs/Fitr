@@ -85,3 +85,63 @@
     margin-bottom: var(--space-9);
   }
 }
+
+/* ---------- Spotlight cards (see Spotlight.tsx) ---------- */
+
+/* A card that hosts a .glare: positioned, and its own stacking context so the glare sits above
+   the card's background but below its content. */
+.spot {
+  position: relative;
+  isolation: isolate;
+}
+
+.glare {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 450ms var(--ease-out);
+  background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), rgb(198 244 50 / 0.1), transparent 60%);
+}
+
+/* The lit edge: the same light, but only on a 1px ring. */
+.glare::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgb(198 244 50 / 0.75), transparent 70%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+/* Over a full-bleed photo the glare has to sit on top of it. */
+.glareOver {
+  z-index: 2;
+}
+
+[data-spotlight]:hover > .glare {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spot {
+    transition:
+      translate 500ms var(--ease-out),
+      box-shadow 500ms var(--ease-out);
+  }
+
+  /* `translate`, not `transform`: the scroll reveal animates transform. */
+  .spot:hover {
+    translate: 0 -4px;
+    box-shadow: 0 24px 50px rgb(0 0 0 / 0.45);
+  }
+}

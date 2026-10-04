@@ -142,9 +142,7 @@
   top: 0;
   right: -6%;
   width: 92%;
-  height: auto;
   aspect-ratio: 1;
-  object-fit: cover;
   /* Two fades intersected: soft sides + soft top/bottom, so no edge of the square survives. */
   -webkit-mask-image:
     linear-gradient(90deg, transparent 14%, #000 36%, #000 66%, transparent 88%),
@@ -155,17 +153,96 @@
     linear-gradient(180deg, transparent 0%, #000 12%, #000 80%, transparent 97%);
   mask-composite: intersect;
   user-select: none;
+  translate: calc(var(--px, 0) * -8px) calc(var(--py, 0) * -6px);
+  transition: translate 900ms var(--ease-out);
+}
+
+.athlete img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: 50% 90%;
+}
+
+/* A band of light that rakes across the athlete; overlay blending leaves the black studio black. */
+.sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgb(226 255 140 / 0.55) 48%, rgb(198 244 50 / 0.2) 54%, transparent 62%);
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* A holographic pedestal under the athlete's feet: two flattened rings turning in opposite directions. */
+.pedestal {
+  position: absolute;
+  z-index: 1;
+  right: 9%;
+  bottom: -4%;
+  width: 60%;
+  mix-blend-mode: screen;
+  aspect-ratio: 1;
+  transform: perspective(900px) rotateX(74deg);
+  pointer-events: none;
+  translate: calc(var(--px, 0) * -8px) calc(var(--py, 0) * -6px);
+  transition: translate 900ms var(--ease-out);
+}
+
+.ringOuter,
+.ringInner {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.ringOuter {
+  inset: 0;
+  border: 2px dashed rgb(198 244 50 / 0.45);
+}
+
+.ringInner {
+  inset: 16%;
+  border: 2px solid rgb(198 244 50 / 0.65);
+  box-shadow:
+    0 0 24px rgb(198 244 50 / 0.25),
+    inset 0 0 30px rgb(198 244 50 / 0.18);
+}
+
+.ringDot {
+  position: absolute;
+  top: -5px;
+  left: calc(50% - 5px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px 3px rgb(198 244 50 / 0.7);
 }
 
 .phone {
   position: absolute;
+  z-index: 2;
   left: 2%;
   bottom: 0;
   width: 47%;
   transform: rotate(-4deg);
+  translate: calc(var(--px, 0) * 14px) calc(var(--py, 0) * 10px);
+  transition: translate 700ms var(--ease-out);
+}
+
+.ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
 }
 
 .float {
+  translate: calc(var(--px, 0) * 22px) calc(var(--py, 0) * 16px);
+  transition: translate 600ms var(--ease-out);
   position: absolute;
   z-index: 3;
   display: flex;
@@ -194,6 +271,7 @@
 }
 
 .floatIcon {
+  position: relative;
   display: grid;
   place-items: center;
   width: 28px;
@@ -233,11 +311,161 @@
   .floatBottom {
     animation-delay: -3s;
   }
+
+  .athlete img {
+    animation: breathe 7s var(--ease-in-out) infinite alternate;
+  }
+
+  .sweep {
+    animation: sweep 6.5s var(--ease-in-out) 1.2s infinite;
+  }
+
+  .halo {
+    animation: halo 5s var(--ease-in-out) infinite alternate;
+  }
+
+  .ringOuter {
+    animation: spin 40s linear infinite;
+  }
+
+  .ringInner {
+    animation: spin 14s linear infinite reverse;
+  }
+
+  .phone {
+    animation: hover 7s var(--ease-in-out) infinite alternate;
+  }
+
+  .ping {
+    animation: ping 2.6s var(--ease-out) infinite;
+  }
+
+  /* Intro: the copy rises in, line by line, on first paint. */
+  .badge,
+  .title,
+  .lede,
+  .ctas,
+  .facts {
+    animation: rise 900ms var(--ease-out) both;
+  }
+
+  .title {
+    animation-delay: 80ms;
+  }
+
+  .accent {
+    animation: rise 900ms var(--ease-out) 240ms both;
+  }
+
+  .lede {
+    animation-delay: 320ms;
+  }
+
+  .ctas {
+    animation-delay: 420ms;
+  }
+
+  .facts {
+    animation-delay: 520ms;
+  }
+
+  .stage {
+    animation: stageIn 1200ms var(--ease-out) 150ms both;
+  }
+
+  .primaryCta::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.55) 50%, transparent 65%);
+    background-size: 250% 100%;
+    background-position: 140% 0;
+    animation: sheen 4.5s var(--ease-in-out) 2s infinite;
+    pointer-events: none;
+  }
+}
+
+.primaryCta {
+  position: relative;
+  overflow: hidden;
 }
 
 @keyframes bob {
   to {
-    translate: 0 -8px;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes breathe {
+  to {
+    transform: scale(1.025) translateY(-0.6%);
+  }
+}
+
+@keyframes sweep {
+  0% {
+    background-position: 130% 0;
+  }
+  55%,
+  100% {
+    background-position: -30% 0;
+  }
+}
+
+@keyframes halo {
+  to {
+    opacity: 0.65;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes hover {
+  to {
+    transform: rotate(-2.5deg) translateY(-10px);
+  }
+}
+
+@keyframes ping {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+    filter: blur(6px);
+  }
+}
+
+@keyframes stageIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+  }
+}
+
+@keyframes sheen {
+  0% {
+    background-position: 140% 0;
+  }
+  45%,
+  100% {
+    background-position: -40% 0;
   }
 }
 

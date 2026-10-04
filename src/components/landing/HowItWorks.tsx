@@ -54,7 +54,8 @@ export default function HowItWorks() {
 
         <ol className={styles.steps} role="list">
           {STEPS.map(({ title, body, detail, Icon }, i) => (
-            <li key={title} className={`${styles.step} ${section.reveal}`}>
+            <li key={title} className={`${styles.step} ${section.reveal} ${section.spot}`} data-spotlight="">
+              <span className={section.glare} aria-hidden="true" />
               <div className={styles.stepTop}>
                 <span className={styles.icon}>
                   <Icon size={22} />
