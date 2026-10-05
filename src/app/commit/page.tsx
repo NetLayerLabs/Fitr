@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import CommitScreen from "@/components/stake/CommitScreen";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Commit",
-  description:
-    "Stake SKR on today's workout goal. Show up and get it back plus a share of forfeits; miss it and it goes to the people who did.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("stake");
+  return {
+    title: t("metaTitle"),
+    description: t("metaDescription"),
+  };
+}
 
 /** The Commit tab. Everything wallet- and chain-dependent renders on the client. */
 export default function CommitPage() {

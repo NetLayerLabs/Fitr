@@ -5,11 +5,14 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { workoutHrefFor } from "@/components/crews/multiPool";
 import { EXERCISES, exerciseFromCode } from "@/lib/exercises";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseNameInSentence } from "@/lib/i18n/exercise";
 import { dayEnd, dayStart, type DayConfig } from "@/lib/solana/vault/day";
 import { claimOpensAt, estimatePayout, type Settlement } from "@/lib/solana/vault/status";
 import { CommitmentStatus, type Pool } from "@/lib/solana/vault/generated";
 import type { EntryView } from "./plan";
 import { formatHold, goalUnitLabel } from "./form";
+import { rich } from "./rich";
 import { formatLocalDeadline } from "./StakeForm";
 import styles from "./stake.module.css";
 import { SkrText } from "@/components/brand/SkrAmount";
@@ -21,15 +24,17 @@ export function formatDayLabel(day: number, cfg: DayConfig, locales?: string | s
 }
 
 function GoalLine({ code, goal }: { code: number; goal: number }) {
+  const t = useT("stake");
+  const tx = useT("exercises");
   const kind = exerciseFromCode(code);
   const info = kind ? EXERCISES[kind] : null;
   if (!info) return <>{goal}</>;
   return (
     <>
-      <span className={`numeral ${styles.goalBig}`}>{info.unit === "seconds" ? formatHold(goal) : goal}</span>{" "}
+      <span className={`numeral ${styles.goalBig}`}>{info.unit === "seconds" ? formatHold(goal, t) : goal}</span>{" "}
       <span className={styles.goalNoun}>
-        {info.name.toLowerCase()}
-        <span className="sr-only"> ({goalUnitLabel(info.unit, goal)})</span>
+        {exerciseNameInSentence(tx, info.kind)}
+        <span className="sr-only"> ({goalUnitLabel(info.unit, goal, t)})</span>
       </span>
     </>
   );
@@ -51,6 +56,11 @@ export interface CommitmentPanelProps {
 
 /** The user's own slots: today's (and tomorrow's) commitment, plus anything to claim. */
 export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settlement, busy, onSettle, crewId }: CommitmentPanelProps) {
+  const t = useT("stake");
+  const dayLabel = (day: number) => formatDayLabel(day, cfg, t.locale);
+  const deadline = (ms: number) => formatLocalDeadline(ms, t.locale);
+  const claimOpens = (status: string, at: number) =>
+    status === "claimable" ? t("claimOpensNow") : t("claimOpensAfter", { time: deadline(at) });
   const mine = entries.filter((e) => e.commitment && e.day >= today);
   const claim = settlement?.kind === "claim" ? entries.find((e) => e.day === settlement.day) : undefined;
   const claimPayout = claim ? estimatePayout(claim, pool) : null;
@@ -60,7 +70,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
     <>
       {claim && claimPayout && settlement ? (
         <Card as="section" tone="lime" padding="lg" aria-labelledby="claim-title">
-          <p className={styles.eyebrowInk}>Ready to claim · {formatDayLabel(claim.day, cfg)}</p>
+          <p className={styles.eyebrowInk}>{t("readyToClaim", { day: dayLabel(claim.day) })}</p>
           <h2 id="claim-title" className={styles.claimTitle}>
             <span className={`numeral ${styles.claimBig}`}>
               {claimPayout.exact ? "" : "≈ "}
@@ -68,16 +78,20 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
             </span>
           </h2>
           <p className={styles.claimBody}>
-            <SkrText text={claim.dayState?.voided
-              ? "That day was cancelled, so your full stake comes back."
-              : claim.commitment?.status === CommitmentStatus.Revoked
-                ? `Your verification was withdrawn after review, so your ${fmt(claimPayout.principal)} stake comes back with no bonus.`
-                : claimPayout.bonus > 0n
-                ? `Your ${fmt(claimPayout.principal)} stake plus ${fmt(claimPayout.bonus)} from people who missed.`
-                : `Your ${fmt(claimPayout.principal)} stake back. Everyone showed up, so there is no bonus this time.`} />
+            <SkrText
+              text={
+                claim.dayState?.voided
+                  ? t("claimVoided")
+                  : claim.commitment?.status === CommitmentStatus.Revoked
+                    ? t("claimRevoked", { stake: fmt(claimPayout.principal) })
+                    : claimPayout.bonus > 0n
+                      ? t("claimBonus", { stake: fmt(claimPayout.principal), bonus: fmt(claimPayout.bonus) })
+                      : t("claimNoBonus", { stake: fmt(claimPayout.principal) })
+              }
+            />
           </p>
           <Button variant="primary" size="lg" block disabled={busy} onClick={() => onSettle(settlement)}>
-            {busy ? "Working…" : "Claim"}
+            {busy ? t("working") : t("claim")}
           </Button>
         </Card>
       ) : null}
@@ -92,66 +106,68 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
         const revoked = c.status === CommitmentStatus.Revoked;
         if (revoked && (e.status === "revoked" || e.status === "claimable")) {
           return (
-            <Card key={e.day} as="section" padding="lg" aria-label={`Verification withdrawn, ${formatDayLabel(e.day, cfg)}`}>
-              <p className={styles.missedTag}>Verification withdrawn</p>
+            <Card key={e.day} as="section" padding="lg" aria-label={t("withdrawnAria", { day: dayLabel(e.day) })}>
+              <p className={styles.missedTag}>{t("withdrawnTag")}</p>
               <p className={styles.goalLine}>
                 <GoalLine code={c.exercise} goal={c.goalTarget} />
               </p>
               <p className={styles.hint}>
-                Fitr&apos;s review withdrew this verification. Your <SkrText text={fmt(c.amount)} /> stake is not forfeited and comes back
-                with no bonus. Claim opens {e.status === "claimable" ? "now" : <>after {formatLocalDeadline(claimAt)}</>}.
+                {rich(t("withdrawnBody", { when: claimOpens(e.status, claimAt) }), { amount: <SkrText text={fmt(c.amount)} /> })}
               </p>
             </Card>
           );
         }
         if (e.status === "completed_pending" || e.status === "claimable") {
           return (
-            <Card key={e.day} as="section" tone="elevated" padding="lg" aria-label={`Verified commitment, ${formatDayLabel(e.day, cfg)}`}>
+            <Card key={e.day} as="section" tone="elevated" padding="lg" aria-label={t("verifiedAria", { day: dayLabel(e.day) })}>
               <p className={styles.verified}>
-                <CheckIcon size={18} /> Verified onchain
+                <CheckIcon size={18} /> {t("verifiedOnchain")}
               </p>
               <p className={styles.goalLine}>
                 <GoalLine code={c.exercise} goal={c.goalTarget} />
               </p>
               <p className={styles.hint}>
-                <SkrText text={fmt(c.amount)} /> comes back with your share of forfeits. Claim opens{" "}
-                {e.status === "claimable" ? "now" : <>after {formatLocalDeadline(claimAt)}</>}.
+                {rich(t("verifiedBody", { when: claimOpens(e.status, claimAt) }), { amount: <SkrText text={fmt(c.amount)} /> })}
               </p>
             </Card>
           );
         }
         if (e.status === "missed") {
           return (
-            <Card key={e.day} as="section" padding="lg" aria-label={`Missed commitment, ${formatDayLabel(e.day, cfg)}`}>
-              <p className={styles.missedTag}>Missed</p>
+            <Card key={e.day} as="section" padding="lg" aria-label={t("missedAria", { day: dayLabel(e.day) })}>
+              <p className={styles.missedTag}>{t("missedTag")}</p>
               <p className={styles.goalLine}>
                 <GoalLine code={c.exercise} goal={c.goalTarget} />
               </p>
               <p className={styles.hint}>
-                <SkrText text={fmt(c.amount)} /> was forfeited to the people who showed up. Tomorrow is a new day.
+                {rich(t("missedBody"), { amount: <SkrText text={fmt(c.amount)} /> })}
               </p>
             </Card>
           );
         }
         return (
-          <Card key={e.day} as="section" tone="elevated" padding="lg" aria-label={`Your commitment, ${isToday ? "today" : "tomorrow"}`}>
-            <p className={styles.eyebrow}>{isToday ? "You're committed today" : "You're committed for tomorrow"}</p>
+          <Card key={e.day} as="section" tone="elevated" padding="lg" aria-label={isToday ? t("yourCommitmentTodayAria") : t("yourCommitmentTomorrowAria")}>
+            <p className={styles.eyebrow}>{isToday ? t("committedToday") : t("committedTomorrow")}</p>
             <p className={styles.goalLine}>
               <GoalLine code={c.exercise} goal={c.goalTarget} />
             </p>
             <p className={styles.hint}>
-              <strong className={styles.stakeStrong}><SkrText text={fmt(c.amount)} /></strong> at stake · finish before{" "}
-              {formatLocalDeadline(finishBy)}
+              {rich(t("atStakeFinishBy", { deadline: deadline(finishBy) }), {
+                amount: (
+                  <strong className={styles.stakeStrong}>
+                    <SkrText text={fmt(c.amount)} />
+                  </strong>
+                ),
+              })}
             </p>
             {isToday && kind ? (
               <Button variant="primary" size="lg" block trailingPlay href={workoutHrefFor(kind, crewId)}>
-                Start workout
+                {t("startWorkout")}
               </Button>
             ) : null}
             {isToday ? (
               <p className={styles.fine}>
-                When you finish, Fitr re-checks the session and marks it complete onchain. It usually takes under a
-                minute.
+                {t("afterFinishFine")}
               </p>
             ) : null}
           </Card>
@@ -160,8 +176,9 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
 
       {missedPast.length > 0 && !mine.some((e) => e.status === "missed") ? (
         <p className={styles.hint}>
-          Missed {formatDayLabel(missedPast[0].day, cfg)}: <SkrText text={fmt(missedPast[0].commitment!.amount)} /> was forfeited. Your
-          next commit also closes it out and returns the account rent.
+          {rich(t("missedPast", { day: dayLabel(missedPast[0].day) }), {
+            amount: <SkrText text={fmt(missedPast[0].commitment!.amount)} />,
+          })}
         </p>
       ) : null}
     </>

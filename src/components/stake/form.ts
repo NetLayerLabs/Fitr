@@ -6,6 +6,19 @@ import { EXERCISE_LIST, EXERCISES, type ExerciseInfo } from "@/lib/exercises";
 import type { ExerciseKind } from "@/lib/pose/types";
 import { formatTokenAmount, parseTokenAmount } from "@/lib/solana/format";
 import type { Pool } from "@/lib/solana/vault/generated";
+import { exerciseGoal, exerciseNameInSentence } from "@/lib/i18n/exercise";
+import { en } from "@/lib/i18n/messages";
+import { makeTranslator, type Translator } from "@/lib/i18n/translate";
+
+/** English fallbacks so callers without a translator (tests, older call sites) keep working. */
+const EN_STAKE: Translator<"stake"> = makeTranslator("en", en, "stake");
+const EN_EXERCISES: Translator<"exercises"> = makeTranslator("en", en, "exercises");
+
+/** Translators for goal text: `{ t: useT("stake"), tx: useT("exercises") }`. */
+export interface GoalTranslators {
+  t: Translator<"stake">;
+  tx: Translator<"exercises">;
+}
 
 /** Hard ceilings in the program (anchor/SPEC.md §2.6) — only a fallback when a limit reads 0. */
 export function goalCeiling(info: Pick<ExerciseInfo, "unit" | "kind">): number {
@@ -48,23 +61,23 @@ export function defaultGoal(pool: Pick<Pool, "goalLimits">, kind: ExerciseKind):
   return clampInt(EXERCISES[kind].defaultGoal, goalBounds(pool, kind));
 }
 
-export function goalUnitLabel(unit: ExerciseInfo["unit"], value: number): string {
-  if (unit === "seconds") return value === 1 ? "second" : "seconds";
-  return value === 1 ? "rep" : "reps";
+export function goalUnitLabel(unit: ExerciseInfo["unit"], value: number, t: Translator<"stake"> = EN_STAKE): string {
+  return t.plural(unit === "seconds" ? "goalUnitSeconds" : "goalUnitReps", value);
 }
 
 /** "1:30" for 90 s; whole minutes as "2 min". */
-export function formatHold(seconds: number): string {
-  if (seconds < 60) return `${seconds} s`;
+export function formatHold(seconds: number, t: Translator<"stake"> = EN_STAKE): string {
+  if (seconds < 60) return t("holdSeconds", { seconds });
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return s === 0 ? `${m} min` : `${m}:${String(s).padStart(2, "0")}`;
+  return s === 0 ? t("holdMinutes", { minutes: m }) : `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export function formatGoal(kind: ExerciseKind, goal: number): string {
+/** "20 push-ups"; holds as "1:30 plank". */
+export function formatGoal(kind: ExerciseKind, goal: number, g: GoalTranslators = { t: EN_STAKE, tx: EN_EXERCISES }): string {
   const info = EXERCISES[kind];
-  if (info.unit === "seconds") return `${formatHold(goal)} ${info.name.toLowerCase()}`;
-  return `${goal} ${info.name.toLowerCase()}`;
+  if (info.unit === "seconds") return g.t("holdGoal", { hold: formatHold(goal, g.t), exercise: exerciseNameInSentence(g.tx, kind) });
+  return exerciseGoal(g.tx, kind, goal);
 }
 
 /* ------------------------------------------------------------------------------------------ */
@@ -129,19 +142,20 @@ export function amountErrorMessage(
   pool: Pick<Pool, "minStake" | "maxStake">,
   decimals: number,
   label: string,
+  t: Translator<"stake"> = EN_STAKE,
 ): string {
   const fmt = (a: bigint) => `${formatTokenAmount(a, decimals)} ${label}`;
   switch (error) {
     case "empty":
-      return `Choose how much ${label} to stake.`;
+      return t("amountEmpty", { token: label });
     case "invalid":
-      return `Enter an amount like 25 or 12.5 (up to ${decimals} decimals).`;
+      return t("amountInvalid", { decimals });
     case "below_min":
-      return `The minimum stake is ${fmt(pool.minStake)}.`;
+      return t("amountBelowMin", { amount: fmt(pool.minStake) });
     case "above_max":
-      return `The maximum stake is ${fmt(pool.maxStake)}.`;
+      return t("amountAboveMax", { amount: fmt(pool.maxStake) });
     case "above_balance":
-      return `That is more ${label} than your wallet holds.`;
+      return t("amountAboveBalance", { token: label });
   }
 }
 

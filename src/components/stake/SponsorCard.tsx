@@ -26,6 +26,8 @@ import { ExplorerLink, TxError, TxProgress } from "./TxStatus";
 import { sendVaultTx, type TxStep } from "./txflow";
 import type { VaultTxPhase } from "./useVaultTx";
 import styles from "./stake.module.css";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { rich } from "./rich";
 
 /** fund_reserve measured about 40k CU; the simulation re-sizes it anyway. */
 const FUND_RESERVE_CU = 80_000;
@@ -39,6 +41,7 @@ export function SponsoredNote({
 }: {
   pool: Pick<Pool, "dailySponsorAmount" | "reserve">;
 }) {
+  const t = useT("stake");
   const perDay =
     pool.dailySponsorAmount < pool.reserve
       ? pool.dailySponsorAmount
@@ -46,11 +49,8 @@ export function SponsoredNote({
   if (pool.dailySponsorAmount === 0n || perDay === 0n) return null;
   return (
     <p className={styles.sponsoredNote} role="note">
-      <span className={styles.sponsoredTag}>Sponsored</span>
-      <span>
-        Up to <SkrAmount value={fmt(perDay)} /> extra per day, shared by the
-        people who finish.
-      </span>
+      <span className={styles.sponsoredTag}>{t("sponsoredTag")}</span>
+      <span>{rich(t("sponsoredNote"), { amount: <SkrAmount value={fmt(perDay)} /> })}</span>
     </p>
   );
 }
@@ -77,6 +77,7 @@ export default function SponsorCard({
   /** The wallet's SKR balance (base units), when known. */
   balance: bigint | null;
 }) {
+  const t = useT("stake");
   const signer = useSendingSigner(account);
   const [pick, setPick] = useState<number>(10);
   const [phase, setPhase] = useState<VaultTxPhase>("idle");
@@ -98,7 +99,7 @@ export default function SponsorCard({
     phase === "simulating" ||
     phase === "signing" ||
     phase === "confirming";
-  const who = crewName ? crewName : "the global pool";
+  const who = crewName ? crewName : t("sponsorGlobalPool");
 
   async function sponsor() {
     if (!mint || busy) return;
@@ -147,23 +148,21 @@ export default function SponsorCard({
   return (
     <Card as="section" padding="md" aria-labelledby="sponsor-title">
       <h2 id="sponsor-title" className={styles.cardTitle}>
-        Sponsor {crewName ? crewName : "a day"}
+        {crewName ? t("sponsorTitleCrew", { crew: crewName }) : t("sponsorTitleDay")}
       </h2>
       <p className={styles.sponsorLede}>
-        Add an extra bonus for showing up. Your {solanaConfig.tokenLabel} goes
-        into the sponsor reserve of {who}, which adds up to{" "}
-        <SkrAmount value={fmt(pool.dailySponsorAmount)} /> to each day&apos;s
-        bonus, only on days where someone finishes.
+        {rich(t("sponsorLede", { token: solanaConfig.tokenLabel, who }), {
+          amount: <SkrAmount value={fmt(pool.dailySponsorAmount)} />,
+        })}
       </p>
       <p className={styles.sponsorReserve}>
-        Reserve now: <SkrAmount value={fmt(pool.reserve)} />
+        {rich(t("sponsorReserve"), { amount: <SkrAmount value={fmt(pool.reserve)} /> })}
       </p>
 
       {done ? (
         <div className={styles.sponsorDone} role="status">
           <p>
-            Thank you! <SkrAmount value={fmt(done.amount)} /> now goes to the
-            people who show up and finish.
+            {rich(t("sponsorThanks"), { amount: <SkrAmount value={fmt(done.amount)} /> })}
           </p>
           <ExplorerLink signature={done.signature} />
           <Button
@@ -173,12 +172,12 @@ export default function SponsorCard({
               setDone(null);
             }}
           >
-            Sponsor again
+            {t("sponsorAgain")}
           </Button>
         </div>
       ) : (
         <>
-          <ChipRow label="Sponsor amount">
+          <ChipRow label={t("sponsorAmount")}>
             {PICKS_SKR.map((n) => (
               <Chip
                 key={n}
@@ -186,7 +185,7 @@ export default function SponsorCard({
                 onClick={() => setPick(n)}
                 disabled={busy}
               >
-                {n} {solanaConfig.tokenLabel}
+                {t("sponsorPick", { count: n, token: solanaConfig.tokenLabel })}
               </Chip>
             ))}
           </ChipRow>
@@ -207,13 +206,11 @@ export default function SponsorCard({
             disabled={busy || tooMuch || !mint}
           >
             {tooMuch
-              ? `Not enough ${solanaConfig.tokenLabel}`
-              : `Sponsor ${pick} ${solanaConfig.tokenLabel}`}
+              ? t("sponsorNotEnough", { token: solanaConfig.tokenLabel })
+              : t("sponsorSubmit", { count: pick, token: solanaConfig.tokenLabel })}
           </Button>
           <p className={styles.fine}>
-            A bonus for the people who finish, not an investment: sponsored SKR
-            is not returned, and nobody (not Fitr either) can withdraw it from
-            the reserve.
+            {t("sponsorFine")}
           </p>
         </>
       )}

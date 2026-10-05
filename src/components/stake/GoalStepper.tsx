@@ -6,6 +6,8 @@ import { EXERCISES } from "@/lib/exercises";
 import type { ExerciseKind } from "@/lib/pose/types";
 import { clampInt, formatHold, goalUnitLabel, stepGoal, type Bounds } from "./form";
 import styles from "./stake.module.css";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseRepNote } from "@/lib/i18n/exercise";
 
 function MinusIcon({ size = 22 }: { size?: number }) {
   return (
@@ -24,10 +26,13 @@ export interface GoalStepperProps {
 
 /** − [big numeral] + with the pool's per-exercise min/max; typing a number also works. */
 export default function GoalStepper({ kind, value, bounds, onChange }: GoalStepperProps) {
+  const t = useT("stake");
+  const tx = useT("exercises");
+  const repNote = exerciseRepNote(tx, kind);
   const info = EXERCISES[kind];
   const id = useId();
   const [draft, setDraft] = useState<string | null>(null);
-  const unit = goalUnitLabel(info.unit, value);
+  const unit = goalUnitLabel(info.unit, value, t);
 
   const commitDraft = () => {
     if (draft === null) return;
@@ -39,13 +44,13 @@ export default function GoalStepper({ kind, value, bounds, onChange }: GoalStepp
   return (
     <div className={styles.stepper}>
       <label htmlFor={id} className={styles.fieldLabel}>
-        Daily goal
+        {t("dailyGoal")}
       </label>
       <div className={styles.stepperRow}>
         <button
           type="button"
           className={styles.stepButton}
-          aria-label="Decrease goal"
+          aria-label={t("decreaseGoal")}
           disabled={value <= bounds.min}
           onClick={() => onChange(stepGoal(info.unit, value, -1, bounds))}
         >
@@ -71,7 +76,7 @@ export default function GoalStepper({ kind, value, bounds, onChange }: GoalStepp
         <button
           type="button"
           className={styles.stepButton}
-          aria-label="Increase goal"
+          aria-label={t("increaseGoal")}
           disabled={value >= bounds.max}
           onClick={() => onChange(stepGoal(info.unit, value, 1, bounds))}
         >
@@ -80,9 +85,9 @@ export default function GoalStepper({ kind, value, bounds, onChange }: GoalStepp
       </div>
       <p id={`${id}-range`} className={styles.hint}>
         {info.unit === "seconds"
-          ? `${formatHold(value)} hold · allowed ${formatHold(bounds.min)} to ${formatHold(bounds.max)}`
-          : `Allowed ${bounds.min} to ${bounds.max.toLocaleString("en-US")} reps`}
-        {info.repNote ? ` · ${info.repNote}` : ""}
+          ? t("holdRange", { hold: formatHold(value, t), min: formatHold(bounds.min, t), max: formatHold(bounds.max, t) })
+          : t("repRange", { min: bounds.min, max: bounds.max.toLocaleString(t.locale) })}
+        {repNote ? ` · ${repNote}` : ""}
       </p>
     </div>
   );

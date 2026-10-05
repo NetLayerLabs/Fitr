@@ -16,6 +16,10 @@ import {
   type UiWalletAccount,
 } from "@wallet-standard/react";
 import { address, type Address, type TransactionSendingSigner } from "@solana/kit";
+import { tr } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { en } from "@/lib/i18n/messages";
+import { makeTranslator, type Translator } from "@/lib/i18n/translate";
 import { solanaConfig } from "@/lib/solana/config";
 import { isMobileWalletAdapterName } from "@/lib/solana/mwa";
 import { fetchSeekerStatus, getBrowserRpc } from "@/lib/solana/rpc";
@@ -52,9 +56,14 @@ export function isMobileWalletAdapter(wallet: Pick<UiWallet, "name">): boolean {
   return isMobileWalletAdapterName(wallet.name);
 }
 
-/** User-facing wallet label. MWA (the phone's own wallet, Seed Vault on Seeker) gets a plain name. */
-export function walletLabel(wallet: Pick<UiWallet, "name">): string {
-  return isMobileWalletAdapter(wallet) ? "Use Installed Wallet" : wallet.name;
+const EN_WALLET: Translator<"wallet"> = makeTranslator("en", en, "wallet");
+
+/**
+ * User-facing wallet label. MWA (the phone's own wallet, Seed Vault on Seeker) gets a plain name.
+ * Pass `useT("wallet")` in render; without it the label is English.
+ */
+export function walletLabel(wallet: Pick<UiWallet, "name">, t: Translator<"wallet"> = EN_WALLET): string {
+  return isMobileWalletAdapter(wallet) ? t("installedWallet") : wallet.name;
 }
 
 /** MWA first, then alphabetical. */
@@ -66,9 +75,10 @@ export function sortWallets<T extends Pick<UiWallet, "name">>(wallets: readonly 
   });
 }
 
+/** Called from a catch block (outside render). */
 function errorMessage(err: unknown, fallback: string): string {
   const msg = err instanceof Error ? err.message : "";
-  if (/reject|declin|cancel|denied/i.test(msg)) return "Request cancelled in your wallet.";
+  if (/reject|declin|cancel|denied/i.test(msg)) return tr("wallet", "connectCancelled");
   return msg || fallback;
 }
 
@@ -91,13 +101,13 @@ export function useConnectWallet(wallet: UiWallet): ConnectWallet {
       const account =
         accounts.find((a) => a.chains.includes(solanaConfig.chain)) ?? accounts[0] ?? wallet.accounts[0];
       if (!account) {
-        setError("The wallet did not share an account.");
+        setError(tr("wallet", "noAccountShared"));
         return null;
       }
       setAccount(account);
       return account;
     } catch (err) {
-      setError(errorMessage(err, "Could not connect to the wallet."));
+      setError(errorMessage(err, tr("wallet", "connectFailed")));
       return null;
     }
   }, [connectFeature, setAccount, wallet]);
@@ -194,7 +204,7 @@ function useAsyncResource<T>(
           baseKey: key,
           requestKey,
           data: prev?.baseKey === key ? prev.data : null,
-          error: err instanceof Error && err.message ? err.message : "Request failed",
+          error: err instanceof Error && err.message ? err.message : tr("wallet", "requestFailed"),
         }));
       },
     );
@@ -214,6 +224,7 @@ function useAsyncResource<T>(
 
 /** SKR (tSKR in devnet test mode) held in the owner's ATA. Idle when owner is null. */
 export function useSkrBalance(owner: Address | null): AsyncState<SkrBalance> {
+  const t = useT("wallet");
   const version = useBalancesVersion();
   const mint = solanaConfig.skrMint;
   const load = useCallback(
@@ -225,7 +236,7 @@ export function useSkrBalance(owner: Address | null): AsyncState<SkrBalance> {
   );
   const state = useAsyncResource(owner && mint ? `skr:${owner}:${mint}` : null, load, version);
   if (owner && !mint) {
-    return { status: "error", data: null, error: `${solanaConfig.tokenLabel} mint is not configured`, refresh: state.refresh };
+    return { status: "error", data: null, error: t("mintNotConfigured", { token: solanaConfig.tokenLabel }), refresh: state.refresh };
   }
   return state;
 }

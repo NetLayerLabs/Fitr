@@ -13,6 +13,7 @@ import {
   type Rpc,
 } from "@solana/kit";
 import { TOKEN_PROGRAM_ADDRESS, findAssociatedTokenPda, getTokenDecoder } from "@solana-program/token";
+import { tr } from "@/lib/i18n";
 import { SKR_DECIMALS } from "./config";
 import type { SkrBalance } from "./types";
 
@@ -43,11 +44,11 @@ export async function fetchSkrBalance(
     return { owner, mint, ata, amount: 0n, decimals: SKR_DECIMALS, exists: false };
   }
   if (account.programAddress !== TOKEN_PROGRAM_ADDRESS) {
-    throw new SkrAccountError("Token account is not owned by the SPL Token program");
+    throw new SkrAccountError(tr("wallet", "tokenAccountWrongProgram"));
   }
   const token = getTokenDecoder().decode(account.data);
   if (token.mint !== mint || token.owner !== owner) {
-    throw new SkrAccountError("Token account does not match the expected mint/owner");
+    throw new SkrAccountError(tr("wallet", "tokenAccountMismatch"));
   }
   return { owner, mint, ata, amount: token.amount, decimals: SKR_DECIMALS, exists: true };
 }

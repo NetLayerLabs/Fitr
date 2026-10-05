@@ -5,15 +5,17 @@ import Button from "@/components/ui/Button";
 import { solanaConfig } from "@/lib/solana/config";
 import type { VaultTxPhase } from "./useVaultTx";
 import styles from "./stake.module.css";
+import { useT } from "@/lib/i18n/I18nProvider";
 
-const STEPS: Array<{ phase: VaultTxPhase; label: string }> = [
-  { phase: "preparing", label: "Preparing" },
-  { phase: "simulating", label: "Checking with the network" },
-  { phase: "signing", label: "Approve in your wallet" },
-  { phase: "confirming", label: "Confirming onchain" },
-];
+const STEPS = [
+  { phase: "preparing", label: "stepPreparing" },
+  { phase: "simulating", label: "stepSimulating" },
+  { phase: "signing", label: "stepSigning" },
+  { phase: "confirming", label: "stepConfirming" },
+] as const satisfies ReadonlyArray<{ phase: VaultTxPhase; label: string }>;
 
 export function TxProgress({ phase }: { phase: VaultTxPhase }) {
+  const t = useT("stake");
   const current = STEPS.findIndex((s) => s.phase === phase);
   if (current === -1) return null;
   return (
@@ -26,7 +28,7 @@ export function TxProgress({ phase }: { phase: VaultTxPhase }) {
             aria-current={i === current ? "step" : undefined}
           >
             <span className={styles.progressDot} aria-hidden="true" />
-            {s.label}
+            {t(s.label)}
           </li>
         ))}
       </ol>
@@ -35,9 +37,11 @@ export function TxProgress({ phase }: { phase: VaultTxPhase }) {
 }
 
 export function ExplorerLink({ signature }: { signature: string }) {
+  const t = useT("stake");
   return (
     <a className={styles.explorer} href={solanaConfig.explorerTxUrl(signature)} target="_blank" rel="noreferrer noopener">
-      View on Solana Explorer<span className="sr-only"> (opens in a new tab)</span>
+      {t("viewOnExplorer")}
+      <span className="sr-only">{t("opensInNewTab")}</span>
     </a>
   );
 }
@@ -54,6 +58,7 @@ export function TxError({
   detail?: string | null;
   onDismiss: () => void;
 }) {
+  const t = useT("stake");
   return (
     <div className={styles.txError} role="alert">
       <AlertIcon size={20} />
@@ -62,13 +67,13 @@ export function TxError({
         {signature ? <ExplorerLink signature={signature} /> : null}
         {detail ? (
           <details className={styles.txErrorDetail}>
-            <summary>Technical details</summary>
+            <summary>{t("technicalDetails")}</summary>
             <code>{detail}</code>
           </details>
         ) : null}
       </div>
       <Button variant="ghost" onClick={onDismiss}>
-        OK
+        {t("ok")}
       </Button>
     </div>
   );

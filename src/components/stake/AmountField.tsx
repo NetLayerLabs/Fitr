@@ -7,6 +7,7 @@ import type { Pool } from "@/lib/solana/vault/generated";
 import { amountErrorMessage, amountToInput, checkAmount, quickPicks } from "./form";
 import styles from "./stake.module.css";
 import { SkrAmount, SkrText } from "@/components/brand/SkrAmount";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 export interface AmountFieldProps {
   text: string;
@@ -22,16 +23,17 @@ export interface AmountFieldProps {
 
 /** Stake input + quick picks, bounded by the pool's min/max and the wallet balance. */
 export default function AmountField({ text, onText, pool, balance, decimals, label, showError }: AmountFieldProps) {
+  const t = useT("stake");
   const id = useId();
   const check = checkAmount(text, pool, balance, decimals);
   const picks = quickPicks(pool, balance, decimals);
-  const error = !check.ok && showError ? amountErrorMessage(check.error, pool, decimals, label) : null;
+  const error = !check.ok && showError ? amountErrorMessage(check.error, pool, decimals, label, t) : null;
   const fmt = (a: bigint) => formatTokenAmount(a, decimals, { maxFractionDigits: 2 });
 
   return (
     <div className={styles.amount}>
       <label htmlFor={id} className={styles.fieldLabel}>
-        Stake
+        {t("amountLabel")}
       </label>
       <div className={`${styles.amountBox} ${error ? styles.amountBoxError : ""}`}>
         <input
@@ -47,7 +49,7 @@ export default function AmountField({ text, onText, pool, balance, decimals, lab
         />
         <span className={styles.amountUnit}>{label}</span>
       </div>
-      <ChipRow label="Quick amounts">
+      <ChipRow label={t("quickAmounts")}>
         {picks.map((p) => (
           <Chip
             key={p.amount.toString()}
@@ -61,9 +63,11 @@ export default function AmountField({ text, onText, pool, balance, decimals, lab
       </ChipRow>
       <p id={`${id}-help`} className={styles.hint}>
         <SkrText
-          text={`Min ${fmt(pool.minStake)} ${label} · max ${fmt(pool.maxStake)} ${label}${
-            balance !== null ? ` · balance ${fmt(balance)} ${label}` : ""
-          }`}
+          text={
+            balance !== null
+              ? t("amountRangeBalance", { min: fmt(pool.minStake), max: fmt(pool.maxStake), balance: fmt(balance), token: label })
+              : t("amountRange", { min: fmt(pool.minStake), max: fmt(pool.maxStake), token: label })
+          }
         />
       </p>
       {error ? (

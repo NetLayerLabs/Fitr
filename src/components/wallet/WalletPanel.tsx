@@ -20,35 +20,38 @@ import {
 import { WalletIcon } from "./WalletIcon";
 import styles from "./Wallet.module.css";
 import { SkrText } from "@/components/brand/SkrAmount";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 function TestModeBanner() {
+  const t = useT("wallet");
   if (!solanaConfig.isTestToken) return null;
   return (
     <p className={styles.testBanner} role="note">
-      Developer test mode: Solana {solanaConfig.cluster} with test tokens ({solanaConfig.tokenLabel}). No real
-      value.
+      {t("testMode", { cluster: solanaConfig.cluster, token: solanaConfig.tokenLabel })}
     </p>
   );
 }
 
 function DisconnectButton({ wallet }: { wallet: UiWallet }) {
+  const t = useT("wallet");
   const { disconnect, disconnecting } = useDisconnectWallet(wallet);
   return (
     <button type="button" className={styles.secondary} onClick={() => void disconnect()} disabled={disconnecting}>
-      {disconnecting ? "Disconnecting…" : "Disconnect"}
+      {disconnecting ? t("disconnecting") : t("disconnect")}
     </button>
   );
 }
 
 function CopyAddress({ value }: { value: string }) {
+  const t = useT("wallet");
   const [copied, setCopied] = useState(false);
   return (
     <>
       <button
         type="button"
         className={styles.copyButton}
-        aria-label={copied ? "Address copied" : "Copy address"}
-        title={copied ? "Copied" : "Copy address"}
+        aria-label={copied ? t("addressCopied") : t("copyAddress")}
+        title={copied ? t("copied") : t("copyAddress")}
         data-copied={copied ? "" : undefined}
         onClick={() => {
           navigator.clipboard?.writeText(value).then(
@@ -63,13 +66,14 @@ function CopyAddress({ value }: { value: string }) {
         {copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}
       </button>
       <span className="sr-only" role="status">
-        {copied ? "Address copied" : ""}
+        {copied ? t("addressCopied") : ""}
       </span>
     </>
   );
 }
 
 function ConnectedWallet({ account, wallet, owner }: { account: UiWalletAccount; wallet: UiWallet | undefined; owner: Address }) {
+  const t = useT("wallet");
   const skr = useSkrBalance(owner);
   const sol = useSolBalance(owner);
   const seeker = useSeekerStatus(owner);
@@ -85,7 +89,7 @@ function ConnectedWallet({ account, wallet, owner }: { account: UiWalletAccount;
           </span>
           <div className={styles.accountText}>
             <h2 id="wallet-account-heading" className={styles.accountName}>
-              {wallet ? walletLabel(wallet) : "Wallet"}
+              {wallet ? walletLabel(wallet, t) : t("walletFallbackName")}
             </h2>
             <div className={styles.addressRow}>
               <p className={styles.address} title={account.address}>
@@ -103,7 +107,7 @@ function ConnectedWallet({ account, wallet, owner }: { account: UiWalletAccount;
             target="_blank"
             rel="noreferrer noopener"
           >
-            View on Explorer
+            {t("viewOnExplorer")}
           </a>
         </div>
       </section>
@@ -111,7 +115,7 @@ function ConnectedWallet({ account, wallet, owner }: { account: UiWalletAccount;
       <section className={styles.card} aria-labelledby="wallet-balance-heading">
         <div className={styles.balanceHead}>
           <h2 id="wallet-balance-heading" className={styles.label}>
-            {solanaConfig.tokenLabel} balance
+            {t("balanceTitle", { token: solanaConfig.tokenLabel })}
           </h2>
           <button
             type="button"
@@ -122,31 +126,33 @@ function ConnectedWallet({ account, wallet, owner }: { account: UiWalletAccount;
               seeker.refresh();
             }}
             disabled={loading}
-            aria-label="Refresh balances"
+            aria-label={t("refreshBalances")}
           >
             <RefreshIcon size={18} />
           </button>
         </div>
         <p className={styles.balance} aria-live="polite" aria-busy={skr.status === "loading" || undefined}>
-          {skr.data ? <SkrText text={formatSkr(skr.data.amount)} /> : skr.status === "loading" ? "Loading…" : "—"}
+          {skr.data ? <SkrText text={formatSkr(skr.data.amount)} /> : skr.status === "loading" ? t("loading") : "—"}
         </p>
         {skr.status === "error" ? (
           <p className={styles.error} role="alert">
-            Could not load your {solanaConfig.tokenLabel} balance. {skr.error}
+            {t("balanceLoadFailed", { token: solanaConfig.tokenLabel, reason: skr.error ?? "" })}
           </p>
         ) : null}
         <p className={styles.subtle}>
-          SOL for network fees: {sol.data !== null ? formatSol(sol.data) : sol.status === "error" ? "unavailable" : "…"}
+          {t("solForFees", {
+            amount: sol.data !== null ? formatSol(sol.data) : sol.status === "error" ? t("unavailable") : "…",
+          })}
         </p>
         {lowSol ? (
           <p className={styles.warn}>
-            <AlertIcon size={16} /> Low SOL. Add a little SOL to pay network fees before staking.
+            <AlertIcon size={16} /> {t("lowSol")}
           </p>
         ) : null}
       </section>
 
       <p className={styles.subtle}>
-        Fitr never moves funds on its own. Every stake or claim is approved by you in your wallet.
+        {t("neverMovesFunds")}
       </p>
 
       {wallet ? <DisconnectButton wallet={wallet} /> : null}
@@ -156,6 +162,7 @@ function ConnectedWallet({ account, wallet, owner }: { account: UiWalletAccount;
 
 /** The /wallet screen body: connect, then account, balances and Seeker status. */
 export default function WalletPanel() {
+  const t = useT("wallet");
   const { account, wallet, owner } = useSelectedWallet();
   return (
     <div className={styles.stack}>
@@ -165,10 +172,10 @@ export default function WalletPanel() {
       ) : (
         <section className={styles.card} aria-labelledby="wallet-connect-heading">
           <h2 id="wallet-connect-heading" className={styles.cardTitle}>
-            Connect your wallet
+            {t("connectTitle")}
           </h2>
           <p className={styles.subtle}>
-            Connect to see your {solanaConfig.tokenLabel} balance and stake on your daily goal.
+            {t("connectHint", { token: solanaConfig.tokenLabel })}
           </p>
           <ConnectWalletList />
         </section>

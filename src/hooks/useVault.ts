@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { Address } from "@solana/kit";
+import { tr } from "@/lib/i18n";
 import { solanaConfig } from "@/lib/solana/config";
 import { getBrowserRpc } from "@/lib/solana/rpc";
 import { fetchVaultSnapshot, type VaultSnapshot } from "@/lib/solana/vault/read";
@@ -96,7 +97,7 @@ export function useVault(
           requestKey,
           snapshot: prev?.key === key ? prev.snapshot : null,
           missing: false,
-          error: err instanceof Error && err.message ? err.message : "Could not read the vault",
+          error: err instanceof Error && err.message ? err.message : tr("stake", "vaultReadFailed"),
         }));
       },
     );

@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from "react";
 import Button from "@/components/ui/Button";
-import { EXERCISES } from "@/lib/exercises";
 import type { ExerciseKind } from "@/lib/pose/types";
 import { dayEnd, type DayConfig } from "@/lib/solana/vault/day";
 import type { Pool } from "@/lib/solana/vault/generated";
@@ -13,6 +12,9 @@ import GoalStepper from "./GoalStepper";
 import { checkAmount, clampInt, defaultGoal, formatGoal, goalBounds } from "./form";
 import styles from "./stake.module.css";
 import { SkrText } from "@/components/brand/SkrAmount";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseName } from "@/lib/i18n/exercise";
+import { rich } from "./rich";
 
 export interface StakeSubmit {
   exercise: ExerciseKind;
@@ -44,7 +46,7 @@ export interface StakeFormProps {
   onSubmit: (v: StakeSubmit) => void;
 }
 
-/** "Mon 23:59" style local time for an instant in ms. */
+/** "Mon 23:59" style local time for an instant in ms (pass `t.locale` for the app language). */
 export function formatLocalDeadline(ms: number, locales?: string | string[]): string {
   return new Intl.DateTimeFormat(locales, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(ms));
 }
@@ -55,6 +57,9 @@ export function formatFeePercent(feeBps: number): string {
 }
 
 export default function StakeForm(p: StakeFormProps) {
+  const t = useT("stake");
+  const tx = useT("exercises");
+  const g = { t, tx };
   const fixedKind = p.fixedExercise ?? null;
   const fixedGoal = fixedKind ? (p.fixedGoal ?? null) : null;
   const [pickedKind, setKind] = useState<ExerciseKind>(fixedKind ?? p.initialExercise ?? "pushup");
@@ -70,6 +75,13 @@ export default function StakeForm(p: StakeFormProps) {
   const finishByMs = dayEnd(p.targetDay, p.cfg) * 1000 - 1000;
   const fee = formatFeePercent(p.pool.feeBps);
   const amountLabel = check.ok ? `${formatTokenAmount(check.amount, p.decimals, { maxFractionDigits: 2 })} ${p.label}` : null;
+  const submitLabel = p.bundledClaim
+    ? amountLabel
+      ? t("submitClaimCommitAmount", { amount: amountLabel })
+      : t("submitClaimCommit")
+    : amountLabel
+      ? t("submitCommitAmount", { amount: amountLabel })
+      : t("submitCommit");
 
   const pick = (k: ExerciseKind) => {
     setKind(k);
@@ -86,48 +98,48 @@ export default function StakeForm(p: StakeFormProps) {
   return (
     <form className={styles.form} onSubmit={submit} noValidate aria-labelledby="stake-form-title">
       <div className={styles.formHead}>
-        <p className={styles.eyebrow}>{p.isTomorrow ? "Tomorrow" : "Today"}</p>
+        <p className={styles.eyebrow}>{p.isTomorrow ? t("tomorrow") : t("today")}</p>
         <h2 id="stake-form-title" className={styles.sectionTitle}>
-          {p.crewName ? "Commit with the crew" : "Set your commitment"}
+          {p.crewName ? t("formTitleCrew") : t("formTitle")}
         </h2>
       </div>
 
-      <section className={styles.step} aria-label="1. Exercise">
+      <section className={styles.step} aria-label={t("stepExerciseAria")}>
         <h3 className={styles.stepTitle}>
           <span className={styles.stepNum} aria-hidden="true">1</span>{" "}
-          {fixedKind ? "The crew's exercise" : "Pick an exercise"}
+          {fixedKind ? t("crewExercise") : t("pickExercise")}
         </h3>
         {fixedKind ? (
           <p className={styles.locked} data-testid="locked-exercise">
-            <strong>{EXERCISES[fixedKind].name}</strong> · set by the crew
+            {rich(t("lockedExercise"), { exercise: <strong>{exerciseName(tx, fixedKind)}</strong> })}
           </p>
         ) : (
           <ExercisePicker value={kind} onChange={pick} />
         )}
       </section>
 
-      <section className={styles.step} aria-label="2. Goal">
+      <section className={styles.step} aria-label={t("stepGoalAria")}>
         <h3 className={styles.stepTitle}>
-          <span className={styles.stepNum} aria-hidden="true">2</span> {fixedGoal ? "The crew's bar" : "Set the bar"}
+          <span className={styles.stepNum} aria-hidden="true">2</span> {fixedGoal ? t("crewBar") : t("setBar")}
         </h3>
         {fixedGoal ? (
           <p className={styles.locked} data-testid="locked-goal">
-            <strong>{formatGoal(kind, fixedGoal)}</strong> · same for everyone in the crew
+            {rich(t("lockedGoal"), { goal: <strong>{formatGoal(kind, fixedGoal, g)}</strong> })}
           </p>
         ) : (
           <GoalStepper kind={kind} value={safeGoal} bounds={bounds} onChange={setGoal} />
         )}
       </section>
 
-      <section className={styles.step} aria-label="3. Stake">
+      <section className={styles.step} aria-label={t("stepStakeAria")}>
         <h3 className={styles.stepTitle}>
-          <span className={styles.stepNum} aria-hidden="true">3</span> Put {p.label} on it
+          <span className={styles.stepNum} aria-hidden="true">3</span> {t("stakeStepTitle", { token: p.label })}
         </h3>
         <AmountField
           text={amountText}
-          onText={(t) => {
-            setAmountText(t);
-            if (t.trim() !== "") setTouched(true);
+          onText={(text) => {
+            setAmountText(text);
+            if (text.trim() !== "") setTouched(true);
           }}
           pool={p.pool}
           balance={p.balance}
@@ -139,25 +151,22 @@ export default function StakeForm(p: StakeFormProps) {
 
       <section className={styles.rules} aria-labelledby="stake-rules-title">
         <h3 id="stake-rules-title" className={styles.rulesTitle}>
-          The deal
+          {t("dealTitle")}
         </h3>
         <ul className={styles.rulesList}>
           <li>
-            Do <strong>{formatGoal(kind, safeGoal)}</strong> before{" "}
-            <strong>
-              <time dateTime={new Date(finishByMs).toISOString()}>{formatLocalDeadline(finishByMs)}</time>
-            </strong>{" "}
-            (your local time). Fitr counts on your phone and re-checks it with live challenges.
+            {rich(t("dealDo"), {
+              goal: <strong>{formatGoal(kind, safeGoal, g)}</strong>,
+              deadline: (
+                <strong>
+                  <time dateTime={new Date(finishByMs).toISOString()}>{formatLocalDeadline(finishByMs, t.locale)}</time>
+                </strong>
+              ),
+            })}
           </li>
-          <li>
-            Show up and you get your full stake back, plus a share of what {p.crewName ? "crew members" : "others"}{" "}
-            forfeited.
-          </li>
-          <li>
-            Miss it and your stake is forfeited to the {p.crewName ? "crew members" : "people"} who showed up. Fitr
-            keeps a {fee} fee on forfeited stakes only.
-          </li>
-          <li>Goal and stake are locked onchain when you sign. There is no cancel.</li>
+          <li>{p.crewName ? t("dealShowUpCrew") : t("dealShowUp")}</li>
+          <li>{p.crewName ? t("dealMissCrew", { fee }) : t("dealMiss", { fee })}</li>
+          <li>{t("dealLocked")}</li>
         </ul>
       </section>
 
@@ -168,7 +177,13 @@ export default function StakeForm(p: StakeFormProps) {
       ) : null}
       {p.bundledClaim ? (
         <p className={styles.hint}>
-          The same signature also claims <strong><SkrText text={p.bundledClaim} /></strong> waiting from an earlier day.
+          {rich(t("bundledClaimHint"), {
+            amount: (
+              <strong>
+                <SkrText text={p.bundledClaim} />
+              </strong>
+            ),
+          })}
         </p>
       ) : null}
 
@@ -181,16 +196,9 @@ export default function StakeForm(p: StakeFormProps) {
         disabled={p.busy || Boolean(p.solShortfall) || (touched && !check.ok)}
         aria-describedby="stake-rules-title"
       >
-        <SkrText
-          text={
-            p.busy ? "Working…" : `${p.bundledClaim ? "Claim & commit" : "Commit"}${amountLabel ? ` ${amountLabel}` : ""}`
-          }
-        />
+        <SkrText text={p.busy ? t("working") : submitLabel} />
       </Button>
-      <p className={styles.fine}>
-        {EXERCISES[kind].name} · one signature in your wallet · network fee under 0.001 SOL plus refundable
-        account rent.
-      </p>
+      <p className={styles.fine}>{t("formFine", { exercise: exerciseName(tx, kind) })}</p>
     </form>
   );
 }

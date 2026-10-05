@@ -5,6 +5,7 @@ import type { Address, Signature } from "@solana/kit";
 import type { UiWalletAccount } from "@wallet-standard/react";
 import { notifyBalancesChanged, useSendingSigner } from "@/components/wallet/hooks";
 import { notifyVaultChanged } from "@/hooks/useVault";
+import { tr } from "@/lib/i18n";
 import { solanaConfig } from "@/lib/solana/config";
 import { getBrowserRpc } from "@/lib/solana/rpc";
 import { describeTxError, extractCustomErrorCode, friendlyTxError } from "@/lib/solana/vault/errors";
@@ -129,9 +130,9 @@ export function useVaultTx(account: UiWalletAccount) {
           unconfirmed: timeout,
           detail: `step=${lastStep} · ${describeTxError(err)}`,
           error: timeout
-            ? "Your wallet sent it, but the network has not confirmed it yet. Check the explorer, then refresh."
+            ? tr("stake", "txUnconfirmed")
             : err instanceof ConfirmationError
-              ? "The transaction failed onchain. Nothing was staked. Refresh and try again."
+              ? tr("stake", "txFailedOnchain")
               : friendlyTxError(err, solanaConfig.tokenLabel),
         }));
       } finally {

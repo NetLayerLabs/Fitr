@@ -17,6 +17,8 @@ import { useHydrated, useNow } from "@/hooks/useSessions";
 import { usePoolsToday } from "@/hooks/useTodayCommitment";
 import { useVault, type VaultState } from "@/hooks/useVault";
 import { EXERCISE_CODE, EXERCISES } from "@/lib/exercises";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseName } from "@/lib/i18n/exercise";
 import type { ExerciseKind } from "@/lib/pose/types";
 import { SKR_DECIMALS, solanaConfig } from "@/lib/solana/config";
 import { formatSkr, formatSol } from "@/lib/solana/format";
@@ -32,6 +34,7 @@ import SponsorCard, { SponsoredNote } from "./SponsorCard";
 import StakeForm, { formatFeePercent, formatLocalDeadline, type StakeSubmit } from "./StakeForm";
 import { ExplorerLink, TxError, TxProgress } from "./TxStatus";
 import { formatHold } from "./form";
+import { rich } from "./rich";
 import { commitTargetDay, liveToday, pickSettlement, viewEntries } from "./plan";
 import { isBusy, useVaultTx } from "./useVaultTx";
 import styles from "./stake.module.css";
@@ -44,10 +47,11 @@ const SOL_NEEDED_FIRST = 6_000_000n;
 /** Commitment rent (+ maybe DayState) plus fees when the profile already exists. */
 const SOL_NEEDED_REPEAT = 4_000_000n;
 
-function Shell({ children, eyebrow = "Daily commitment" }: { children: ReactNode; eyebrow?: string }) {
+function Shell({ children, eyebrow }: { children: ReactNode; eyebrow?: string }) {
+  const t = useT("stake");
   return (
     <div className={styles.screen} data-ambient="strong">
-      <PageHeader eyebrow={eyebrow} title="Commit" />
+      <PageHeader eyebrow={eyebrow ?? t("eyebrowDaily")} title={t("screenTitle")} />
       <div className={styles.body}>{children}</div>
     </div>
   );
@@ -55,29 +59,25 @@ function Shell({ children, eyebrow = "Daily commitment" }: { children: ReactNode
 
 /** `feeBps` comes from the onchain Pool once it is read; before that the copy names no number. */
 function HowItWorks({ feeBps }: { feeBps?: number }) {
+  const t = useT("stake");
   return (
     <Card as="section" padding="md" aria-labelledby="how-title">
       <h2 id="how-title" className={styles.cardTitle}>
-        How it works
+        {t("howTitle")}
       </h2>
       <ol className={styles.how}>
         <li>
-          <strong>Commit.</strong> Pick one exercise, your goal, and how much {solanaConfig.tokenLabel} to lock. It is
-          fixed onchain when you sign.
+          <strong>{t("howCommitLead")}</strong> {t("howCommitBody", { token: solanaConfig.tokenLabel })}
         </li>
         <li>
-          <strong>Show up.</strong> Your phone counts every rep; Fitr re-checks the session with live challenges and
-          marks it complete onchain.
+          <strong>{t("howShowUpLead")}</strong> {t("howShowUpBody")}
         </li>
         <li>
-          <strong>Settle.</strong> Hit it and your stake comes back plus a share of what others forfeited. Miss it and
-          your stake goes to the people who showed up (Fitr keeps{" "}
-          {feeBps === undefined ? "a small fee" : formatFeePercent(feeBps)} of forfeits only).
+          <strong>{t("howSettleLead")}</strong>{" "}
+          {t("howSettleBody", { fee: feeBps === undefined ? t("howSmallFee") : formatFeePercent(feeBps) })}
         </li>
       </ol>
-      <p className={styles.fine}>
-        A commitment device, not an investment: if everyone shows up, everyone simply gets their stake back.
-      </p>
+      <p className={styles.fine}>{t("howFine")}</p>
     </Card>
   );
 }
@@ -120,32 +120,31 @@ function Notice({
 }
 
 function StillWorks() {
+  const t = useT("stake");
   return (
     <ul className={styles.stillWorks}>
-      <li>All 16 workouts with on-device rep counting and form checks</li>
-      <li>Your streaks and history in Progress</li>
+      <li>{t("stillWorksWorkouts")}</li>
+      <li>{t("stillWorksProgress")}</li>
     </ul>
   );
 }
 
 export default function CommitScreen() {
+  const t = useT("stake");
   const hydrated = useHydrated();
   const { owner, account } = useSelectedWallet();
   const seeker = useSeekerStatus(owner);
   const vault = useVault(owner, { sgtMint: seeker.data?.sgtMint ?? null });
   const nowMs = useNow();
 
-  if (!hydrated) return <Skeleton label="Loading" />;
+  if (!hydrated) return <Skeleton label={t("loading")} />;
 
   if (!owner || !account) {
     return (
       <Shell>
         <div className={styles.hero}>
-          <h2 className={styles.heroTitle}>Put something on the line.</h2>
-          <p className={styles.heroBody}>
-            Stake {solanaConfig.tokenLabel} on today&apos;s workout. Show up and get it back. Skip it and it goes to the
-            people who did.
-          </p>
+          <h2 className={styles.heroTitle}>{t("heroTitle")}</h2>
+          <p className={styles.heroBody}>{t("heroBody", { token: solanaConfig.tokenLabel })}</p>
         </div>
         {vault.snapshot ? (
           <PoolSummary
@@ -156,9 +155,9 @@ export default function CommitScreen() {
         ) : null}
         <Card as="section" padding="md" aria-labelledby="connect-title">
           <h2 id="connect-title" className={styles.cardTitle}>
-            Connect your wallet
+            {t("connectTitle")}
           </h2>
-          <p className={`${styles.hint} ${styles.hintSpaced}`}>You sign every stake yourself. Fitr never holds your keys.</p>
+          <p className={`${styles.hint} ${styles.hintSpaced}`}>{t("connectHint")}</p>
           <ConnectWalletList />
         </Card>
         <HowItWorks />
@@ -173,18 +172,15 @@ export default function CommitScreen() {
       <Shell>
         <Notice
           icon={<ShieldIcon size={24} />}
-          title="Staking is Seeker-only"
+          title={t("seekerOnlyTitle")}
           actions={
             <Button variant="primary" href="/workouts" trailingPlay>
-              Browse workouts
+              {t("browseWorkouts")}
             </Button>
           }
         >
-          <p>
-            To keep it one person, one stake, commitments need a Solana Seeker phone. This wallet does not hold a Seeker
-            Genesis Token, so staking is off for it.
-          </p>
-          <p>Everything else still works:</p>
+          <p>{t("seekerOnlyBody")}</p>
+          <p>{t("everythingElseWorks")}</p>
           <StillWorks />
         </Notice>
       </Shell>
@@ -196,15 +192,15 @@ export default function CommitScreen() {
       <Shell>
         <Notice
           icon={<LockIcon size={24} />}
-          title="Staking opens soon"
+          title={t("opensSoonTitle")}
           actions={
             <Button variant="primary" href="/workouts" trailingPlay>
-              Train now
+              {t("trainNow")}
             </Button>
           }
         >
-          <p>The {solanaConfig.tokenLabel} commitment vault is not live yet. Nothing can be staked, and nothing is.</p>
-          <p>In the meantime:</p>
+          <p>{t("opensSoonBody", { token: solanaConfig.tokenLabel })}</p>
+          <p>{t("meantime")}</p>
           <StillWorks />
         </Notice>
         <HowItWorks />
@@ -217,20 +213,20 @@ export default function CommitScreen() {
       <Shell>
         <Notice
           icon={<LockIcon size={24} />}
-          title="Can't reach the vault"
+          title={t("unreachableTitle")}
           actions={
             <Button variant="secondary" onClick={vault.refresh}>
-              Try again
+              {t("tryAgain")}
             </Button>
           }
         >
-          <p>We couldn&apos;t read the onchain pool. Check your connection and try again.</p>
+          <p>{t("unreachableBody")}</p>
         </Notice>
       </Shell>
     );
   }
 
-  if (!vault.snapshot || nowMs === 0) return <Skeleton label="Loading the pool" />;
+  if (!vault.snapshot || nowMs === 0) return <Skeleton label={t("loadingPool")} />;
 
   if (requireSgt && seeker.status !== "ready") {
     if (seeker.status === "error") {
@@ -238,19 +234,19 @@ export default function CommitScreen() {
         <Shell>
           <Notice
             icon={<ShieldIcon size={24} />}
-            title="Couldn't check your Seeker"
+            title={t("seekerCheckFailedTitle")}
             actions={
               <Button variant="secondary" onClick={seeker.refresh}>
-                Try again
+                {t("tryAgain")}
               </Button>
             }
           >
-            <p>Staking needs a quick Seeker Genesis Token check, and it did not go through.</p>
+            <p>{t("seekerCheckFailedBody")}</p>
           </Notice>
         </Shell>
       );
     }
-    return <Skeleton label="Checking your Seeker" />;
+    return <Skeleton label={t("checkingSeeker")} />;
   }
 
   return (
@@ -270,8 +266,9 @@ type CommitMode = "solo" | "crew";
 
 /** Solo / Crew switch (a two-option radio group). */
 function ModeSwitch({ mode, onChange }: { mode: CommitMode; onChange: (m: CommitMode) => void }) {
+  const t = useT("stake");
   return (
-    <div className={styles.modeSwitch} role="radiogroup" aria-label="Commit solo or with a crew">
+    <div className={styles.modeSwitch} role="radiogroup" aria-label={t("modeLabel")}>
       {(["solo", "crew"] as const).map((m) => (
         <button
           key={m}
@@ -281,7 +278,7 @@ function ModeSwitch({ mode, onChange }: { mode: CommitMode; onChange: (m: Commit
           className={styles.modeButton}
           onClick={() => onChange(m)}
         >
-          {m === "solo" ? "Solo" : "Crew"}
+          {m === "solo" ? t("modeSolo") : t("modeCrew")}
         </button>
       ))}
     </div>
@@ -290,6 +287,7 @@ function ModeSwitch({ mode, onChange }: { mode: CommitMode; onChange: (m: Commit
 
 /** The connected Commit tab: today's commitments across pools, then Solo (global pool) or Crew. */
 function CommitHome(props: ConnectedProps & { seekerState: Parameters<typeof usePoolsToday>[2] }) {
+  const t = useT("stake");
   const [mode, setMode] = useState<CommitMode>("solo");
   const { pools } = usePoolsToday(props.owner, props.vault, props.seekerState);
   const head = (
@@ -300,7 +298,7 @@ function CommitHome(props: ConnectedProps & { seekerState: Parameters<typeof use
   );
   if (mode === "crew") {
     return (
-      <Shell eyebrow="Commit together">
+      <Shell eyebrow={t("eyebrowTogether")}>
         {head}
         <CrewHub account={props.account} owner={props.owner} globalPool={props.snapshot.pool} />
       </Shell>
@@ -352,6 +350,8 @@ export function PoolCommitFlow({
   howItWorks = true,
   closed = false,
 }: PoolCommitFlowProps) {
+  const t = useT("stake");
+  const tex = useT("exercises");
   const tx = useVaultTx(account);
   const crewId = crew && crew.crewId !== 0n ? crew.crewId : 0n;
   // Only crews name their pool; the global pool's requests stay exactly as before.
@@ -378,7 +378,7 @@ export function PoolCommitFlow({
   const solNeeded = snapshot.profile ? SOL_NEEDED_REPEAT : SOL_NEEDED_FIRST;
   const solShortfall =
     sol.data !== null && sol.data < solNeeded
-      ? `You need about ${formatSol(solNeeded, { maxFractionDigits: 3 })} for network fees and account rent (most of the rent comes back later). This wallet has ${formatSol(sol.data)}.`
+      ? t("solShortfall", { needed: formatSol(solNeeded, { maxFractionDigits: 3 }), has: formatSol(sol.data) })
       : null;
 
   const sgt = seeker?.sgtMint && seeker.sgtTokenAccount ? { mint: seeker.sgtMint, tokenAccount: seeker.sgtTokenAccount } : null;
@@ -414,11 +414,12 @@ export function PoolCommitFlow({
       const info = EXERCISES[last.exercise];
       const isToday = last.dayIndex === today;
       const finishBy = dayEnd(last.dayIndex, cfg) * 1000 - 1000;
+      const deadline = formatLocalDeadline(finishBy, t.locale);
       return (
         <LimeMoment
-          eyebrow={`${isToday ? "Committed for today" : "Committed for tomorrow"}${crew?.name ? ` · ${crew.name}` : ""}`}
-          title="You're in."
-          big={<span className="numeral">{info.unit === "seconds" ? formatHold(last.goalTarget) : last.goalTarget}</span>}
+          eyebrow={`${isToday ? t("committedForToday") : t("committedForTomorrow")}${crew?.name ? ` · ${crew.name}` : ""}`}
+          title={t("youreIn")}
+          big={<span className="numeral">{info.unit === "seconds" ? formatHold(last.goalTarget, t) : last.goalTarget}</span>}
           actions={
             <>
               {isToday ? (
@@ -429,21 +430,23 @@ export function PoolCommitFlow({
                   trailingPlay
                   href={workoutHrefFor(last.exercise as ExerciseKind, crewId)}
                 >
-                  Start workout
+                  {t("startWorkout")}
                 </Button>
               ) : null}
               <Button variant={isToday ? "ghost" : "primary"} size="lg" block onClick={tx.reset}>
-                Done
+                {t("done")}
               </Button>
             </>
           }
         >
           <p className={styles.momentLine}>
-            {info.name} · <SkrText text={fmt(last.amount)} /> staked · finish before {formatLocalDeadline(finishBy)}
+            {rich(t("committedSummary", { exercise: exerciseName(tex, last.exercise), deadline }), {
+              amount: <SkrText text={fmt(last.amount)} />,
+            })}
           </p>
           {did.settled?.kind === "claim" ? (
             <p className={styles.momentLine}>
-              {claimedLabel ? `${claimedLabel} claimed` : "Earlier payout claimed"} in the same signature.
+              {claimedLabel ? t("claimedInSameSignature", { amount: claimedLabel }) : t("earlierClaimedInSameSignature")}
             </p>
           ) : null}
           <ExplorerLink signature={tx.state.signature} />
@@ -452,12 +455,12 @@ export function PoolCommitFlow({
     }
     return (
       <LimeMoment
-        eyebrow={did?.settled?.kind === "claim" ? "Claimed" : "Settled"}
-        title={did?.settled?.kind === "claim" ? "Paid out." : "All squared away."}
+        eyebrow={did?.settled?.kind === "claim" ? t("eyebrowClaimed") : t("eyebrowSettled")}
+        title={did?.settled?.kind === "claim" ? t("paidOut") : t("allSquared")}
         big={claimedLabel && did?.settled?.kind === "claim" ? <span className="numeral">{claimedLabel}</span> : undefined}
         actions={
           <Button variant="primary" size="lg" block onClick={tx.reset}>
-            Done
+            {t("done")}
           </Button>
         }
       >
@@ -469,12 +472,12 @@ export function PoolCommitFlow({
   const todayEntry = entries.find((e) => e.day === today);
   const yourStatus = todayEntry?.commitment
     ? todayEntry.status === "committed"
-      ? "You're in today."
+      ? t("statusInToday")
       : todayEntry.status === "missed"
-        ? "You missed today's goal."
-        : "You're verified today."
+        ? t("statusMissedToday")
+        : t("statusVerifiedToday")
     : target === today
-      ? `Commits for today close at ${formatLocalDeadline(commitDeadline(today, cfg) * 1000)}.`
+      ? t("statusCommitsClose", { time: formatLocalDeadline(commitDeadline(today, cfg) * 1000, t.locale) })
       : null;
 
   return frame(
@@ -500,8 +503,8 @@ export function PoolCommitFlow({
       />
 
       {closed ? null : pool.paused ? (
-        <Notice icon={<LockIcon size={24} />} title="Commits are paused">
-          <p>New commitments are paused for maintenance. Claims still work, and your funds are safe.</p>
+        <Notice icon={<LockIcon size={24} />} title={t("pausedTitle")}>
+          <p>{t("pausedBody")}</p>
         </Notice>
       ) : target !== null ? (
         <>
@@ -519,7 +522,7 @@ export function PoolCommitFlow({
             busy={busy}
             fixedExercise={crew?.fixedExercise ?? null}
             fixedGoal={crew?.fixedGoal ?? null}
-            crewName={crew && crewId !== 0n ? crew.name || "your crew" : null}
+            crewName={crew && crewId !== 0n ? crew.name || t("yourCrew") : null}
             onSubmit={submitCommit}
           />
         </>
@@ -531,14 +534,14 @@ export function PoolCommitFlow({
           owner={owner}
           pool={pool}
           crewId={crewId === 0n ? undefined : crewId}
-          crewName={crew && crewId !== 0n ? crew.name || "your crew" : null}
+          crewName={crew && crewId !== 0n ? crew.name || t("yourCrew") : null}
           balance={balance}
         />
       )}
 
       {vault.error ? (
         <p className={styles.hint} role="status">
-          Showing the last known state; refreshing failed.
+          {t("staleState")}
         </p>
       ) : null}
       {howItWorks ? <HowItWorks feeBps={pool.feeBps} /> : null}

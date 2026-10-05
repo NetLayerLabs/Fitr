@@ -5,10 +5,12 @@ import { AlertIcon } from "@/components/icons/Icons";
 import { sortWallets, useConnectWallet, usePlatform, useSelectedWallet, walletLabel } from "./hooks";
 import { WalletIcon } from "./WalletIcon";
 import styles from "./Wallet.module.css";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 function WalletOption({ wallet }: { wallet: UiWallet }) {
+  const t = useT("wallet");
   const { connect, connecting, error } = useConnectWallet(wallet);
-  const label = walletLabel(wallet);
+  const label = walletLabel(wallet, t);
   return (
     <li>
       <button
@@ -25,7 +27,7 @@ function WalletOption({ wallet }: { wallet: UiWallet }) {
         ) : (
           <WalletIcon size={28} />
         )}
-        <span className={styles.walletOptionLabel}>{connecting ? "Waiting for wallet…" : label}</span>
+        <span className={styles.walletOptionLabel}>{connecting ? t("waitingForWallet") : label}</span>
       </button>
       {error ? (
         <p className={styles.error} role="alert">
@@ -41,6 +43,7 @@ function WalletOption({ wallet }: { wallet: UiWallet }) {
  * own wallet (Mobile Wallet Adapter; Seed Vault on Seeker) is listed first as "Use Installed Wallet".
  */
 export default function ConnectWalletList() {
+  const t = useT("wallet");
   const platform = usePlatform();
   const { wallets } = useSelectedWallet();
 
@@ -50,10 +53,7 @@ export default function ConnectWalletList() {
     return (
       <div className={styles.notice} role="note">
         <AlertIcon size={20} />
-        <p>
-          Wallet connection is not supported on iOS. Fitr staking works on Android, built for the
-          Solana Seeker.
-        </p>
+        <p>{t("iosUnsupported")}</p>
       </div>
     );
   }
@@ -64,15 +64,15 @@ export default function ConnectWalletList() {
         <AlertIcon size={20} />
         <p>
           {platform === "android"
-            ? "No Solana wallet app found. Install one (Seeker has one built in), then come back."
-            : "No Solana wallet found in this browser. Open Fitr on your Seeker or Android phone."}
+            ? t("noWalletAndroid")
+            : t("noWalletBrowser")}
         </p>
       </div>
     );
   }
 
   return (
-    <ul className={styles.walletList} role="list" aria-label="Wallets">
+    <ul className={styles.walletList} role="list" aria-label={t("walletsLabel")}>
       {sortWallets(wallets).map((wallet) => (
         <WalletOption key={wallet.name} wallet={wallet} />
       ))}

@@ -3,6 +3,7 @@
  * (the Helius key stays on the server); the Seeker check is GET /api/seeker?owner=.
  */
 import { address, createSolanaRpc, type Address, type Rpc, type SolanaRpcApi } from "@solana/kit";
+import { tr } from "@/lib/i18n";
 import type { ApiError, ApiErrorCode, SeekerStatus, SeekerStatusResponse } from "./types";
 
 export const RPC_PROXY_PATH = "/api/rpc";
@@ -38,7 +39,7 @@ function isApiError(body: unknown): body is ApiError {
 function parseSeekerResponse(body: unknown): SeekerStatus {
   const b = body as Partial<SeekerStatusResponse> | null;
   if (!b || typeof b.owner !== "string" || typeof b.isSeeker !== "boolean" || typeof b.checkedAt !== "number") {
-    throw new ApiRequestError("Unexpected Seeker check response", "bad_response", 200);
+    throw new ApiRequestError(tr("wallet", "seekerCheckBadResponse"), "bad_response", 200);
   }
   return {
     owner: address(b.owner),
@@ -63,7 +64,7 @@ export async function fetchSeekerStatus(
     });
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") throw err;
-    throw new ApiRequestError("Network error. Check your connection.", "network", null);
+    throw new ApiRequestError(tr("wallet", "networkError"), "network", null);
   }
   let body: unknown = null;
   try {
@@ -73,7 +74,7 @@ export async function fetchSeekerStatus(
   }
   if (!res.ok) {
     if (isApiError(body)) throw new ApiRequestError(body.error, body.code, res.status, body.retryAfterSec);
-    throw new ApiRequestError(`Seeker check failed (${res.status})`, "bad_response", res.status);
+    throw new ApiRequestError(tr("wallet", "seekerCheckFailed", { status: res.status }), "bad_response", res.status);
   }
   return parseSeekerResponse(body);
 }

@@ -27,6 +27,7 @@ import {
 } from "@solana/kit";
 import { exerciseFromCode, EXERCISE_CODE } from "@/lib/exercises";
 import type { ExerciseKind } from "@/lib/pose/types";
+import type { Translator } from "@/lib/i18n/translate";
 import { COMMITMENT_OFFSETS, COMMITMENT_SIZE, getPoolAddresses, GLOBAL_CREW_ID, vaultProgramAddress } from "./addresses";
 import {
   getCommitmentDecoder,
@@ -160,11 +161,28 @@ const UNSAFE_NAME_CHARS = /[\u0000-\u001f\u007f-\u009f\u200b\u200c\u200e\u200f\u
  * (non-empty UTF-8 without NUL, at most 32 bytes); we also refuse names that are only whitespace
  * or contain control characters, and trim the ends.
  */
-export function crewNameError(name: string): string | null {
+export function crewNameError(name: string, t?: Translator<"crews">): string | null {
+  const problem = crewNameProblem(name);
+  if (problem === null) return null;
+  const key = CREW_NAME_ERROR_KEYS[problem];
+  return t ? t(key) : CREW_NAME_ERROR_EN[problem];
+}
+
+export type CrewNameProblem = "empty" | "chars" | "tooLong";
+
+const CREW_NAME_ERROR_KEYS = { empty: "crewNameEmpty", chars: "crewNameChars", tooLong: "crewNameTooLong" } as const;
+const CREW_NAME_ERROR_EN: Record<CrewNameProblem, string> = {
+  empty: "Give your crew a name.",
+  chars: "Use letters, numbers and emoji only.",
+  tooLong: "That name is too long (32 bytes max).",
+};
+
+/** Which rule `name` breaks (see crewNameError), or null when it is a valid crew name. */
+export function crewNameProblem(name: string): CrewNameProblem | null {
   const t = name.trim();
-  if (!t) return "Give your crew a name.";
-  if (new RegExp(UNSAFE_NAME_CHARS.source).test(t)) return "Use letters, numbers and emoji only.";
-  if (new TextEncoder().encode(t).length > CREW_NAME_BYTES) return "That name is too long (32 bytes max).";
+  if (!t) return "empty";
+  if (new RegExp(UNSAFE_NAME_CHARS.source).test(t)) return "chars";
+  if (new TextEncoder().encode(t).length > CREW_NAME_BYTES) return "tooLong";
   return null;
 }
 
@@ -224,10 +242,12 @@ export function crewInfoFromPool(pool: Pool, poolAddress: Address): CrewInfo {
   };
 }
 
-/** A display name that is never empty. */
-export function crewDisplayName(info: Pick<CrewInfo, "crewId" | "name">): string {
-  if (info.crewId === GLOBAL_CREW_ID) return "Solo";
-  return info.name || `Crew ${info.crewId.toString().slice(-4)}`;
+/** A display name that is never empty. Pass the "crews" translator to localise the fallbacks. */
+export function crewDisplayName(info: Pick<CrewInfo, "crewId" | "name">, t?: Translator<"crews">): string {
+  if (info.crewId === GLOBAL_CREW_ID) return t ? t("soloName") : "Solo";
+  if (info.name) return info.name;
+  const suffix = info.crewId.toString().slice(-4);
+  return t ? t("unnamedCrew", { suffix }) : `Crew ${suffix}`;
 }
 
 /* ------------------------------------------------------------------------------------------ */

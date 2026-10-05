@@ -1,8 +1,13 @@
 /**
  * Vault program errors (anchor/SPEC.md §7, codes 6000 + index) and friendly copy for everything
- * that can go wrong while staking or claiming. Pure.
+ * that can go wrong while staking or claiming. Copy comes from the "stake" namespace in the
+ * active language (call outside render only: catch blocks, error mapping).
  */
 import { isSolanaError, SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM } from "@solana/kit";
+import { tr } from "@/lib/i18n";
+import type { Messages } from "@/lib/i18n/messages";
+
+type StakeKey = keyof Messages["stake"] & string;
 
 export const VAULT_ERROR_FIRST = 6000;
 export const VAULT_ERROR_LAST = 6031;
@@ -42,44 +47,16 @@ export const VAULT_ERROR_NAMES: Readonly<Record<number, string>> = Object.freeze
   6031: "SponsorTapClosed",
 });
 
-const MESSAGES: Readonly<Record<number, string>> = Object.freeze({
-  6000: "Staking is paused for maintenance. Your funds are safe; try again later.",
-  6001: "Only the pool authority can do that.",
-  6002: "Only Fitr's verifier can mark a workout complete.",
-  6003: "Only the proposed authority can accept.",
-  6004: "The pool settings are invalid.",
-  6005: "This token is not supported by the vault.",
-  6006: "That day is not open for commitments.",
-  6007: "Today's commit window has closed. You can commit for tomorrow.",
-  6008: "The verification window for that day has closed.",
-  6009: "That day is not over yet. Try again in a minute.",
-  6010: "That day has already been settled.",
-  6011: "That day is not settled yet. Try again shortly.",
-  6012: "That day was cancelled; everyone can claim their stake back.",
-  6013: "That commitment cannot be claimed in its current state.",
-  6014: "The workout session time is invalid.",
-  6015: "Staking needs a Seeker: the Seeker Genesis Token was not found.",
-  6016: "That Seeker Genesis Token is not valid.",
-  6017: "This Seeker has already committed for that day.",
-  6018: "Not every commitment for that day is settled yet.",
-  6019: "Not enough funds for that.",
-  6020: "The vault cannot pay that right now. Your funds are safe; please contact Fitr.",
-  6021: "That amount is too large.",
-  6022: "The pool has not started yet.",
-  6023: "That stake is outside the allowed range.",
-  6024: "That goal is outside the allowed range for this exercise.",
-  6025: "The verified count did not reach the goal.",
-  6026: "This token is not supported by the vault.",
-  6027: "Only the program upgrade authority can do that.",
-  6028: "Pick a different destination account.",
-  6029: "This crew has a fixed challenge: commit to the crew's exercise and goal.",
-  6030: "That crew setup is invalid. Check the name and the challenge.",
-  6031: "Sponsoring is not switched on for this pool yet, so your SKR was not taken.",
-});
+/** The "stake" message key for each vault error code: `vaultErr` + the program's error name. */
+function messageKey(code: number): StakeKey | null {
+  const name = VAULT_ERROR_NAMES[code];
+  return name ? (`vaultErr${name}` as StakeKey) : null;
+}
 
 /** User copy for a vault error code, or null when `code` is not a vault error. */
 export function vaultErrorMessage(code: number): string | null {
-  return MESSAGES[code] ?? null;
+  const key = messageKey(code);
+  return key ? tr("stake", key) : null;
 }
 
 function asCode(v: unknown): number | null {
@@ -168,25 +145,25 @@ function messageOf(err: unknown, depth = 0): string {
  */
 export function friendlyTxError(err: unknown, tokenLabel = "SKR"): string {
   const vault = extractVaultErrorCode(err);
-  if (vault !== null) return vaultErrorMessage(vault) ?? "The vault rejected the transaction.";
+  if (vault !== null) return vaultErrorMessage(vault) ?? tr("stake", "errVaultRejected");
   const msg = messageOf(err);
-  if (/reject|declin|cancel|denied|dismiss|abort/i.test(msg)) return "Cancelled in your wallet. Nothing was sent.";
+  if (/reject|declin|cancel|denied|dismiss|abort/i.test(msg)) return tr("stake", "errCancelled");
   const custom = extractCustomErrorCode(err);
   // SPL Token error 1 = InsufficientFunds.
   if (custom === 1 || (/insufficient funds/i.test(msg) && !/lamports|fee|rent/i.test(msg))) {
-    return `Not enough ${tokenLabel} in your wallet for that stake.`;
+    return tr("stake", "errNotEnoughToken", { token: tokenLabel });
   }
   if (/insufficient lamports|InsufficientFundsForFee|insufficient funds for (fee|rent)|InsufficientFundsForRent/i.test(msg)) {
-    return "Not enough SOL for network fees and account rent (about 0.005 SOL).";
+    return tr("stake", "errNotEnoughSol");
   }
   if (/AccountNotFound|could not find account|Attempt to debit an account but found no record/i.test(msg)) {
-    return `Your wallet needs some SOL and a ${tokenLabel} account first.`;
+    return tr("stake", "errNeedsAccount", { token: tokenLabel });
   }
-  if (/blockhash|BlockhashNotFound|expired/i.test(msg)) return "The network was slow and the request expired. Please try again.";
-  if (/rate.?limit|429/i.test(msg)) return "Too many requests. Wait a few seconds and try again.";
-  if (/network|fetch|timeout|timed out|Failed to fetch/i.test(msg)) return "Network problem. Check your connection and try again.";
-  if (/AccountNotInitialized|3012/.test(msg)) return "Something changed onchain. Refresh and try again.";
-  return "Something went wrong. Refresh and try again.";
+  if (/blockhash|BlockhashNotFound|expired/i.test(msg)) return tr("stake", "errExpired");
+  if (/rate.?limit|429/i.test(msg)) return tr("stake", "errRateLimited");
+  if (/network|fetch|timeout|timed out|Failed to fetch/i.test(msg)) return tr("stake", "errNetwork");
+  if (/AccountNotInitialized|3012/.test(msg)) return tr("stake", "errChanged");
+  return tr("stake", "errUnknown");
 }
 
 /**
