@@ -1,5 +1,102 @@
 import type { NsMessages } from "../types";
 
-const progress: Partial<NsMessages<"progress">> = {};
+const progress: Partial<NsMessages<"progress">> = {
+  // Page
+  metaTitle: "Progreso",
+  metaDescription: "Tu racha, tus récords personales, logros e historial de entrenamientos, guardados en este dispositivo.",
+  pageTitle: "Progreso",
+  pageEyebrow: "Guardado en este dispositivo",
+
+  // Dashboard sections
+  loadingProgress: "Cargando tu progreso…",
+  streakCalendarHeading: "Calendario de rachas",
+  personalRecordsHeading: "Récords personales",
+  awardsHeading: "Logros",
+  historyHeading: "Historial",
+
+  // Stats
+  statsLabel: "Tus estadísticas",
+  currentStreak: "Racha actual",
+  bestStreak: "Mejor racha",
+  thisWeek: "Esta semana",
+  totalReps: "Reps totales",
+  dayUnit_one: "día",
+  dayUnit_other: "días",
+  workoutUnit_one: "entrenamiento",
+  workoutUnit_other: "entrenamientos",
+  hintTodayDone: "Meta de hoy cumplida. Nos vemos mañana.",
+  hintKeepGoing: "Cumple la meta de hoy para mantener la racha.",
+  hintStart: "Cumple una meta diaria para empezar una racha.",
+
+  // Streak calendar
+  previousMonth: "Mes anterior",
+  nextMonth: "Mes siguiente",
+  calendarDay: "{date}: {status}",
+  calendarDayToday: "{date} (hoy): {status}",
+  dayStatusUpcoming: "próximo",
+  dayStatusGoalMet: "meta cumplida",
+  dayStatusActive: "entrenaste, meta no cumplida",
+  dayStatusNotDoneYet: "aún sin hacer",
+  dayStatusNoGoal: "sin meta",
+  calendarLegend_one: "Meta cumplida {count} día en {month}",
+  calendarLegend_other: "Meta cumplida {count} días en {month}",
+
+  // Personal records
+  recordsEmpty: "Aquí aparece tu mejor serie de cada ejercicio. {link} para lograr tu primer récord.",
+  recordsEmptyLink: "Elige un ejercicio",
+  unitHeld: "aguantados",
+  repUnit_one: "rep",
+  repUnit_other: "reps",
+
+  // Awards
+  awardsEarnedCount: "{earned} de {total} conseguidos",
+  awardEarnedSuffix: " (conseguido)",
+  awardLockedSuffix: " (bloqueado)",
+  awardEarnedOn: "Conseguido el {date}",
+  awardEarned: "Conseguido",
+  awardProgressLabel: "Progreso de {title}",
+  awardFirstWorkoutTitle: "Primer entrenamiento",
+  awardFirstWorkoutDescription: "Termina tu primer entrenamiento.",
+  awardFirstGoalTitle: "A por la meta",
+  awardFirstGoalDescription: "Cumple una meta diaria por primera vez.",
+  awardStreak3Title: "Racha de 3 días",
+  awardStreak3Description: "Cumple tu meta 3 días seguidos.",
+  awardStreak7Title: "Racha de 7 días",
+  awardStreak7Description: "Cumple tu meta 7 días seguidos.",
+  awardStreak30Title: "Racha de 30 días",
+  awardStreak30Description: "Cumple tu meta 30 días seguidos.",
+  awardReps100Title: "100 reps",
+  awardReps100Description: "Suma 100 repeticiones contadas en total.",
+  awardReps1000Title: "1000 reps",
+  awardReps1000Description: "Suma 1000 repeticiones contadas en total.",
+  awardPlankMinuteTitle: "Minuto de plancha",
+  awardPlankMinuteDescription: "Aguanta la plancha un minuto completo de una vez.",
+  awardVariety5Title: "Varía",
+  awardVariety5Description: "Prueba 5 ejercicios distintos.",
+  awardVerifiedDayTitle: "Verificado onchain",
+  awardVerifiedDayDescription: "Completa un día con depósito verificado onchain.",
+
+  // History
+  loadingHistory: "Cargando tu historial…",
+  emptyTitle: "Aún no hay entrenamientos",
+  emptyText: "Termina cualquier entrenamiento y aparecerá aquí. Todo se queda en este dispositivo.",
+  startWorkout: "Empezar a entrenar",
+  workoutsLabel: "Entrenamientos",
+  dayToday: "Hoy",
+  dayYesterday: "Ayer",
+  goalDay: "Día con meta",
+  noVerifiedReps: "Sin reps verificadas",
+  holdTotal: "{time} de {exercise}",
+  sessionAt: "a las {time}",
+  notCounted: "{count} sin contar",
+  goalMet: "Meta cumplida",
+  confirmDeleteOne: "¿Borrar este entrenamiento de este dispositivo?",
+  confirmDeleteAll: "¿Borrar los {count} entrenamientos de este dispositivo?",
+  confirmResetNote: "Esto también reinicia tu racha y no se puede deshacer.",
+  deleteOne: "Borrar",
+  deleteAll: "Borrar todo",
+  cancel: "Cancelar",
+  clearHistory: "Borrar historial",
+};
 
 export default progress;
