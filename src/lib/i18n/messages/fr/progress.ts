@@ -1,5 +1,102 @@
 import type { NsMessages } from "../types";
 
-const progress: Partial<NsMessages<"progress">> = {};
+const progress: Partial<NsMessages<"progress">> = {
+  // Page
+  metaTitle: "Progrès",
+  metaDescription: "Ta série, tes records perso, tes trophées et ton historique de séances, stockés sur cet appareil.",
+  pageTitle: "Progrès",
+  pageEyebrow: "Stocké sur cet appareil",
+
+  // Dashboard sections
+  loadingProgress: "Chargement de tes progrès…",
+  streakCalendarHeading: "Calendrier des séries",
+  personalRecordsHeading: "Records perso",
+  awardsHeading: "Trophées",
+  historyHeading: "Historique",
+
+  // Stats
+  statsLabel: "Tes stats",
+  currentStreak: "Série en cours",
+  bestStreak: "Meilleure série",
+  thisWeek: "Cette semaine",
+  totalReps: "Total de répétitions",
+  dayUnit_one: "jour",
+  dayUnit_other: "jours",
+  workoutUnit_one: "séance",
+  workoutUnit_other: "séances",
+  hintTodayDone: "L’objectif du jour est atteint. À demain !",
+  hintKeepGoing: "Atteins l’objectif du jour pour continuer ta série.",
+  hintStart: "Atteins un objectif quotidien pour lancer une série.",
+
+  // Streak calendar
+  previousMonth: "Mois précédent",
+  nextMonth: "Mois suivant",
+  calendarDay: "{date} : {status}",
+  calendarDayToday: "{date} (aujourd’hui) : {status}",
+  dayStatusUpcoming: "à venir",
+  dayStatusGoalMet: "objectif atteint",
+  dayStatusActive: "entraîné, objectif non atteint",
+  dayStatusNotDoneYet: "pas encore fait",
+  dayStatusNoGoal: "pas d’objectif",
+  calendarLegend_one: "Objectif atteint {count} jour en {month}",
+  calendarLegend_other: "Objectif atteint {count} jours en {month}",
+
+  // Personal records
+  recordsEmpty: "Ta meilleure série sur chaque exercice s’affiche ici. {link} pour établir ton premier record.",
+  recordsEmptyLink: "Choisis une séance",
+  unitHeld: "tenu",
+  repUnit_one: "rép.",
+  repUnit_other: "rép.",
+
+  // Awards
+  awardsEarnedCount: "{earned} sur {total} obtenus",
+  awardEarnedSuffix: " (obtenu)",
+  awardLockedSuffix: " (verrouillé)",
+  awardEarnedOn: "Obtenu le {date}",
+  awardEarned: "Obtenu",
+  awardProgressLabel: "Progression : {title}",
+  awardFirstWorkoutTitle: "Première séance",
+  awardFirstWorkoutDescription: "Termine ta première séance.",
+  awardFirstGoalTitle: "Objectif en poche",
+  awardFirstGoalDescription: "Atteins un objectif quotidien pour la première fois.",
+  awardStreak3Title: "Série de 3 jours",
+  awardStreak3Description: "Atteins ton objectif 3 jours d’affilée.",
+  awardStreak7Title: "Série de 7 jours",
+  awardStreak7Description: "Atteins ton objectif 7 jours d’affilée.",
+  awardStreak30Title: "Série de 30 jours",
+  awardStreak30Description: "Atteins ton objectif 30 jours d’affilée.",
+  awardReps100Title: "100 répétitions",
+  awardReps100Description: "Cumule 100 répétitions comptées au total.",
+  awardReps1000Title: "1 000 répétitions",
+  awardReps1000Description: "Cumule 1 000 répétitions comptées au total.",
+  awardPlankMinuteTitle: "Minute de gainage",
+  awardPlankMinuteDescription: "Tiens la planche une minute entière d’un coup.",
+  awardVariety5Title: "Varie les plaisirs",
+  awardVariety5Description: "Essaie 5 exercices différents.",
+  awardVerifiedDayTitle: "Validé onchain",
+  awardVerifiedDayDescription: "Termine une journée avec mise validée onchain.",
+
+  // History
+  loadingHistory: "Chargement de ton historique…",
+  emptyTitle: "Pas encore de séance",
+  emptyText: "Termine une séance et elle s’affiche ici. Tout reste sur cet appareil.",
+  startWorkout: "Commencer une séance",
+  workoutsLabel: "Séances",
+  dayToday: "Aujourd’hui",
+  dayYesterday: "Hier",
+  goalDay: "Jour d’objectif",
+  noVerifiedReps: "Aucune répétition validée",
+  holdTotal: "{time} de {exercise}",
+  sessionAt: "à {time}",
+  notCounted: "{count} non comptées",
+  goalMet: "Objectif atteint",
+  confirmDeleteOne: "Supprimer cette séance de cet appareil ?",
+  confirmDeleteAll: "Supprimer les {count} séances de cet appareil ?",
+  confirmResetNote: "Ta série sera aussi remise à zéro, et c’est irréversible.",
+  deleteOne: "Supprimer",
+  deleteAll: "Tout supprimer",
+  cancel: "Annuler",
+  clearHistory: "Effacer l’historique",
+};
 
 export default progress;
