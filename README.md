@@ -78,6 +78,15 @@ multisig, and each day keeps the rules it started with):
 
 `/history` and `/wallet` permanently redirect to `/progress` and `/you`.
 
+**Languages.** The app is translated into English, 简体中文, 日本語, 한국어, Italiano, Español, Français,
+Português and Deutsch (You → Settings → Language). Every screen, the voice coach, transaction
+errors, reminders and the in-app info pages switch at once; the choice is stored in a cookie so the
+server renders the right language from the first paint. About 1,220 texts per language live in
+`src/lib/i18n/messages/<language>/`; a test fails if any language misses a text or a
+`{placeholder}`. Conventions: [`src/lib/i18n/README.md`](./src/lib/i18n/README.md). The voice
+coach speaks the chosen language where the phone has a voice for it (Android app 1.2.0+), English
+otherwise. The public website stays in English.
+
 ## Two hosts, one server
 
 The same Next server answers both hosts behind nginx:
