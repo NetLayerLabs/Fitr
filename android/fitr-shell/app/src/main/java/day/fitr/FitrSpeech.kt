@@ -32,12 +32,31 @@ class FitrSpeech(context: Context) {
             }
         }
 
-    private fun configure() {
-        val preferred = Locale.getDefault()
-        val result = runCatching { tts.setLanguage(preferred) }.getOrDefault(TextToSpeech.LANG_NOT_SUPPORTED)
+    /** The app's language (BCP 47, e.g. "zh-CN"); null = the device language. */
+    private var wanted: Locale? = null
+
+    /**
+     * Speaks in the app's chosen language when the device has a voice for it. Returns false when it
+     * does not (the caller then speaks English instead).
+     */
+    fun setLanguage(tag: String): Boolean {
+        val locale = Locale.forLanguageTag(tag)
+        wanted = locale
+        if (!ready) return true
+        return applyLanguage(locale)
+    }
+
+    private fun applyLanguage(locale: Locale): Boolean {
+        val result = runCatching { tts.setLanguage(locale) }.getOrDefault(TextToSpeech.LANG_NOT_SUPPORTED)
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
             runCatching { tts.setLanguage(Locale.ENGLISH) }
+            return false
         }
+        return true
+    }
+
+    private fun configure() {
+        applyLanguage(wanted ?: Locale.getDefault())
         // Coaching cues: duck music instead of pausing it, like navigation prompts.
         tts.setAudioAttributes(
             AudioAttributes

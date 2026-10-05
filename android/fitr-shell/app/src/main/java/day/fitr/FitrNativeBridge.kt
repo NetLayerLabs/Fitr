@@ -105,6 +105,18 @@ class FitrNativeBridge(
         main.post { if (allowed) speech.speak(t, flush) }
     }
 
+    /**
+     * Voice-coach language (BCP 47, e.g. "ja-JP"). Returns false when the device has no voice for
+     * it; the web app then speaks English. Added in 1.2.0 (the web app feature-detects it).
+     */
+    @JavascriptInterface
+    fun setSpeechLanguage(tag: String?): Boolean {
+        if (!allowed || tag.isNullOrBlank() || tag.length > 35) return false
+        val result = java.util.concurrent.FutureTask { speech.setLanguage(tag) }
+        main.post(result)
+        return runCatching { result.get(2, java.util.concurrent.TimeUnit.SECONDS) }.getOrDefault(false)
+    }
+
     @JavascriptInterface
     fun stopSpeaking() {
         if (!allowed) return
