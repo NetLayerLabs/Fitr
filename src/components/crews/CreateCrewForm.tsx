@@ -14,6 +14,7 @@ import type { ExerciseKind } from "@/lib/pose/types";
 import { formatSol } from "@/lib/solana/format";
 import { CREATE_CREW_RENT_LAMPORTS, crewNameError, crewPath, CREW_NAME_BYTES } from "@/lib/solana/vault/crews";
 import type { Pool } from "@/lib/solana/vault/generated";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { useCreateCrew } from "./useCreateCrew";
 import styles from "./crews.module.css";
 
@@ -29,6 +30,7 @@ export interface CreateCrewFormProps {
 
 /** Name + optional fixed exercise / goal → create_crew (one signature) → the crew's page. */
 export default function CreateCrewForm({ account, owner, globalPool }: CreateCrewFormProps) {
+  const t = useT("crews");
   const router = useRouter();
   const tx = useCreateCrew(account);
   const sol = useSolBalance(owner);
@@ -39,7 +41,7 @@ export default function CreateCrewForm({ account, owner, globalPool }: CreateCre
   const [goal, setGoal] = useState(() => defaultGoal(globalPool, "pushup"));
   const [touched, setTouched] = useState(false);
 
-  const nameErr = crewNameError(name);
+  const nameErr = crewNameError(name, t);
   const bounds = goalBounds(globalPool, kind);
   const safeGoal = clampInt(goal, bounds);
   const busy = tx.state.phase !== "idle" && tx.state.phase !== "done" && tx.state.phase !== "error";
@@ -65,15 +67,12 @@ export default function CreateCrewForm({ account, owner, globalPool }: CreateCre
   return (
     <form className={styles.form} onSubmit={submit} noValidate aria-labelledby="create-crew-title">
       <h2 id="create-crew-title" className={styles.sectionTitle}>
-        Start a crew
+        {t("createTitle")}
       </h2>
-      <p className={styles.hint}>
-        Your crew gets its own pool: no-shows fund the members who showed up. If nobody shows up on a day, the stakes
-        roll over to the next day someone does.
-      </p>
+      <p className={styles.hint}>{t("createHint")}</p>
 
       <label className={styles.label}>
-        Crew name
+        {t("crewNameLabel")}
         <input
           className={styles.input}
           value={name}
@@ -83,7 +82,7 @@ export default function CreateCrewForm({ account, owner, globalPool }: CreateCre
             if (new TextEncoder().encode(v.trim()).length <= CREW_NAME_BYTES) setName(v);
           }}
           onBlur={() => setTouched(true)}
-          placeholder="Morning Movers"
+          placeholder={t("crewNamePlaceholder")}
           autoComplete="off"
           enterKeyHint="done"
           aria-invalid={touched && nameErr ? true : undefined}
@@ -98,14 +97,14 @@ export default function CreateCrewForm({ account, owner, globalPool }: CreateCre
 
       <label className={styles.toggle}>
         <input type="checkbox" checked={fixExercise} onChange={(e) => setFixExercise(e.target.checked)} />
-        Everyone does the same exercise
+        {t("sameExerciseToggle")}
       </label>
       {fixExercise ? (
         <>
           <ExercisePicker value={kind} onChange={pick} />
           <label className={styles.toggle}>
             <input type="checkbox" checked={fixGoal} onChange={(e) => setFixGoal(e.target.checked)} />
-            Same goal for everyone
+            {t("sameGoalToggle")}
           </label>
           {fixGoal ? <GoalStepper kind={kind} value={safeGoal} bounds={bounds} onChange={setGoal} /> : null}
         </>
@@ -117,13 +116,15 @@ export default function CreateCrewForm({ account, owner, globalPool }: CreateCre
       {busy ? <TxProgress phase={tx.state.phase as Parameters<typeof TxProgress>[0]["phase"]} /> : null}
       {solShort && sol.data !== null ? (
         <p className={styles.error} role="note">
-          Creating a crew needs about {formatSol(SOL_NEEDED, { maxFractionDigits: 3 })} for account rent and the network
-          fee. This wallet has {formatSol(sol.data)}.
+          {t("createNeedsSol", {
+            needed: formatSol(SOL_NEEDED, { maxFractionDigits: 3 }),
+            balance: formatSol(sol.data),
+          })}
         </p>
       ) : null}
       {globalPool.paused ? (
         <p className={styles.error} role="note">
-          New crews are paused for maintenance right now.
+          {t("createPaused")}
         </p>
       ) : null}
 
@@ -134,11 +135,10 @@ export default function CreateCrewForm({ account, owner, globalPool }: CreateCre
         block
         disabled={busy || solShort || globalPool.paused || (touched && Boolean(nameErr))}
       >
-        {busy ? "Working…" : "Create crew"}
+        {busy ? t("working") : t("createButton")}
       </Button>
       <p className={styles.fine}>
-        One signature · about {formatSol(CREATE_CREW_RENT_LAMPORTS, { maxFractionDigits: 4 })} of account rent (not
-        refunded). Creating a crew gives you no special powers over it: the same onchain rules apply to everyone.
+        {t("createFine", { rent: formatSol(CREATE_CREW_RENT_LAMPORTS, { maxFractionDigits: 4 }) })}
       </p>
     </form>
   );

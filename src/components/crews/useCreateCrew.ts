@@ -14,6 +14,7 @@ import { solanaConfig } from "@/lib/solana/config";
 import { getBrowserRpc } from "@/lib/solana/rpc";
 import { buildCreateCrewIx, CREATE_CREW_COMPUTE_UNITS, randomCrewId } from "@/lib/solana/vault/crews";
 import { friendlyTxError } from "@/lib/solana/vault/errors";
+import { tr } from "@/lib/i18n";
 import { ConfirmationError, sendVaultTx, type TxStep } from "@/components/stake/txflow";
 import { rememberCrew } from "./useCrews";
 
@@ -74,9 +75,9 @@ export function useCreateCrew(account: UiWalletAccount) {
           phase: "error",
           signature: err instanceof ConfirmationError ? err.signature : s.signature,
           error: timeout
-            ? "Your wallet sent it, but the network has not confirmed it yet. Check the explorer, then refresh."
+            ? tr("crews", "createTimeout")
             : err instanceof ConfirmationError
-              ? "Creating the crew failed onchain. Nothing was charged except the network fee."
+              ? tr("crews", "createFailedOnchain")
               : friendlyTxError(err, solanaConfig.tokenLabel),
         }));
         return null;

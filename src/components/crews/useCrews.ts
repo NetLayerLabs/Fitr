@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 import type { Address } from "@solana/kit";
 import { useVaultVersion } from "@/hooks/useVault";
+import { tr } from "@/lib/i18n";
 import { solanaConfig } from "@/lib/solana/config";
 import { getBrowserRpc } from "@/lib/solana/rpc";
 import { fetchCrewBoard, fetchUserCrews, type CrewBoardData, type CrewInfo } from "@/lib/solana/vault/crews";
@@ -71,7 +72,7 @@ function load<T>(key: string, fetcher: () => Promise<T>, version: number, maxAge
       e.snap = { status: "ready", data, error: null };
     },
     (err: unknown) => {
-      const error = err instanceof Error && err.message ? err.message : "Could not read the vault";
+      const error = err instanceof Error && err.message ? err.message : tr("crews", "vaultReadError");
       // Keep the last good data on a failed refresh.
       e.snap = { status: e.snap.data === undefined ? "error" : "ready", data: e.snap.data, error };
     },

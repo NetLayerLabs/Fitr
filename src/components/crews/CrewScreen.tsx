@@ -11,11 +11,11 @@ import ConnectWalletList from "@/components/wallet/ConnectWalletList";
 import { useSeekerStatus, useSelectedWallet } from "@/components/wallet/hooks";
 import { PoolCommitFlow } from "@/components/stake/CommitScreen";
 import { liveToday } from "@/components/stake/plan";
-import { formatGoal } from "@/components/stake/form";
-import { goalNoun } from "@/components/home/today";
 import { useHydrated, useNow } from "@/hooks/useSessions";
 import { useVault } from "@/hooks/useVault";
-import { EXERCISES } from "@/lib/exercises";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseGoal, exerciseName } from "@/lib/i18n/exercise";
+import type { Translator } from "@/lib/i18n/translate";
 import { solanaConfig } from "@/lib/solana/config";
 import { formatSkr, shortenAddress } from "@/lib/solana/format";
 import { crewDisplayName, crewInfoFromPool, type CrewInfo } from "@/lib/solana/vault/crews";
@@ -29,17 +29,39 @@ import styles from "./crews.module.css";
 
 const fmt = (a: bigint) => formatSkr(a, { maxFractionDigits: 2 });
 
-const MEMBER_TAG: Record<MemberStatus, { label: string; tone?: "lime" | "warn" | "danger" }> = {
-  verified: { label: "Verified", tone: "lime" },
-  committed: { label: "Committed", tone: "warn" },
-  missed: { label: "Missed", tone: "danger" },
-  revoked: { label: "Withdrawn", tone: "danger" },
+const MEMBER_TAG: Record<MemberStatus, { label: "tagVerified" | "tagCommitted" | "tagMissed" | "tagWithdrawn"; tone?: "lime" | "warn" | "danger" }> = {
+  verified: { label: "tagVerified", tone: "lime" },
+  committed: { label: "tagCommitted", tone: "warn" },
+  missed: { label: "tagMissed", tone: "danger" },
+  revoked: { label: "tagWithdrawn", tone: "danger" },
 };
 
-function Frame({ title, eyebrow = "Crew", children }: { title: string; eyebrow?: string; children: ReactNode }) {
+/** Renders a message with one {placeholder} replaced by a React node (e.g. an SKR amount). */
+function withNode(template: string, name: string, node: ReactNode): ReactNode {
+  const [before, ...rest] = template.split(`{${name}}`);
+  if (rest.length === 0) return template;
+  return (
+    <>
+      {before}
+      {node}
+      {rest.join(`{${name}}`)}
+    </>
+  );
+}
+
+/** "25 push-ups" split around the number so the number can be shown big. */
+function splitGoal(phrase: string, goal: number): { before: string; after: string } {
+  const n = String(goal);
+  const i = phrase.indexOf(n);
+  if (i < 0) return { before: "", after: phrase };
+  return { before: phrase.slice(0, i).trim(), after: phrase.slice(i + n.length).trim() };
+}
+
+function Frame({ title, eyebrow, children }: { title: string; eyebrow?: string; children: ReactNode }) {
+  const t = useT("crews");
   return (
     <div className={stake.screen} data-ambient="strong">
-      <PageHeader eyebrow={eyebrow} title={title} back="/commit" />
+      <PageHeader eyebrow={eyebrow ?? t("eyebrowCrew")} title={title} back="/commit" />
       <div className={stake.body}>{children}</div>
     </div>
   );
@@ -60,12 +82,14 @@ function Notice({ icon, title, children, action }: { icon: ReactNode; title: str
   );
 }
 
-function who(user: Address, owner: Address | null): ReactNode {
-  return user === owner ? <span className={styles.you}>You</span> : <span className={styles.mono}>{shortenAddress(user)}</span>;
+function who(user: Address, owner: Address | null, t: Translator<"crews">): ReactNode {
+  return user === owner ? <span className={styles.you}>{t("you")}</span> : <span className={styles.mono}>{shortenAddress(user)}</span>;
 }
 
 /** The crew's page in the app: challenge, invite, today's members, streak, leaderboard, commit. */
 export default function CrewScreen({ crewId }: { crewId: bigint }) {
+  const t = useT("crews");
+  const tx = useT("exercises");
   const hydrated = useHydrated();
   const { owner, account } = useSelectedWallet();
   const seeker = useSeekerStatus(owner);
@@ -84,10 +108,10 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
 
   if (!hydrated || vault.status === "loading") {
     return (
-      <Frame title="Crew" eyebrow="Commit together">
+      <Frame title={t("eyebrowCrew")} eyebrow={t("eyebrowCommitTogether")}>
         <div className={stake.skeletonCardTall} aria-hidden="true" />
         <p className="sr-only" role="status">
-          Loading the crew
+          {t("loadingCrew")}
         </p>
       </Frame>
     );
@@ -95,17 +119,17 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
 
   if (vault.status === "unavailable") {
     return (
-      <Frame title="Crew" eyebrow="Commit together">
+      <Frame title={t("eyebrowCrew")} eyebrow={t("eyebrowCommitTogether")}>
         <Notice
           icon={<LockIcon size={24} />}
-          title="Crew not found"
+          title={t("notFoundTitle")}
           action={
             <Button variant="primary" href="/commit">
-              Go to Commit
+              {t("goToCommit")}
             </Button>
           }
         >
-          <p>We couldn&apos;t find this crew onchain. Check the invite link, or staking may not be open yet.</p>
+          <p>{t("notFoundBody")}</p>
         </Notice>
       </Frame>
     );
@@ -113,25 +137,25 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
 
   if (!snapshot || today === null) {
     return (
-      <Frame title="Crew" eyebrow="Commit together">
+      <Frame title={t("eyebrowCrew")} eyebrow={t("eyebrowCommitTogether")}>
         <Notice
           icon={<LockIcon size={24} />}
-          title="Can't reach the vault"
+          title={t("unreachableTitle")}
           action={
             <Button variant="secondary" onClick={vault.refresh}>
-              Try again
+              {t("tryAgain")}
             </Button>
           }
         >
-          <p>We couldn&apos;t read this crew. Check your connection and try again.</p>
+          <p>{t("unreachableBody")}</p>
         </Notice>
       </Frame>
     );
   }
 
   const crew: CrewInfo = crewInfoFromPool(snapshot.pool, snapshot.poolAddress);
-  const name = crewDisplayName(crew);
-  const challenge = challengeLabel(crew);
+  const name = crewDisplayName(crew, t);
+  const challenge = challengeLabel(crew, t, tx);
   const todayDay = snapshot.entries.find((e) => e.day === today)?.dayState ?? null;
   // You first, then everyone else in the order the board gives.
   const members = board.data
@@ -142,33 +166,33 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
   const counts = countMembers(members);
   const streak = board.data ? crewStreak(board.data.days, today, snapshot.cfg, nowSecs) : null;
   const leaders = board.data ? crewLeaderboard(board.data.profiles, today) : [];
-  const info = crew.fixedExercise ? EXERCISES[crew.fixedExercise] : null;
+  const fixedKind = crew.fixedExercise;
+  const fixedGoal = fixedKind && crew.fixedGoal ? splitGoal(exerciseGoal(tx, fixedKind, crew.fixedGoal), crew.fixedGoal) : null;
   const requireSgt = snapshot.pool.requireSgt;
 
   let commit: ReactNode;
   if (!owner || !account) {
     commit = (
       <>
-        <p className={`${styles.hint}`}>Connect your wallet to commit with the crew. You sign every stake yourself.</p>
+        <p className={`${styles.hint}`}>{t("connectToCommit")}</p>
         <ConnectWalletList />
       </>
     );
   } else if (requireSgt && seeker.status === "ready" && seeker.data && !seeker.data.isSeeker) {
     commit = (
       <p className={styles.hint}>
-        <ShieldIcon size={16} /> Staking is Seeker-only: this wallet does not hold a Seeker Genesis Token. You can still
-        follow the crew and train.
+        <ShieldIcon size={16} /> {t("seekerOnly")}
       </p>
     );
   } else if (requireSgt && seeker.status !== "ready") {
     commit =
       seeker.status === "error" ? (
         <Button variant="secondary" onClick={seeker.refresh}>
-          Check my Seeker again
+          {t("checkSeekerAgain")}
         </Button>
       ) : (
         <p className={styles.hint} role="status">
-          Checking your Seeker…
+          {t("checkingSeeker")}
         </p>
       );
   } else {
@@ -178,66 +202,63 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
   return (
     <Frame title={name}>
       {closed ? (
-        <Notice icon={<LockIcon size={24} />} title="This crew was deleted">
-          <p>
-            Its creator removed it from Fitr, so nobody can join or stake in it any more. If you staked here, you can
-            still claim below.
-          </p>
+        <Notice icon={<LockIcon size={24} />} title={t("deletedTitle")}>
+          <p>{t("deletedBody")}</p>
         </Notice>
       ) : null}
       <Card as="section" padding="lg" aria-labelledby="crew-challenge-title">
         <div className={styles.stack}>
           <p className={styles.eyebrow} id="crew-challenge-title">
-            Today&apos;s challenge
+            {t("todaysChallenge")}
           </p>
-          {info && crew.fixedGoal ? (
+          {fixedGoal && crew.fixedGoal ? (
             <p className={styles.challenge}>
+              {fixedGoal.before ? <span className={styles.challengeNoun}>{fixedGoal.before}</span> : null}
               <span className={`numeral ${styles.challengeBig}`}>{crew.fixedGoal}</span>
-              <span className={styles.challengeNoun}>{goalNoun(info.name, info.unit, crew.fixedGoal)}</span>
+              {fixedGoal.after ? <span className={styles.challengeNoun}>{fixedGoal.after}</span> : null}
             </p>
           ) : (
-            <p className={styles.challengeNoun}>{info ? info.name : "Your workout, your goal"}</p>
+            <p className={styles.challengeNoun}>{fixedKind ? exerciseName(tx, fixedKind) : t("ownWorkoutOwnGoal")}</p>
           )}
           <p className={styles.hint}>
-            {info && crew.fixedGoal ? "Same goal for everyone." : `${challenge}.`} No-shows fund the crew members who
-            showed up. If nobody shows up, the stakes roll over to the next crew day someone completes.
+            {fixedGoal ? t("sameGoalSentence") : t("challengeSentence", { challenge })} {t("challengeRules")}
           </p>
           {closed ? null : <InviteActions crewId={crew.crewId} crewName={name} challenge={challenge} />}
         </div>
       </Card>
 
       <div className={styles.stats}>
-        <div className={styles.stat} role="group" aria-label="Crew streak">
+        <div className={styles.stat} role="group" aria-label={t("statStreak")}>
           <span className={styles.statValue} data-tone={streak && streak.current > 0 ? "lime" : undefined}>
             {streak ? streak.current : "–"}
           </span>
-          <span className={styles.statLabel}>Crew streak</span>
+          <span className={styles.statLabel}>{t("statStreak")}</span>
         </div>
-        <div className={styles.stat} role="group" aria-label="Verified today">
+        <div className={styles.stat} role="group" aria-label={t("statVerifiedToday")}>
           <span className={styles.statValue}>
             {board.data ? `${counts.verified}/${counts.total}` : "–"}
           </span>
-          <span className={styles.statLabel}>Verified today</span>
+          <span className={styles.statLabel}>{t("statVerifiedToday")}</span>
         </div>
-        <div className={styles.stat} role="group" aria-label="Members">
+        <div className={styles.stat} role="group" aria-label={t("statMembers")}>
           <span className={styles.statValue}>{board.data ? board.data.profiles.length : "–"}</span>
-          <span className={styles.statLabel}>Members</span>
+          <span className={styles.statLabel}>{t("statMembers")}</span>
         </div>
       </div>
 
       <Card as="section" padding="md" aria-labelledby="crew-today-title">
         <div className={styles.stack}>
           <h2 id="crew-today-title" className={styles.sectionTitle}>
-            Today
+            {t("todayTitle")}
           </h2>
           {board.status === "error" && !board.data ? (
-            <p className={styles.hint}>Couldn&apos;t load the crew&apos;s day. It refreshes on its own.</p>
+            <p className={styles.hint}>{t("dayLoadError")}</p>
           ) : !board.data ? (
             <p className={styles.hint} role="status">
-              Loading…
+              {t("loading")}
             </p>
           ) : members.length === 0 ? (
-            <p className={styles.hint}>Nobody has committed today yet. Be the first, then share the link.</p>
+            <p className={styles.hint}>{t("nobodyCommitted")}</p>
           ) : (
             <ul className={styles.list} role="list">
               {members.map((m) => {
@@ -245,14 +266,14 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
                 return (
                   <li key={m.user} className={styles.row}>
                     <span className={styles.rowMain}>
-                      <span className={styles.rowTitle}>{who(m.user, owner)}</span>
+                      <span className={styles.rowTitle}>{who(m.user, owner, t)}</span>
                       <span className={styles.rowMeta}>
-                        {m.exercise ? formatGoal(m.exercise, m.goalTarget) : `${m.goalTarget}`} ·{" "}
+                        {m.exercise ? exerciseGoal(tx, m.exercise, m.goalTarget) : `${m.goalTarget}`} ·{" "}
                         <SkrText text={fmt(m.amount)} />
                       </span>
                     </span>
                     <span className={styles.tag} data-tone={tag.tone}>
-                      {tag.label}
+                      {t(tag.label)}
                     </span>
                   </li>
                 );
@@ -261,8 +282,7 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
           )}
           {streak ? (
             <p className={styles.fine}>
-              The crew streak counts days on which everyone who committed was verified
-              {streak.best > streak.current ? ` (best: ${streak.best})` : ""}.
+              {streak.best > streak.current ? t("streakExplainerBest", { best: streak.best }) : t("streakExplainer")}
             </p>
           ) : null}
         </div>
@@ -270,7 +290,7 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
 
       <section id="commit" aria-labelledby="crew-commit-title" className={styles.stack}>
         <h2 id="crew-commit-title" className={styles.sectionTitle}>
-          Your stake
+          {t("yourStakeTitle")}
         </h2>
         {commit ??
           (owner && account ? (
@@ -292,46 +312,39 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
       <Card as="section" padding="md" aria-labelledby="crew-board-title">
         <div className={styles.stack}>
           <h2 id="crew-board-title" className={styles.sectionTitle}>
-            Leaderboard
+            {t("leaderboardTitle")}
           </h2>
           {!board.data ? (
             <p className={styles.hint} role="status">
-              Loading…
+              {t("loading")}
             </p>
           ) : leaders.length === 0 ? (
-            <p className={styles.hint}>The board fills up after the first verified day.</p>
+            <p className={styles.hint}>{t("leaderboardEmpty")}</p>
           ) : (
-            <ol className={styles.list} role="list" aria-label="Crew leaderboard">
+            <ol className={styles.list} role="list" aria-label={t("leaderboardLabel")}>
               {leaders.map((r) => (
                 <li key={r.user} className={styles.row}>
                   <span className={styles.rank} data-top={r.rank === 1 ? "true" : undefined}>
                     {r.rank}
                   </span>
                   <span className={styles.rowMain}>
-                    <span className={styles.rowTitle}>{who(r.user, owner)}</span>
-                    <span className={styles.rowMeta}>
-                      {r.completed} {r.completed === 1 ? "day" : "days"} verified · streak {r.streak}
-                    </span>
+                    <span className={styles.rowTitle}>{who(r.user, owner, t)}</span>
+                    <span className={styles.rowMeta}>{t.plural("leaderDays", r.completed, { streak: r.streak })}</span>
                   </span>
                   <span className={styles.rowEnd}>
-                    <span>
-                      +<SkrText text={fmt(r.bonus)} />
-                    </span>
-                    <span className={styles.fine}>bonus</span>
+                    <span>{withNode(t("bonusAmount"), "amount", <SkrText text={fmt(r.bonus)} />)}</span>
+                    <span className={styles.fine}>{t("bonusLabel")}</span>
                   </span>
                 </li>
               ))}
             </ol>
           )}
           <p className={styles.fine}>
-            Bonus is what members got on top of their own stake back, from crew members who missed (Fitr keeps a{" "}
-            {snapshot.pool.feeBps / 100}% fee on forfeits only). {solanaConfig.tokenLabel} amounts come from the crew&apos;s
-            onchain profiles.
+            {t("bonusExplainer", { fee: snapshot.pool.feeBps / 100, token: solanaConfig.tokenLabel })}
           </p>
           {BigInt(snapshot.pool.rollover) > 0n ? (
             <p className={styles.fine}>
-              Rolling over: <SkrText text={fmt(BigInt(snapshot.pool.rollover))} /> from crew days nobody completed goes to
-              the next crew day someone does.
+              {withNode(t("rolloverNote"), "amount", <SkrText text={fmt(BigInt(snapshot.pool.rollover))} />)}
             </p>
           ) : null}
         </div>

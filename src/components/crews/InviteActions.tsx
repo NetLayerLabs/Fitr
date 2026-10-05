@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CheckIcon, CopyIcon } from "@/components/icons/Icons";
 import Button from "@/components/ui/Button";
 import { crewInviteUrl } from "@/lib/solana/vault/crews";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { inviteText } from "./labels";
 import styles from "./crews.module.css";
 
@@ -18,6 +19,7 @@ const noopSubscribe = () => () => {};
 
 /** Share sheet (navigator.share) + copy link for https://fitr.day/c/<id>. */
 export default function InviteActions({ crewId, crewName, challenge }: InviteActionsProps) {
+  const t = useT("crews");
   const url = crewInviteUrl(crewId);
   const [copied, setCopied] = useState(false);
   // Server render (and hydration) assume no share sheet, so markup matches.
@@ -48,7 +50,7 @@ export default function InviteActions({ crewId, crewName, challenge }: InviteAct
 
   const share = async () => {
     try {
-      await navigator.share({ title: `${crewName} on Fitr`, text: inviteText(crewName, challenge), url });
+      await navigator.share({ title: t("inviteShareTitle", { name: crewName }), text: inviteText(crewName, challenge, t), url });
     } catch {
       // Dismissed, or the share target failed: the copy button is still there.
     }
@@ -59,18 +61,18 @@ export default function InviteActions({ crewId, crewName, challenge }: InviteAct
       <div className={styles.actions}>
         {canShare ? (
           <Button variant="primary" onClick={share}>
-            Invite
+            {t("inviteButton")}
           </Button>
         ) : null}
-        <Button variant="secondary" onClick={copy} aria-label={copied ? "Invite link copied" : "Copy invite link"} icon={copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}>
-          {copied ? "Copied" : "Copy"}
+        <Button variant="secondary" onClick={copy} aria-label={copied ? t("inviteLinkCopied") : t("copyInviteLink")} icon={copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}>
+          {copied ? t("copiedButton") : t("copyButton")}
         </Button>
       </div>
-      <p className={styles.link} aria-label="Invite link">
+      <p className={styles.link} aria-label={t("inviteLinkLabel")}>
         {url}
       </p>
       <span className="sr-only" role="status">
-        {copied ? "Invite link copied" : ""}
+        {copied ? t("inviteLinkCopied") : ""}
       </span>
     </div>
   );

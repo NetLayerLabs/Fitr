@@ -7,6 +7,8 @@ import { getBase64Decoder, getUtf8Encoder, type Address } from "@solana/kit";
 import type { UiWalletAccount } from "@wallet-standard/react";
 import Button from "@/components/ui/Button";
 import { closeCrewMessage } from "@/lib/crews/closeMessage";
+import { tr } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { forgetCrew, refreshClosedCrews } from "./useCrews";
 import styles from "./crews.module.css";
 
@@ -21,6 +23,7 @@ export function canSignMessages(account: UiWalletAccount): boolean {
  * Render only when canSignMessages(account) (the signing hook needs the feature).
  */
 export default function DeleteCrew({ account, owner, crewId, name }: { account: UiWalletAccount; owner: Address; crewId: bigint; name: string }) {
+  const t = useT("crews");
   const router = useRouter();
   const signMessage = useSignMessage(account);
   const [confirming, setConfirming] = useState(false);
@@ -40,14 +43,14 @@ export default function DeleteCrew({ account, owner, crewId, name }: { account: 
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(body?.error ?? `Couldn't delete the crew (${res.status}).`);
+        throw new Error(body?.error ?? tr("crews", "deleteFailedStatus", { status: res.status }));
       }
       forgetCrew(crewId);
       refreshClosedCrews();
       router.push("/commit");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
-      setError(/reject|declin|cancel|denied|dismiss|abort/i.test(msg) ? "Cancelled in your wallet. Nothing changed." : msg || "Couldn't delete the crew. Try again.");
+      setError(/reject|declin|cancel|denied|dismiss|abort/i.test(msg) ? tr("crews", "deleteCancelled") : msg || tr("crews", "deleteFailed"));
       setBusy(false);
     }
   }
@@ -56,7 +59,7 @@ export default function DeleteCrew({ account, owner, crewId, name }: { account: 
     return (
       <div className={styles.danger}>
         <Button variant="ghost" onClick={() => setConfirming(true)}>
-          Delete crew
+          {t("deleteButton")}
         </Button>
       </div>
     );
@@ -64,11 +67,10 @@ export default function DeleteCrew({ account, owner, crewId, name }: { account: 
   return (
     <div className={styles.dangerConfirm} role="alertdialog" aria-labelledby="delete-crew-title" aria-describedby="delete-crew-body">
       <p id="delete-crew-title" className={styles.sectionTitle}>
-        Delete {name}?
+        {t("deleteConfirmTitle", { name })}
       </p>
       <p id="delete-crew-body" className={styles.hint}>
-        It disappears from Fitr and its invite link stops working. Nobody can join or stake in it any more. Anyone who
-        already staked can still claim. Your wallet signs a message to prove you created it: no transaction, no fee.
+        {t("deleteConfirmBody")}
       </p>
       {error ? (
         <p className={styles.error} role="alert">
@@ -77,10 +79,10 @@ export default function DeleteCrew({ account, owner, crewId, name }: { account: 
       ) : null}
       <div className={styles.inline}>
         <Button variant="ghost" onClick={() => setConfirming(false)} disabled={busy}>
-          Keep it
+          {t("keepIt")}
         </Button>
         <Button variant="primary" onClick={remove} disabled={busy}>
-          {busy ? "Deleting…" : "Delete crew"}
+          {busy ? t("deleting") : t("deleteButton")}
         </Button>
       </div>
     </div>

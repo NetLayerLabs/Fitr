@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CrewScreen from "@/components/crews/CrewScreen";
+import { getT } from "@/lib/i18n/server";
 import { parseCrewId } from "@/lib/solana/vault/crews";
 
-export const metadata: Metadata = {
-  title: "Crew",
-  description: "Your Fitr crew: today's challenge, who showed up, the crew streak and the leaderboard.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("crews");
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 /** In-app crew page (app.fitr.day/crew/<id>, opened by the Android app's App Links). */
 export default async function CrewPage(props: PageProps<"/crew/[crewId]">) {
