@@ -6,12 +6,29 @@ import { DEMO_HEIGHT as DEMO_H, DEMO_WIDTH as DEMO_W } from "@/lib/pose/exercise
 import { EXERCISE_MODULES } from "@/lib/pose/exercises/registry";
 import type { JudgedAngle } from "@/lib/pose/exercises/types";
 import { EXERCISES } from "@/lib/exercises";
+import { useT } from "@/lib/i18n/I18nProvider";
+import type { Translator } from "@/lib/i18n";
 import { LM } from "@/lib/pose/landmarks";
 import type { ExerciseKind, PoseFrame } from "@/lib/pose/types";
 import styles from "./FormGuide.module.css";
 import { MANNEQUIN_PALETTE, analyzeRig, buildFigure, drawContactShadow, drawFigure, type Vec, type View } from "./mannequin";
 
 const MAX_DPR = 3;
+
+/** The engine's English joint labels (JudgedAngle.label) and their "guide" message keys. */
+const JOINT_KEYS: Readonly<Record<string, Parameters<Translator<"guide">>[0]>> = {
+  elbow: "joint_elbow",
+  knee: "joint_knee",
+  "front knee": "joint_frontKnee",
+  hip: "joint_hip",
+  arm: "joint_arm",
+  "body line": "joint_bodyLine",
+};
+
+function jointLabel(t: Translator<"guide">, label: string): string {
+  const key = Object.hasOwn(JOINT_KEYS, label) ? JOINT_KEYS[label] : undefined;
+  return key ? t(key) : label;
+}
 
 /** Body points that can rest on the floor, for the contact shadow. */
 const CONTACT_POINTS = [
@@ -129,7 +146,13 @@ function keyFrameIndex(frames: readonly PoseFrame[], judged: JudgedAngle | null)
   return bestLen > 0 ? bestStart + Math.floor((bestLen - 1) / 2) : middle;
 }
 
-function drawFrame(canvas: HTMLCanvasElement, judged: JudgedAngle | null, frame: PoseFrame, scene: Scene) {
+function drawFrame(
+  canvas: HTMLCanvasElement,
+  judged: JudgedAngle | null,
+  judgedLabel: string,
+  frame: PoseFrame,
+  scene: Scene,
+) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   const css = getComputedStyle(canvas);
@@ -226,7 +249,7 @@ function drawFrame(canvas: HTMLCanvasElement, judged: JudgedAngle | null, frame:
 
     ctx.font = `800 ${22 * unit}px ${labelFont}`;
     ctx.textBaseline = "bottom";
-    const label = `${judged.label} ${Math.round(deg)}°${good ? " ✓" : ""}`;
+    const label = `${judgedLabel} ${Math.round(deg)}°${good ? " ✓" : ""}`;
     const lx = Math.min(Math.max(joint.x + 14 * unit, 12 * unit), w - ctx.measureText(label).width - 12 * unit);
     const ly = Math.max(joint.y - 16 * unit, 30 * unit);
     ctx.lineWidth = 5 * unit;
@@ -261,6 +284,8 @@ export interface GuideDemoProps {
 /** The demonstrator: a looping stock clip when we have one, otherwise an animated skeleton. */
 export default function GuideDemo({ exercise, clip, label }: GuideDemoProps) {
   const reducedMotion = useReducedMotion();
+  const t = useT("guide");
+  const judgedLabel = jointLabel(t, EXERCISE_MODULES[exercise].demo.judged?.label ?? "");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -281,7 +306,7 @@ export default function GuideDemo({ exercise, clip, label }: GuideDemoProps) {
       const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
       canvas.width = Math.round(canvas.clientWidth * dpr) || DEMO_W;
       canvas.height = Math.round(canvas.clientHeight * dpr) || DEMO_H;
-      if (still) drawFrame(canvas, demo.judged, still, scene);
+      if (still) drawFrame(canvas, demo.judged, judgedLabel, still, scene);
     };
     resize();
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
@@ -292,7 +317,7 @@ export default function GuideDemo({ exercise, clip, label }: GuideDemoProps) {
     const tick = (now: number) => {
       if (!start) start = now;
       const index = Math.floor(((now - start) % (frames.length * frameMs)) / frameMs);
-      drawFrame(canvas, demo.judged, frames[Math.min(index, frames.length - 1)], scene);
+      drawFrame(canvas, demo.judged, judgedLabel, frames[Math.min(index, frames.length - 1)], scene);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -300,7 +325,7 @@ export default function GuideDemo({ exercise, clip, label }: GuideDemoProps) {
       cancelAnimationFrame(raf);
       observer?.disconnect();
     };
-  }, [exercise, clip, reducedMotion]);
+  }, [exercise, clip, reducedMotion, judgedLabel]);
 
   if (clip) {
     return (

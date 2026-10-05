@@ -1,10 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { ExerciseIcon } from "@/components/icons/Icons";
 import { formatGoal } from "@/components/workout/format";
 import { exerciseArt } from "@/lib/exerciseArt";
 import type { ExerciseInfo } from "@/lib/exercises";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseName, exerciseTagline, levelLabel } from "@/lib/i18n/exercise";
 import {
-  LEVEL_LABEL,
   LEVEL_RANK,
   equipmentBadge,
   workoutAccessibleName,
@@ -23,9 +26,10 @@ export interface WorkoutCardProps {
 }
 
 function LevelDots({ info }: { info: ExerciseInfo }) {
+  const tx = useT("exercises");
   const rank = LEVEL_RANK[info.level];
   return (
-    <span className={styles.level} data-level={info.level} title={LEVEL_LABEL[info.level]}>
+    <span className={styles.level} data-level={info.level} title={levelLabel(tx, info.level)}>
       {[1, 2, 3].map((i) => (
         <span key={i} className={styles.levelDot} data-on={i <= rank ? "" : undefined} />
       ))}
@@ -39,7 +43,10 @@ function LevelDots({ info }: { info: ExerciseInfo }) {
  * the athlete photo are presentation only.
  */
 export default function WorkoutCard({ info, variant = "grid", priority = false }: WorkoutCardProps) {
-  const gear = equipmentBadge(info.equipment);
+  const t = useT("workouts");
+  const tx = useT("exercises");
+  const tw = useT("workout");
+  const gear = equipmentBadge(info.equipment, tx);
   const front = info.camera === "front";
   const art = exerciseArt(info.kind);
   return (
@@ -48,7 +55,7 @@ export default function WorkoutCard({ info, variant = "grid", priority = false }
       className={styles.card}
       data-variant={variant}
       data-kind={info.kind}
-      aria-label={workoutAccessibleName(info)}
+      aria-label={workoutAccessibleName(info, t, tx, tw)}
     >
       <span className={styles.cardMedia} data-art={art ? "photo" : "icon"}
         data-framing={art?.framing}
@@ -69,10 +76,10 @@ export default function WorkoutCard({ info, variant = "grid", priority = false }
         )}
       </span>
       <span className={styles.cardBody} aria-hidden="true">
-        <span className={styles.cardName}>{keepHyphenatedWords(info.name)}</span>
-        {variant === "grid" ? <span className={styles.cardTagline}>{info.tagline}</span> : null}
+        <span className={styles.cardName}>{keepHyphenatedWords(exerciseName(tx, info.kind))}</span>
+        {variant === "grid" ? <span className={styles.cardTagline}>{exerciseTagline(tx, info.kind)}</span> : null}
         <span className={styles.cardMeta}>
-          <span className={styles.cardGoal}>{formatGoal(info.defaultGoal, info.unit)}</span>
+          <span className={styles.cardGoal}>{formatGoal(info.defaultGoal, info.unit, tw)}</span>
           {gear ? (
             <span className={styles.badge} data-badge="equipment">
               {gear}
@@ -80,7 +87,7 @@ export default function WorkoutCard({ info, variant = "grid", priority = false }
           ) : null}
           {front ? (
             <span className={styles.badge} data-badge="camera">
-              Front camera
+              {t("frontCameraBadge")}
             </span>
           ) : null}
           <LevelDots info={info} />

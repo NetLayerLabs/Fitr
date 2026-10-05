@@ -1,5 +1,8 @@
+"use client";
+
 import { EXERCISES } from "@/lib/exercises";
-import { FORM_GUIDES, placementSteps } from "@/lib/formGuide";
+import { FORM_GUIDES, placementDistance, placementSteps } from "@/lib/formGuide";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { EXERCISE_MODULES } from "@/lib/pose/exercises/registry";
 import { LM } from "@/lib/pose/landmarks";
 import type { ExerciseKind, Landmark } from "@/lib/pose/types";
@@ -235,8 +238,9 @@ function MannequinSvg({ figure, gradId }: { figure: Figure; gradId: string }) {
 
 /** Bird's-eye map: where the phone stands relative to you, which way you face, how far away. */
 function TopDown({ exercise }: { exercise: ExerciseKind }) {
+  const t = useT("guide");
   const info = EXERCISES[exercise];
-  const { layout, distance } = FORM_GUIDES[exercise].placement;
+  const { layout } = FORM_GUIDES[exercise].placement;
   const lying = layout === "floor";
   const front = info.camera === "front";
   // Mirror the map so you face the same way as in the phone's view.
@@ -360,7 +364,7 @@ function TopDown({ exercise }: { exercise: ExerciseKind }) {
         className={styles.placementYou}
         textAnchor="middle"
       >
-        You
+        {t("you")}
       </text>
 
       {/* distance */}
@@ -372,7 +376,7 @@ function TopDown({ exercise }: { exercise: ExerciseKind }) {
         className={styles.placementSight}
       />
       <text x="86" y="104" className={styles.placementLabel}>
-        {distance.replace(/^about /, "~")}
+        {placementDistance(t, exercise, true)}
       </text>
 
       {/* the phone, lens towards you */}
@@ -452,17 +456,18 @@ function CameraView({ exercise }: { exercise: ExerciseKind }) {
 
 /** Where to put the phone: a map from above, the phone's own view, and numbered set-up steps. */
 export default function PhonePlacement({ exercise }: PhonePlacementProps) {
-  const steps = placementSteps(exercise);
+  const t = useT("guide");
+  const steps = placementSteps(exercise, t);
   return (
     <div>
       <div className={styles.placementViews}>
         <figure className={styles.placementView}>
           <TopDown exercise={exercise} />
-          <figcaption>From above</figcaption>
+          <figcaption>{t("fromAbove")}</figcaption>
         </figure>
         <figure className={styles.placementView}>
           <CameraView exercise={exercise} />
-          <figcaption>What your phone sees</figcaption>
+          <figcaption>{t("phoneView")}</figcaption>
         </figure>
       </div>
       <ol className={styles.placementSteps}>

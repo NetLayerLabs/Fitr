@@ -1,4 +1,4 @@
-import { spokenValue } from "@/components/workout/format";
+import { EN_WORKOUT, spokenValue } from "@/components/workout/format";
 import {
   EXERCISE_CATEGORIES,
   EXERCISE_LIST,
@@ -7,6 +7,15 @@ import {
   type ExerciseInfo,
   type ExerciseLevel,
 } from "@/lib/exercises";
+import { makeTranslator, type Translator } from "@/lib/i18n";
+import {
+  categoryLabel as exerciseCategoryLabel,
+  equipmentLabel,
+  equipmentNeeds,
+  exerciseName,
+  levelLabel,
+} from "@/lib/i18n/exercise";
+import { en } from "@/lib/i18n/messages";
 import { isExerciseKind, type ExerciseKind } from "@/lib/pose/types";
 
 /** A category chip's value: one category, or every exercise. */
@@ -60,43 +69,34 @@ export function categoryCounts(noEquipment: boolean): Record<CategoryFilter, num
   return counts;
 }
 
-export function categoryLabel(category: CategoryFilter): string {
-  if (category === "all") return "All";
-  return EXERCISE_CATEGORIES.find((c) => c.id === category)?.label ?? category;
+/** English translators: the default for callers that do not pass the app's translators. */
+const EN_WORKOUTS = makeTranslator("en", en, "workouts");
+const EN_EXERCISES = makeTranslator("en", en, "exercises");
+
+/** A chip's label: "All" or the category name, in the app's language when `t`/`tx` are given. */
+export function categoryLabel(
+  category: CategoryFilter,
+  t: Translator<"workouts"> = EN_WORKOUTS,
+  tx: Translator<"exercises"> = EN_EXERCISES,
+): string {
+  return category === "all" ? t("categoryAll") : exerciseCategoryLabel(tx, category);
 }
 
 /** Short visible badge for the gear an exercise needs, or null when it needs none. */
-export function equipmentBadge(equipment: ExerciseEquipment): string | null {
-  switch (equipment) {
-    case "bar":
-      return "Bar";
-    case "chair":
-      return "Chair";
-    case "wall":
-      return "Wall";
-    default:
-      return null;
-  }
+export function equipmentBadge(equipment: ExerciseEquipment, tx: Translator<"exercises"> = EN_EXERCISES): string | null {
+  return equipmentLabel(tx, equipment);
 }
 
 /** Spoken form of the equipment requirement, or null when none is needed. */
-export function equipmentPhrase(equipment: ExerciseEquipment): string | null {
-  switch (equipment) {
-    case "bar":
-      return "needs a bar";
-    case "chair":
-      return "needs a chair or bench";
-    case "wall":
-      return "needs a wall";
-    default:
-      return null;
-  }
+export function equipmentPhrase(equipment: ExerciseEquipment, tx: Translator<"exercises"> = EN_EXERCISES): string | null {
+  return equipmentNeeds(tx, equipment);
 }
 
+/** Level badge labels in English (screens use levelLabel(tx, level) from src/lib/i18n/exercise.ts). */
 export const LEVEL_LABEL: Record<ExerciseLevel, string> = {
-  beginner: "Beginner",
-  intermediate: "Intermediate",
-  advanced: "Advanced",
+  beginner: levelLabel(EN_EXERCISES, "beginner"),
+  intermediate: levelLabel(EN_EXERCISES, "intermediate"),
+  advanced: levelLabel(EN_EXERCISES, "advanced"),
 };
 
 /** 1-3, for the level dots. */
@@ -106,13 +106,18 @@ export const LEVEL_RANK: Record<ExerciseLevel, 1 | 2 | 3> = { beginner: 1, inter
  * Full accessible name for a workout card link, e.g.
  * "Pull-ups, 8 reps, needs a bar, front camera, advanced".
  */
-export function workoutAccessibleName(info: ExerciseInfo): string {
-  const parts = [info.name, spokenValue(info.defaultGoal, info.unit)];
-  const gear = equipmentPhrase(info.equipment);
+export function workoutAccessibleName(
+  info: ExerciseInfo,
+  t: Translator<"workouts"> = EN_WORKOUTS,
+  tx: Translator<"exercises"> = EN_EXERCISES,
+  tw: Translator<"workout"> = EN_WORKOUT,
+): string {
+  const parts = [exerciseName(tx, info.kind), spokenValue(info.defaultGoal, info.unit, tw)];
+  const gear = equipmentPhrase(info.equipment, tx);
   if (gear) parts.push(gear);
-  if (info.camera === "front") parts.push("front camera");
-  parts.push(info.level);
-  return parts.join(", ");
+  if (info.camera === "front") parts.push(t("frontCameraSpoken"));
+  parts.push(levelLabel(tx, info.level, true));
+  return parts.join(t("listSeparator"));
 }
 
 export function workoutHref(kind: ExerciseKind): string {

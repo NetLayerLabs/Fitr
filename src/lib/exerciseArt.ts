@@ -1,5 +1,6 @@
 import type { ExerciseKind } from "@/lib/pose/types";
 import type { Demonstrator } from "@/lib/formGuide";
+import EN from "@/lib/i18n/messages/en/exercises";
 
 /**
  * Hero photography per exercise (AI-generated, one consistent athlete per demonstrator), served
@@ -9,7 +10,13 @@ import type { Demonstrator } from "@/lib/formGuide";
 export interface ExerciseArt {
   src: string;
   thumb: string;
+  /**
+   * English alt text. Screens show it translated with artAlt(t, art.kind) from
+   * src/lib/i18n/exercise.ts (ArtPhoto does this itself).
+   */
   alt: string;
+  /** The exercise shown, or null for the neutral standing portrait (picks the alt text key). */
+  kind: ExerciseKind | null;
   /**
    * "floor": the athlete stays in the lower ~65% of the square (push-up, plank...), so wide
    * headers may crop the empty top (anchor the image to the bottom). "full": the pose uses the
@@ -17,25 +24,6 @@ export interface ExerciseArt {
    */
   framing: "floor" | "full";
 }
-
-const POSE_ALT: Record<ExerciseKind, string> = {
-  pushup: "at the bottom of a push-up, body in a straight line",
-  squat: "at the bottom of a deep bodyweight squat",
-  plank: "holding a forearm plank",
-  lunge: "in a deep lunge, back knee just above the floor",
-  situp: "sitting up during a sit-up",
-  leg_raise: "lying on his back with straight legs raised to vertical",
-  glute_bridge: "in a glute bridge, hips raised",
-  wall_sit: "in a wall sit, back against the wall, thighs level",
-  pike_pushup: "in a pike push-up, hips high, head lowering to the floor",
-  jump_squat: "in the air during a jump squat",
-  pullup: "at the top of a pull-up, chin over the bar",
-  dip: "doing a dip on a bench",
-  burpee: "jumping with arms overhead at the end of a burpee",
-  mountain_climber: "driving a knee to his chest in a mountain climber",
-  jumping_jack: "mid jumping jack, arms overhead and feet wide",
-  high_knees: "running in place, knee at hip height",
-};
 
 /** Poses that sit low in the frame; checked against the actual photos. */
 const FLOOR_POSES: ReadonlySet<ExerciseKind> = new Set<ExerciseKind>([
@@ -56,7 +44,8 @@ export function exerciseArt(kind: ExerciseKind, who: Demonstrator = "man"): Exer
   return {
     src: `${base}.jpg`,
     thumb: `${base}-sm.jpg`,
-    alt: `Athlete ${POSE_ALT[kind]}`,
+    alt: EN[`${kind}_photoAlt`],
+    kind,
     framing: FLOOR_POSES.has(kind) ? "floor" : "full",
   };
 }
@@ -65,6 +54,7 @@ export function exerciseArt(kind: ExerciseKind, who: Demonstrator = "man"): Exer
 export const STANDING_ART: ExerciseArt = {
   src: "/art/exercises/stand-man.jpg",
   thumb: "/art/exercises/stand-man-sm.jpg",
-  alt: "Athlete standing, ready to train",
+  alt: EN.standingPhotoAlt,
+  kind: null,
   framing: "full",
 };

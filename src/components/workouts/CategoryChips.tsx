@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { EXERCISE_CATEGORIES } from "@/lib/exercises";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { categoryLabel, type CategoryFilter } from "./catalog";
 import styles from "./workouts.module.css";
 
@@ -23,6 +24,8 @@ export interface CategoryChipsProps {
  * Plain buttons rather than a radiogroup so Tab reaches every chip without arrow-key handling.
  */
 export default function CategoryChips({ value, onChange, label, counts, children }: CategoryChipsProps) {
+  const t = useT("workouts");
+  const tx = useT("exercises");
   const rowRef = useRef<HTMLDivElement>(null);
 
   // Keep the selected chip in view (e.g. /workouts?c=cardio opens with "Cardio" off-screen).
@@ -41,7 +44,7 @@ export default function CategoryChips({ value, onChange, label, counts, children
   return (
     <div ref={rowRef} className={styles.chips} role="group" aria-label={label}>
       {FILTERS.map((filter) => {
-        const name = categoryLabel(filter);
+        const name = categoryLabel(filter, t, tx);
         const count = counts?.[filter];
         const pressed = filter === value;
         return (
@@ -50,7 +53,7 @@ export default function CategoryChips({ value, onChange, label, counts, children
             type="button"
             className={styles.chip}
             aria-pressed={pressed}
-            aria-label={count === undefined ? undefined : `${name}, ${count} ${count === 1 ? "workout" : "workouts"}`}
+            aria-label={count === undefined ? undefined : t.plural("chipWithCount", count, { name })}
             data-filter={filter}
             onClick={() => onChange?.(filter)}
           >

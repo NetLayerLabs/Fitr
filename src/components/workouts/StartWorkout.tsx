@@ -6,6 +6,8 @@ import { ChevronRightIcon, ExerciseIcon } from "@/components/icons/Icons";
 import { formatGoal } from "@/components/workout/format";
 import { useSessions } from "@/hooks/useSessions";
 import { EXERCISES, EXERCISE_LIST } from "@/lib/exercises";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseName } from "@/lib/i18n/exercise";
 import CategoryChips from "./CategoryChips";
 import WorkoutCard from "./WorkoutCard";
 import {
@@ -24,27 +26,30 @@ import styles from "./workouts.module.css";
  * on /workouts.
  */
 export default function StartWorkout() {
+  const t = useT("workouts");
+  const tx = useT("exercises");
+  const tw = useT("workout");
   const sessions = useSessions();
   const [category, setCategory] = useState<CategoryFilter>("all");
   const quick = useMemo(() => quickStartKinds(sessions), [sessions]);
   const shown = useMemo(() => filterExercises({ category, noEquipment: false }), [category]);
-  const label = categoryLabel(category);
+  const label = categoryLabel(category, t, tx);
 
   return (
     <section className={styles.start} aria-labelledby="workouts-heading">
       <div className={styles.startHead}>
         <h2 id="workouts-heading" className={styles.startTitle}>
-          Start a workout
+          {t("startTitle")}
         </h2>
         <Link href="/workouts" className={styles.browseLink}>
-          Browse all {EXERCISE_LIST.length}
+          {t("browseAll", { count: EXERCISE_LIST.length })}
           <ChevronRightIcon size={18} />
         </Link>
       </div>
 
       <div className={styles.quick}>
         <h3 className={styles.quickTitle} id="quick-start-heading">
-          Quick start
+          {t("quickStart")}
         </h3>
         <ul className={styles.quickList} role="list" aria-labelledby="quick-start-heading">
           {quick.map((kind) => {
@@ -55,14 +60,14 @@ export default function StartWorkout() {
                   href={workoutHref(kind)}
                   className={styles.quickItem}
                   data-kind={kind}
-                  aria-label={workoutAccessibleName(info)}
+                  aria-label={workoutAccessibleName(info, t, tx, tw)}
                 >
                   <span className={styles.quickIcon} aria-hidden="true">
                     <ExerciseIcon kind={kind} size={22} />
                   </span>
                   <span className={styles.quickBody} aria-hidden="true">
-                    <span className={styles.quickName}>{info.name}</span>
-                    <span className={styles.quickGoal}>{formatGoal(info.defaultGoal, info.unit)}</span>
+                    <span className={styles.quickName}>{exerciseName(tx, kind)}</span>
+                    <span className={styles.quickGoal}>{formatGoal(info.defaultGoal, info.unit, tw)}</span>
                   </span>
                 </Link>
               </li>
@@ -71,12 +76,12 @@ export default function StartWorkout() {
         </ul>
       </div>
 
-      <CategoryChips value={category} onChange={setCategory} label="Workout category" />
+      <CategoryChips value={category} onChange={setCategory} label={t("categoryGroupLabel")} />
 
       <div
         className={styles.carousel}
         role="region"
-        aria-label={`${label} workouts, ${shown.length}, scroll sideways for more`}
+        aria-label={t("carouselLabel", { category: label, count: shown.length })}
         tabIndex={0}
       >
         {/* Keyed by category so a new filter starts scrolled to its first card. */}
@@ -89,7 +94,7 @@ export default function StartWorkout() {
           {category !== "all" ? (
             <li className={styles.carouselItem}>
               <Link href={`/workouts?c=${category}`} className={styles.seeAllCard}>
-                <span>All {label}</span>
+                <span>{t("seeAllInCategory", { category: label })}</span>
                 <ChevronRightIcon size={20} />
               </Link>
             </li>

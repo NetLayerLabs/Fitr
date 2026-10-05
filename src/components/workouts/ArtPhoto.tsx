@@ -1,4 +1,8 @@
+"use client";
+
 import type { ExerciseArt } from "@/lib/exerciseArt";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { artAlt } from "@/lib/i18n/exercise";
 
 export interface ArtPhotoProps {
   art: ExerciseArt;
@@ -21,6 +25,7 @@ export interface ArtPhotoProps {
  * plus the container's aspect-ratio rule out layout shift.
  */
 export default function ArtPhoto({ art, sizes, decorative = false, priority = false, className }: ArtPhotoProps) {
+  const tx = useT("exercises");
   return (
     // eslint-disable-next-line @next/next/no-img-element -- pre-sized static art, see above
     <img
@@ -30,7 +35,7 @@ export default function ArtPhoto({ art, sizes, decorative = false, priority = fa
       sizes={sizes}
       width={960}
       height={960}
-      alt={decorative ? "" : art.alt}
+      alt={decorative ? "" : artAlt(tx, art.kind)}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
       decoding="async"
