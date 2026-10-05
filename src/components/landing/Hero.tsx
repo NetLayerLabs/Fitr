@@ -9,6 +9,26 @@ import { APK_NOTE, LANDING_LINKS } from "./links";
 import section from "./section.module.css";
 import styles from "./Hero.module.css";
 import { SkrLogo } from "@/components/brand/SkrAmount";
+import { BrandMark } from "@/components/brand/Brand";
+
+/** The Solana logomark, in its official gradient. */
+function SolanaMark() {
+  return (
+    <svg className={styles.solana} viewBox="0 0 398 312" aria-hidden="true">
+      <defs>
+        <linearGradient id="hero-solana" x1="0" y1="312" x2="398" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#9945FF" />
+          <stop offset="1" stopColor="#14F195" />
+        </linearGradient>
+      </defs>
+      <g fill="url(#hero-solana)">
+        <path d="M64.6 237.9c2.4-2.4 5.7-3.8 9.2-3.8h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1l62.7-62.7z" />
+        <path d="M64.6 3.8C67.1 1.4 70.4 0 73.8 0h317.4c5.8 0 8.7 7 4.6 11.1l-62.7 62.7c-2.4 2.4-5.7 3.8-9.2 3.8H6.5c-5.8 0-8.7-7-4.6-11.1L64.6 3.8z" />
+        <path d="M333.1 120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8 0-8.7 7-4.6 11.1l62.7 62.7c2.4 2.4 5.7 3.8 9.2 3.8h317.4c5.8 0 8.7-7 4.6-11.1l-62.7-62.7z" />
+      </g>
+    </svg>
+  );
+}
 
 /** Hero: the promise, the Android download, and a phone mid-workout in front of the athlete. */
 export default function Hero() {
@@ -17,9 +37,17 @@ export default function Hero() {
     <section id="top" className={styles.hero} aria-labelledby="landing-title">
       <div className={`${section.container} ${styles.grid}`}>
         <div className={styles.copy}>
-          <p className={styles.badge}>
-            <span className={styles.badgeDot} aria-hidden="true" />
-            A fitness commitment app for Solana Seeker
+          <p className={styles.tag}>
+            <span className={styles.tagMark} aria-hidden="true">
+              <BrandMark size={16} />
+            </span>
+            <span className={styles.tagBody}>
+              <span className={styles.tagTitle}>Fitness commitment app</span>
+              <span className={styles.tagMeta}>
+                <SolanaMark />
+                Built for Solana Seeker
+              </span>
+            </span>
           </p>
           <h1 id="landing-title" className={styles.title}>
             Put your word <span className={styles.accent}>on the line.</span>
@@ -92,7 +120,7 @@ export default function Hero() {
             </span>
             <span>
               <span className={styles.floatLabel}>Day verified</span>
-              <span className={styles.floatValue}>On-chain</span>
+              <span className={styles.floatValue}>Onchain</span>
             </span>
           </div>
           <div className={`${styles.float} ${styles.floatBottom}`} aria-hidden="true">
