@@ -13,6 +13,7 @@ const OTHER = address("Vote111111111111111111111111111111111111111");
 const CREW_POOL = address("SysvarC1ock11111111111111111111111111111111");
 
 const mocks = vi.hoisted(() => ({
+  closed: new Set<string>(),
   owner: null as string | null,
   vault: null as unknown,
   board: null as unknown,
@@ -40,6 +41,9 @@ vi.mock("@/components/crews/useCrews", () => ({
   useMyCrews: () => ({ status: "ready", data: mocks.crews, error: null, refresh: () => {} }),
   useCrewVaults: () => ({ status: "idle", data: undefined, error: null, refresh: () => {} }),
   rememberCrew: mocks.remember,
+  useClosedCrews: () => mocks.closed,
+  forgetCrew: () => {},
+  refreshClosedCrews: () => {},
 }));
 vi.mock("@/components/stake/useVaultTx", () => ({
   useVaultTx: () => ({ state: { phase: "idle", did: null, signature: null, error: null, unconfirmed: false }, run: mocks.run, reset: () => {} }),
@@ -97,6 +101,7 @@ beforeEach(() => {
     },
   };
   mocks.crews = [];
+  mocks.closed = new Set();
   mocks.push.mockReset();
   mocks.remember.mockReset();
   mocks.run.mockReset();
@@ -135,6 +140,15 @@ describe("CrewScreen", () => {
     const req = mocks.run.mock.calls[0][0];
     expect(req.crewId).toBe(7n);
     expect(req.commit).toMatchObject({ dayIndex: D0, exercise: Exercise.Pushup, goalTarget: 25, amount: 10_000_000n });
+  });
+
+  it("a deleted crew: notice, no invite link, no stake form", () => {
+    mocks.closed = new Set(["7"]);
+    render(<CrewScreen crewId={7n} />);
+    expect(screen.getByRole("heading", { name: "This crew was deleted" })).toBeTruthy();
+    expect(screen.queryByLabelText("Invite link")).toBeNull();
+    expect(screen.queryByLabelText("Stake")).toBeNull();
+    expect(mocks.remember).not.toHaveBeenCalled();
   });
 
   it("crew not found", () => {

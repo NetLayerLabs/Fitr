@@ -43,6 +43,7 @@ vi.mock("@/components/crews/useCrews", () => ({
   useCrewVaults: () => ({ status: "idle", data: undefined, error: null, refresh: () => {} }),
   useCrewBoard: () => ({ status: "idle", data: undefined, error: null, refresh: () => {} }),
   rememberCrew: () => {},
+  useClosedCrews: () => new Set<string>(),
 }));
 vi.mock("@/hooks/useSessions", () => ({ useHydrated: () => true, useNow: () => mocks.now, useSessions: () => [] }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {} }), usePathname: () => "/commit" }));

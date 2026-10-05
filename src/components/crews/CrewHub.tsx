@@ -12,7 +12,7 @@ import { crewDisplayName, crewPath, parseInviteInput } from "@/lib/solana/vault/
 import type { Pool } from "@/lib/solana/vault/generated";
 import CreateCrewForm from "./CreateCrewForm";
 import { challengeLabel } from "./labels";
-import { useMyCrews } from "./useCrews";
+import { useClosedCrews, useMyCrews } from "./useCrews";
 import styles from "./crews.module.css";
 
 function JoinCrew() {
@@ -69,7 +69,8 @@ export interface CrewHubProps {
 /** The Commit tab's "Crew" side: your crews, join by link, start a new one. */
 export default function CrewHub({ account, owner, globalPool }: CrewHubProps) {
   const crews = useMyCrews(owner);
-  const list = crews.data ?? [];
+  const closed = useClosedCrews();
+  const list = (crews.data ?? []).filter((c) => !closed.has(c.crewId.toString()));
   return (
     <>
       <Card as="section" padding="md" aria-labelledby="my-crews-title">

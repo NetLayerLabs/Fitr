@@ -42,6 +42,8 @@ export type CrewInviteResult =
   | { kind: "found"; crew: CrewInvite }
   /** No such crew (or not for this mint). */
   | { kind: "missing" }
+  /** Its creator deleted it from the app (the onchain pool still exists for claims). */
+  | { kind: "closed" }
   /** Neither the crew nor the global pool exists yet: the vault has not opened. */
   | { kind: "no_pool" }
   /** The server cannot read Solana right now (not configured, RPC down). */

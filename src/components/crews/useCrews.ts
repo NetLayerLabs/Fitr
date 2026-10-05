@@ -216,6 +216,22 @@ function useRememberedRaw(): string {
 /* Hooks                                                                                       */
 /* ------------------------------------------------------------------------------------------ */
 
+/** Ids (decimal strings) of crews their creator deleted from the app; see lib/crews/closeMessage.ts. */
+export function useClosedCrews(): Set<string> {
+  const q = useSharedQuery("closed-crews", async () => {
+    const res = await fetch("/api/crews/closed", { cache: "no-store" });
+    if (!res.ok) throw new Error(`closed crews: ${res.status}`);
+    const body = (await res.json()) as { closed?: unknown };
+    return Array.isArray(body.closed) ? body.closed.filter((x): x is string => typeof x === "string") : [];
+  });
+  return useMemo(() => new Set(q.data ?? []), [q.data]);
+}
+
+/** Re-reads the closed-crews list now (after this device deleted a crew). */
+export function refreshClosedCrews(): void {
+  store.delete("closed-crews");
+}
+
 /** The crews `owner` belongs to (committed in, created, or opened on this device). */
 export function useMyCrews(owner: Address | null): QueryState<CrewInfo[]> & { refresh: () => void } {
   const mint = solanaConfig.skrMint;

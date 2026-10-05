@@ -22,7 +22,8 @@ import { crewDisplayName, crewInfoFromPool, type CrewInfo } from "@/lib/solana/v
 import { challengeLabel } from "./labels";
 import { countMembers, crewLeaderboard, crewMembersToday, crewStreak, type MemberStatus } from "./crewStats";
 import InviteActions from "./InviteActions";
-import { rememberCrew, useCrewBoard } from "./useCrews";
+import DeleteCrew, { canSignMessages } from "./DeleteCrew";
+import { rememberCrew, useClosedCrews, useCrewBoard } from "./useCrews";
 import stake from "@/components/stake/stake.module.css";
 import styles from "./crews.module.css";
 
@@ -74,11 +75,12 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
   const nowSecs = Math.floor(nowMs / 1000);
   const today = snapshot && nowMs > 0 ? liveToday(snapshot.cfg, nowSecs, snapshot.today) : null;
   const board = useCrewBoard(snapshot?.poolAddress ?? null, today);
+  const closed = useClosedCrews().has(crewId.toString());
   const exists = Boolean(snapshot);
 
   useEffect(() => {
-    if (exists) rememberCrew(crewId);
-  }, [exists, crewId]);
+    if (exists && !closed) rememberCrew(crewId);
+  }, [exists, closed, crewId]);
 
   if (!hydrated || vault.status === "loading") {
     return (
@@ -175,6 +177,14 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
 
   return (
     <Frame title={name}>
+      {closed ? (
+        <Notice icon={<LockIcon size={24} />} title="This crew was deleted">
+          <p>
+            Its creator removed it from Fitr, so nobody can join or stake in it any more. If you staked here, you can
+            still claim below.
+          </p>
+        </Notice>
+      ) : null}
       <Card as="section" padding="lg" aria-labelledby="crew-challenge-title">
         <div className={styles.stack}>
           <p className={styles.eyebrow} id="crew-challenge-title">
@@ -192,7 +202,7 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
             {info && crew.fixedGoal ? "Same goal for everyone." : `${challenge}.`} No-shows fund the crew members who
             showed up. If nobody shows up, the stakes roll over to the next crew day someone completes.
           </p>
-          <InviteActions crewId={crew.crewId} crewName={name} challenge={challenge} />
+          {closed ? null : <InviteActions crewId={crew.crewId} crewName={name} challenge={challenge} />}
         </div>
       </Card>
 
@@ -272,6 +282,7 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
               seeker={requireSgt ? seeker.data : null}
               nowMs={nowMs}
               crew={crew}
+              closed={closed}
               howItWorks={false}
               wrap={(children) => <div className={styles.stack}>{children}</div>}
             />
@@ -325,6 +336,10 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
           ) : null}
         </div>
       </Card>
+
+      {!closed && owner && account && crew.creator === owner && canSignMessages(account) ? (
+        <DeleteCrew account={account} owner={owner} crewId={crew.crewId} name={name} />
+      ) : null}
     </Frame>
   );
 }

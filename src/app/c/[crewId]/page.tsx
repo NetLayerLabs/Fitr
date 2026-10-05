@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import CrewInvitePage from "@/components/crews/CrewInvitePage";
 import { loadCrewInvite } from "@/components/crews/inviteData";
+import { isCrewClosed } from "@/lib/crews/closedStore";
 import { SITE_ORIGIN } from "@/components/landing/links";
 import { exerciseArt, STANDING_ART } from "@/lib/exerciseArt";
 import { crewInvitePath, crewPath, parseCrewId } from "@/lib/solana/vault/crews";
@@ -25,6 +26,7 @@ export async function generateMetadata(props: PageProps<"/c/[crewId]">): Promise
   const { crewId } = await props.params;
   const id = parseCrewId(crewId);
   if (id === null) return { title: "Invite not found" };
+  if (await isCrewClosed(id)) return { title: { absolute: "This crew was deleted · Fitr" }, robots: { index: false, follow: true } };
   const res = await loadCrewInvite(id);
   const crew = res.kind === "found" ? res.crew : null;
   const title = crew ? `Join ${crew.name} on Fitr` : "Join a crew on Fitr";
@@ -57,6 +59,6 @@ export default async function CrewInviteRoute(props: PageProps<"/c/[crewId]">) {
   const id = parseCrewId(crewId);
   if (id === null) notFound();
   if (await isAppContext()) redirect(crewPath(id));
-  const res = await loadCrewInvite(id);
+  const res = (await isCrewClosed(id)) ? ({ kind: "closed" } as const) : await loadCrewInvite(id);
   return <CrewInvitePage crewId={id} result={res} />;
 }

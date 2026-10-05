@@ -319,6 +319,8 @@ interface ConnectedProps {
 }
 
 export interface PoolCommitFlowProps extends ConnectedProps {
+  /** The crew was deleted from the app by its creator: claims only, no new stakes or sponsoring. */
+  closed?: boolean;
   /** The crew this flow commits into; null / omitted = the global pool. */
   crew?: CrewInfo | null;
   /** Rendered first inside the wrapper (e.g. the Solo/Crew switch). */
@@ -348,6 +350,7 @@ export function PoolCommitFlow({
   before = null,
   wrap,
   howItWorks = true,
+  closed = false,
 }: PoolCommitFlowProps) {
   const tx = useVaultTx(account);
   const crewId = crew && crew.crewId !== 0n ? crew.crewId : 0n;
@@ -496,7 +499,7 @@ export function PoolCommitFlow({
         crewId={crewId === 0n ? undefined : crewId}
       />
 
-      {pool.paused ? (
+      {closed ? null : pool.paused ? (
         <Notice icon={<LockIcon size={24} />} title="Commits are paused">
           <p>New commitments are paused for maintenance. Claims still work, and your funds are safe.</p>
         </Notice>
@@ -522,7 +525,7 @@ export function PoolCommitFlow({
         </>
       ) : null}
 
-      {pool.paused ? null : (
+      {pool.paused || closed ? null : (
         <SponsorCard
           account={account}
           owner={owner}

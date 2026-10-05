@@ -32,6 +32,30 @@ function Ctas({ crewId }: { crewId: bigint }) {
  * shows was read on the server.
  */
 export default function CrewInvitePage({ crewId, result }: CrewInvitePageProps) {
+  if (result.kind === "closed") {
+    return (
+      <LandingDoc>
+        <section className={styles.invite} aria-labelledby="invite-title">
+          <p className={styles.eyebrow}>Crew invite</p>
+          <h1 id="invite-title" className={styles.inviteTitle}>
+            This crew was deleted
+          </h1>
+          <p className={styles.lede}>
+            Its creator removed it from Fitr, so it can no longer be joined. Start your own crew in the app, or ask your
+            friend for a new invite.
+          </p>
+          <div className={styles.inviteCtas}>
+            <a className={`${styles.cta} ${styles.ctaPrimary}`} href={LANDING_LINKS.apk}>
+              <DownloadIcon size={20} strokeWidth={2.25} aria-hidden="true" />
+              Download Fitr
+            </a>
+            <p className={styles.fine}>{APK_NOTE}. Staking is Seeker-only.</p>
+          </div>
+        </section>
+      </LandingDoc>
+    );
+  }
+
   if (result.kind === "missing" || result.kind === "no_pool") {
     const soon = result.kind === "no_pool";
     return (

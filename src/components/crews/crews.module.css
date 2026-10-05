@@ -410,3 +410,25 @@ a.row:focus-visible {
   font-size: var(--text-md);
   line-height: var(--leading-body);
 }
+
+/* ---------- Delete crew (creator only) ---------- */
+
+.danger {
+  display: flex;
+  justify-content: center;
+  color: var(--danger);
+}
+
+.danger button {
+  color: var(--danger);
+}
+
+.dangerConfirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--hairline) solid color-mix(in srgb, var(--danger) 45%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
