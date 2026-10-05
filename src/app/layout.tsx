@@ -4,6 +4,8 @@ import BottomNav from "@/components/nav/BottomNav";
 import NativeSync from "@/components/native/NativeSync";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 import WalletProviders from "@/components/wallet/WalletProviders";
+import I18nProvider from "@/lib/i18n/I18nProvider";
+import { getLocale, getMessages } from "@/lib/i18n/server";
 import "./globals.css";
 
 /** Text face. Exposed as a CSS variable; globals.css composes it into --font-sans. */
@@ -55,10 +57,13 @@ export const viewport: Viewport = {
   // User zoom is intentionally left enabled (accessibility).
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
   return (
-    <html lang="en" className={`${inter.variable} ${interTight.variable} ${geistMono.variable}`}>
+    <html lang={locale} className={`${inter.variable} ${interTight.variable} ${geistMono.variable}`}>
       <body>
+        <I18nProvider locale={locale} messages={messages}>
         <a className="skip-link" href="#main">
           Skip to content
         </a>
@@ -72,6 +77,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <NativeSync />
         </WalletProviders>
         <ServiceWorkerRegister />
+        </I18nProvider>
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AboutLinks from "@/components/you/AboutLinks";
+import LanguagePicker from "@/components/you/LanguagePicker";
 import ProfileHeader from "@/components/you/ProfileHeader";
 import SettingsPanel from "@/components/you/SettingsPanel";
 import styles from "@/components/you/You.module.css";
@@ -30,6 +31,7 @@ export default function YouPage() {
           <h2 id="you-settings-heading" className={styles.sectionTitle}>
             Settings
           </h2>
+          <LanguagePicker />
           <SettingsPanel />
         </section>
 

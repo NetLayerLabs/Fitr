@@ -430,3 +430,32 @@
 .nameIconButton:hover {
   color: var(--accent);
 }
+
+/* ---------- Language ---------- */
+
+.languageRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: var(--hairline) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.languageSelect {
+  flex: none;
+  min-height: var(--tap);
+  padding: 0 var(--space-8) 0 var(--space-3);
+  border: var(--hairline) solid var(--border);
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--text-muted) 50%) right 18px center / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) right 12px center / 6px 6px no-repeat,
+    var(--surface-strong);
+  color: var(--text);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  appearance: none;
+}
