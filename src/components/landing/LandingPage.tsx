@@ -4,6 +4,7 @@ import Hero from "./Hero";
 import HowItWorks from "./HowItWorks";
 import LandingFooter from "./LandingFooter";
 import LandingNav from "./LandingNav";
+import Problem from "./Problem";
 import Spotlight from "./Spotlight";
 import Trust from "./Trust";
 import WorkoutShowcase from "./WorkoutShowcase";
@@ -19,6 +20,7 @@ export default function LandingPage() {
       <Spotlight />
       <LandingNav />
       <Hero />
+      <Problem />
       <HowItWorks />
       <WorkoutShowcase />
       <Trust />
