@@ -1,5 +1,102 @@
 import type { NsMessages } from "../types";
 
-const progress: Partial<NsMessages<"progress">> = {};
+const progress: Partial<NsMessages<"progress">> = {
+  // Page
+  metaTitle: "Progressi",
+  metaDescription: "La tua serie, i record personali, i premi e lo storico degli allenamenti, salvati su questo dispositivo.",
+  pageTitle: "Progressi",
+  pageEyebrow: "Salvati su questo dispositivo",
+
+  // Dashboard sections
+  loadingProgress: "Caricamento dei tuoi progressi…",
+  streakCalendarHeading: "Calendario della serie",
+  personalRecordsHeading: "Record personali",
+  awardsHeading: "Premi",
+  historyHeading: "Storico",
+
+  // Stats
+  statsLabel: "Le tue statistiche",
+  currentStreak: "Serie attuale",
+  bestStreak: "Serie migliore",
+  thisWeek: "Questa settimana",
+  totalReps: "Ripetizioni totali",
+  dayUnit_one: "giorno",
+  dayUnit_other: "giorni",
+  workoutUnit_one: "allenamento",
+  workoutUnit_other: "allenamenti",
+  hintTodayDone: "Obiettivo di oggi fatto. A domani.",
+  hintKeepGoing: "Raggiungi l'obiettivo di oggi per non interrompere la serie.",
+  hintStart: "Raggiungi un obiettivo giornaliero per iniziare una serie.",
+
+  // Streak calendar
+  previousMonth: "Mese precedente",
+  nextMonth: "Mese successivo",
+  calendarDay: "{date}: {status}",
+  calendarDayToday: "{date} (oggi): {status}",
+  dayStatusUpcoming: "in arrivo",
+  dayStatusGoalMet: "obiettivo raggiunto",
+  dayStatusActive: "allenato, obiettivo non raggiunto",
+  dayStatusNotDoneYet: "non ancora fatto",
+  dayStatusNoGoal: "nessun obiettivo",
+  calendarLegend_one: "Obiettivo raggiunto {count} giorno a {month}",
+  calendarLegend_other: "Obiettivo raggiunto {count} giorni a {month}",
+
+  // Personal records
+  recordsEmpty: "Qui compare il tuo miglior set di ogni esercizio. {link} per stabilire il tuo primo record.",
+  recordsEmptyLink: "Scegli un allenamento",
+  unitHeld: "di tenuta",
+  repUnit_one: "rip.",
+  repUnit_other: "rip.",
+
+  // Awards
+  awardsEarnedCount: "{earned} su {total} ottenuti",
+  awardEarnedSuffix: " (ottenuto)",
+  awardLockedSuffix: " (bloccato)",
+  awardEarnedOn: "Ottenuto il {date}",
+  awardEarned: "Ottenuto",
+  awardProgressLabel: "Avanzamento: {title}",
+  awardFirstWorkoutTitle: "Primo allenamento",
+  awardFirstWorkoutDescription: "Completa il tuo primo allenamento.",
+  awardFirstGoalTitle: "Obiettivo centrato",
+  awardFirstGoalDescription: "Raggiungi un obiettivo giornaliero per la prima volta.",
+  awardStreak3Title: "3 giorni di fila",
+  awardStreak3Description: "Raggiungi il tuo obiettivo per 3 giorni di fila.",
+  awardStreak7Title: "7 giorni di fila",
+  awardStreak7Description: "Raggiungi il tuo obiettivo per 7 giorni di fila.",
+  awardStreak30Title: "30 giorni di fila",
+  awardStreak30Description: "Raggiungi il tuo obiettivo per 30 giorni di fila.",
+  awardReps100Title: "100 ripetizioni",
+  awardReps100Description: "Registra 100 ripetizioni contate in totale.",
+  awardReps1000Title: "1.000 ripetizioni",
+  awardReps1000Description: "Registra 1.000 ripetizioni contate in totale.",
+  awardPlankMinuteTitle: "Un minuto di plank",
+  awardPlankMinuteDescription: "Tieni il plank per un minuto intero senza fermarti.",
+  awardVariety5Title: "Cambia un po'",
+  awardVariety5Description: "Prova 5 esercizi diversi.",
+  awardVerifiedDayTitle: "Verificato onchain",
+  awardVerifiedDayDescription: "Completa un giorno con posta in gioco verificato onchain.",
+
+  // History
+  loadingHistory: "Caricamento dello storico…",
+  emptyTitle: "Ancora nessun allenamento",
+  emptyText: "Completa un allenamento qualsiasi e comparirà qui. Tutto resta su questo dispositivo.",
+  startWorkout: "Inizia un allenamento",
+  workoutsLabel: "Allenamenti",
+  dayToday: "Oggi",
+  dayYesterday: "Ieri",
+  goalDay: "Giorno con obiettivo",
+  noVerifiedReps: "Nessuna ripetizione verificata",
+  holdTotal: "{time} di {exercise}",
+  sessionAt: "alle {time}",
+  notCounted: "{count} non contate",
+  goalMet: "Obiettivo raggiunto",
+  confirmDeleteOne: "Eliminare questo allenamento da questo dispositivo?",
+  confirmDeleteAll: "Eliminare tutti i {count} allenamenti da questo dispositivo?",
+  confirmResetNote: "Questo azzera anche la tua serie e non si può annullare.",
+  deleteOne: "Elimina",
+  deleteAll: "Elimina tutto",
+  cancel: "Annulla",
+  clearHistory: "Cancella storico",
+};
 
 export default progress;
