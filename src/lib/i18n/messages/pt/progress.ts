@@ -1,5 +1,102 @@
 import type { NsMessages } from "../types";
 
-const progress: Partial<NsMessages<"progress">> = {};
+const progress: Partial<NsMessages<"progress">> = {
+  // Page
+  metaTitle: "Progresso",
+  metaDescription: "Sua sequência, recordes pessoais, conquistas e histórico de treinos, salvos neste aparelho.",
+  pageTitle: "Progresso",
+  pageEyebrow: "Salvo neste aparelho",
+
+  // Dashboard sections
+  loadingProgress: "Carregando seu progresso…",
+  streakCalendarHeading: "Calendário de sequência",
+  personalRecordsHeading: "Recordes pessoais",
+  awardsHeading: "Conquistas",
+  historyHeading: "Histórico",
+
+  // Stats
+  statsLabel: "Suas estatísticas",
+  currentStreak: "Sequência atual",
+  bestStreak: "Melhor sequência",
+  thisWeek: "Esta semana",
+  totalReps: "Total de reps",
+  dayUnit_one: "dia",
+  dayUnit_other: "dias",
+  workoutUnit_one: "treino",
+  workoutUnit_other: "treinos",
+  hintTodayDone: "A meta de hoje está cumprida. Até amanhã.",
+  hintKeepGoing: "Cumpra a meta de hoje para manter a sequência.",
+  hintStart: "Cumpra uma meta diária para começar uma sequência.",
+
+  // Streak calendar
+  previousMonth: "Mês anterior",
+  nextMonth: "Próximo mês",
+  calendarDay: "{date}: {status}",
+  calendarDayToday: "{date} (hoje): {status}",
+  dayStatusUpcoming: "em breve",
+  dayStatusGoalMet: "meta cumprida",
+  dayStatusActive: "treinou, meta não cumprida",
+  dayStatusNotDoneYet: "ainda não feito",
+  dayStatusNoGoal: "sem meta",
+  calendarLegend_one: "Meta cumprida em {count} dia de {month}",
+  calendarLegend_other: "Meta cumprida em {count} dias de {month}",
+
+  // Personal records
+  recordsEmpty: "Sua melhor série de cada exercício aparece aqui. {link} para definir seu primeiro recorde.",
+  recordsEmptyLink: "Escolha um treino",
+  unitHeld: "segurados",
+  repUnit_one: "rep",
+  repUnit_other: "reps",
+
+  // Awards
+  awardsEarnedCount: "{earned} de {total} conquistadas",
+  awardEarnedSuffix: " (conquistada)",
+  awardLockedSuffix: " (bloqueada)",
+  awardEarnedOn: "Conquistada em {date}",
+  awardEarned: "Conquistada",
+  awardProgressLabel: "Progresso de {title}",
+  awardFirstWorkoutTitle: "Primeiro treino",
+  awardFirstWorkoutDescription: "Termine seu primeiro treino.",
+  awardFirstGoalTitle: "Meta batida",
+  awardFirstGoalDescription: "Cumpra uma meta diária pela primeira vez.",
+  awardStreak3Title: "3 dias seguidos",
+  awardStreak3Description: "Cumpra sua meta 3 dias seguidos.",
+  awardStreak7Title: "7 dias seguidos",
+  awardStreak7Description: "Cumpra sua meta 7 dias seguidos.",
+  awardStreak30Title: "30 dias seguidos",
+  awardStreak30Description: "Cumpra sua meta 30 dias seguidos.",
+  awardReps100Title: "100 reps",
+  awardReps100Description: "Registre 100 reps contadas no total.",
+  awardReps1000Title: "1.000 reps",
+  awardReps1000Description: "Registre 1.000 reps contadas no total.",
+  awardPlankMinuteTitle: "Minuto de prancha",
+  awardPlankMinuteDescription: "Segure a prancha por um minuto inteiro sem parar.",
+  awardVariety5Title: "Variando",
+  awardVariety5Description: "Experimente 5 exercícios diferentes.",
+  awardVerifiedDayTitle: "Verificado onchain",
+  awardVerifiedDayDescription: "Conclua um dia com stake verificado onchain.",
+
+  // History
+  loadingHistory: "Carregando seu histórico…",
+  emptyTitle: "Nenhum treino ainda",
+  emptyText: "Termine qualquer treino e ele aparece aqui. Tudo fica neste aparelho.",
+  startWorkout: "Começar um treino",
+  workoutsLabel: "Treinos",
+  dayToday: "Hoje",
+  dayYesterday: "Ontem",
+  goalDay: "Dia de meta",
+  noVerifiedReps: "Nenhuma rep verificada",
+  holdTotal: "{time} de {exercise}",
+  sessionAt: "às {time}",
+  notCounted: "{count} não contadas",
+  goalMet: "Meta cumprida",
+  confirmDeleteOne: "Excluir este treino deste aparelho?",
+  confirmDeleteAll: "Excluir todos os {count} treinos deste aparelho?",
+  confirmResetNote: "Isso também zera sua sequência e não pode ser desfeito.",
+  deleteOne: "Excluir",
+  deleteAll: "Excluir tudo",
+  cancel: "Cancelar",
+  clearHistory: "Limpar histórico",
+};
 
 export default progress;
