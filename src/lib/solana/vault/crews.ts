@@ -248,8 +248,8 @@ export interface CreateCrewParams {
 
 /** Rent of the crew Pool + its vault token account (SPEC §2.7), never refunded. */
 export const CREATE_CREW_RENT_LAMPORTS = 4_953_000n;
-/** Measured 37,826 CU (SPEC §4); headroom for the simulation-sized limit to replace. */
-export const CREATE_CREW_COMPUTE_UNITS = 60_000;
+/** Measured 61,327 CU on the deployed binary; the simulation-sized limit replaces this guess. */
+export const CREATE_CREW_COMPUTE_UNITS = 80_000;
 
 export async function buildCreateCrewIx(p: CreateCrewParams): Promise<Instruction> {
   if (p.crewId === GLOBAL_CREW_ID || p.crewId > MAX_CREW_ID || p.crewId < 0n) throw new Error("Invalid crew id");

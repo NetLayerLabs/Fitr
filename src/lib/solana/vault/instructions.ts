@@ -281,15 +281,25 @@ export async function buildDailyLoopIxs(p: DailyLoopParams): Promise<Instruction
   return ixs;
 }
 
-/** Measured CU per instruction (anchor/SPEC.md §4, LiteSVM), rounded up. */
+/**
+ * CU per instruction, measured with LiteSVM on the deployed (verifiable, opt-level "z") binary,
+ * plus about 25% for unlucky PDA bumps: commit 95,858 (SGT path, fresh DayState + Profile),
+ * claim 54,041, close_missed 28,845, finalize 35,930, register_device 33,241.
+ * Only the first guess: every transaction is simulated and re-sized before it is signed.
+ */
 export const CU_ESTIMATES = {
-  /** Worst case (fresh DayState + Profile, unlucky PDA bumps), measured up to 59,596. */
-  commit: 60_000,
-  claim: 31_100,
-  closeMissed: 12_600,
-  finalize: 16_100,
-  registerDevice: 21_200,
+  commit: 120_000,
+  claim: 68_000,
+  closeMissed: 36_000,
+  finalize: 45_000,
+  registerDevice: 42_000,
 } as const;
+
+/**
+ * CU limit for the simulation that sizes a transaction. Simulating at the protocol maximum means a
+ * low estimate can never make the size check itself fail; the real limit comes from its result.
+ */
+export const SIMULATION_CU_LIMIT = 1_400_000;
 
 /** CU limit for a daily-loop transaction: measured sum × 1.2, at least 120,000 (SPEC §4). */
 export function estimateComputeUnits(p: Pick<DailyLoopParams, "settle" | "commit" | "registerDevice">): number {

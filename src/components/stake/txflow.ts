@@ -19,6 +19,7 @@ import { pollSignature, type PollOutcome } from "@/lib/solana/server/confirm";
 import {
   composeUserTransaction,
   computeUnitLimitFromSimulation,
+  SIMULATION_CU_LIMIT,
 } from "@/lib/solana/vault/instructions";
 
 /** µ-lamports per CU when the estimate is unavailable (≈ 0.0000024 SOL at 120k CU). */
@@ -114,7 +115,7 @@ export async function sendVaultTx(p: SendVaultTxParams): Promise<SendVaultTxResu
     feePayer: p.signer,
     latestBlockhash,
     ixs: p.ixs,
-    unitLimit: p.unitLimit,
+    unitLimit: SIMULATION_CU_LIMIT,
     microLamportsPerCu: DEFAULT_PRIORITY_MICROLAMPORTS,
   });
   const draftB64 = getBase64EncodedWireTransaction(compileTransaction(draft));

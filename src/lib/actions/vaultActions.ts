@@ -41,6 +41,7 @@ import {
   composeUserTransaction,
   computeUnitLimitFromSimulation,
   CU_ESTIMATES,
+  SIMULATION_CU_LIMIT,
   userTokenAccount,
 } from "@/lib/solana/vault/instructions";
 import { decodeOwned } from "@/lib/solana/vault/read";
@@ -237,7 +238,7 @@ async function finalizeTransaction(
     getBase64EncodedWireTransaction(
       compileTransaction(composeUserTransaction({ feePayer, latestBlockhash, ixs: built.ixs, unitLimit, microLamportsPerCu })),
     );
-  const draft = compose(built.unitLimit, 0n);
+  const draft = compose(SIMULATION_CU_LIMIT, 0n);
   const [priority, sim] = await Promise.all([
     chain.priorityFee(draft),
     chain.rpc
@@ -472,7 +473,7 @@ export async function sponsorTransaction(
     { funder: createNoopSigner(account), pool: poolAddress, mint: chain.mint, funderToken: ata, vault: pool.vault, amount },
     { programAddress: chain.programAddress },
   );
-  const tx = await finalizeTransaction(chain, account, { ixs: [ix], unitLimit: 60_000 });
+  const tx = await finalizeTransaction(chain, account, { ixs: [ix], unitLimit: 80_000 });
   if (!tx.ok) return tx;
   return {
     ok: true,

@@ -26,6 +26,7 @@ import {
   buildDailyLoopIxs,
   composeUserTransaction,
   computeUnitLimitFromSimulation,
+  CU_ESTIMATES,
   estimateComputeUnits,
   signerAddresses,
   userTokenAccount,
@@ -146,11 +147,13 @@ describe("daily loop composition", () => {
 });
 
 describe("compute units", () => {
-  it("floors at 120k (SPEC §4) and grows with bundled work", () => {
-    expect(estimateComputeUnits({ commit })).toBe(120_000);
+  it("covers the deployed binary's measured CU and grows with bundled work", () => {
+    // commit measured 95,858 CU (SGT path, fresh accounts) on the deployed opt-level "z" binary.
+    expect(estimateComputeUnits({ commit })).toBe(Math.ceil(CU_ESTIMATES.commit * 1.2));
+    expect(estimateComputeUnits({ commit, registerDevice: true })).toBeGreaterThan(95_858 + 33_241);
     expect(
       estimateComputeUnits({ settle: { day: 1, kind: "claim", needsFinalize: true }, commit, registerDevice: true }),
-    ).toBe(Math.ceil((16_100 + 31_100 + 60_000 + 21_200) * 1.2));
+    ).toBe(Math.ceil((CU_ESTIMATES.finalize + CU_ESTIMATES.claim + CU_ESTIMATES.commit + CU_ESTIMATES.registerDevice) * 1.2));
   });
 
   it("right-sizes from simulation", () => {

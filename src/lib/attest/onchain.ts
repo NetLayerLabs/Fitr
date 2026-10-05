@@ -83,8 +83,8 @@ export const notConfiguredOnchain: AttestOnchain = {
   },
 };
 
-/** attest_completion measured 15,018 CU (SPEC §4); 1.4x headroom. */
-export const ATTEST_COMPUTE_UNITS = 21_000;
+/** attest_completion measured 43,473 CU on the deployed binary; about 1.4x headroom. */
+export const ATTEST_COMPUTE_UNITS = 60_000;
 
 /** User-facing copy for the program errors attest_completion can hit. */
 const ATTEST_ERROR_COPY: Record<number, string> = {

@@ -362,10 +362,11 @@ export async function sendServerInstructions(
 
 /** DayState: pool at offset 12 (SPEC §2.4). */
 const DAY_STATE_POOL_OFFSET = 12n;
-const FINALIZE_CU = 20_000;
-const CLOSE_MISSED_CU_EACH = 16_000;
-const SWEEP_CU = 15_000;
-const SYNC_CREW_CU_EACH = 8_000;
+// Measured on the deployed binary: finalize 35,930, close_missed 28,845, sweep 22,878.
+const FINALIZE_CU = 50_000;
+const CLOSE_MISSED_CU_EACH = 40_000;
+const SWEEP_CU = 32_000;
+const SYNC_CREW_CU_EACH = 20_000;
 /** sync_crew instructions per transaction (2 accounts each; SPEC: about 10 fit). */
 export const SYNC_CREW_BATCH = 8;
 const NO_PENDING_AUTHORITY = "11111111111111111111111111111111";
