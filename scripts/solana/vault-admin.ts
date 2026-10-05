@@ -5,6 +5,7 @@
  *   npx tsx scripts/solana/vault-admin.ts init      [--send]   §5: initialize_pool + pause, one tx
  *   npx tsx scripts/solana/vault-admin.ts propose   [--send]   §7.1: propose_authority(SQUADS_VAULT)
  *   npx tsx scripts/solana/vault-admin.ts accept-tx            §7.2: base58 tx for Squads "import"
+ *   npx tsx scripts/solana/vault-admin.ts unpause-tx / pause-tx  §7.5 / §10.1: Squads tx to (un)pause
  *
  * Without --send every step only simulates. Env: HELIUS_API_KEY (from .env.local), DEPLOYER_KEYPAIR
  * (path, default ~/.fitr/keys/fitr-deployer.json), ATTESTOR, SQUADS_VAULT.
@@ -16,6 +17,8 @@ import {
   appendTransactionMessageInstructions,
   compileTransaction,
   createKeyPairSignerFromBytes,
+  createNoopSigner,
+  getTransactionEncoder,
   createSolanaRpc,
   createTransactionMessage,
   getBase58Decoder,
@@ -188,27 +191,64 @@ async function propose(send: boolean) {
   await run(signer, [getProposeAuthorityInstruction({ authority: signer, pool, newAuthority: address(env("SQUADS_VAULT")) })], send);
 }
 
-/** A v0 message paid by the Squads vault, base58, for Squads → Developers → TX Builder → Import. */
-async function acceptTx() {
+/** Print a transaction for the Squads vault to sign: the instruction (for TX Builder's manual
+ *  form) and the base58 transaction / message (for Squads → Developers → TX Builder → Import). */
+async function squadsTx(build: (vault: TransactionSigner, pool: Address) => Instruction) {
   const squads: Address = address(env("SQUADS_VAULT"));
   const { pool } = await addresses();
   const { value: blockhash } = await rpc.getLatestBlockhash().send();
-  const noop = { address: squads } as unknown as TransactionSigner;
+  const ix = build(createNoopSigner(squads), pool);
   const message = pipe(
     createTransactionMessage({ version: 0 }),
     (m) => setTransactionMessageFeePayer(squads, m),
     (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
-    (m) => appendTransactionMessageInstructions([getAcceptAuthorityInstruction({ newAuthority: noop, pool })], m),
+    (m) => appendTransactionMessageInstructions([ix], m),
   );
   const compiled = compileTransaction(message);
-  console.log(getBase58Decoder().decode(compiled.messageBytes));
+  console.log("program:", ix.programAddress);
+  for (const a of ix.accounts ?? []) console.log("account:", a.address, "role:", a.role);
+  console.log("data (hex):", Buffer.from(ix.data ?? []).toString("hex"));
+  console.log("base58 message:", getBase58Decoder().decode(compiled.messageBytes));
+  console.log("base58 transaction:", getBase58Decoder().decode(getTransactionEncoder().encode(compiled)));
 }
+
+/** §7.2: the Squads vault accepts the pool authority. */
+const acceptTx = () => squadsTx((vault, pool) => getAcceptAuthorityInstruction({ newAuthority: vault, pool }));
+
+/** §7.5: the Squads vault sets update_config{ paused: Some(paused) }. */
+const pausedTx = (paused: boolean) =>
+  squadsTx((vault, pool) =>
+    getUpdateConfigInstruction({
+      authority: vault,
+      pool,
+      attestor: NONE,
+      minStake: NONE,
+      maxStake: NONE,
+      feeBps: NONE,
+      streakBonusBps: NONE,
+      maxStreakBonusBps: NONE,
+      commitCutoffSecs: NONE,
+      attestGraceSecs: NONE,
+      goalLimits: NONE,
+      dailySponsorAmount: NONE,
+      paused,
+      requireSgt: NONE,
+      finalizeDelaySecs: NONE,
+    }),
+  );
 
 const [cmd, flag] = process.argv.slice(2);
 const send = flag === "--send";
-const steps: Record<string, () => Promise<unknown>> = { status, init: () => init(send), propose: () => propose(send), "accept-tx": acceptTx };
+const steps: Record<string, () => Promise<unknown>> = {
+  status,
+  init: () => init(send),
+  propose: () => propose(send),
+  "accept-tx": acceptTx,
+  "unpause-tx": () => pausedTx(false),
+  "pause-tx": () => pausedTx(true),
+};
 if (!steps[cmd]) {
-  console.error("usage: vault-admin.ts status | init [--send] | propose [--send] | accept-tx");
+  console.error("usage: vault-admin.ts status | init [--send] | propose [--send] | accept-tx | unpause-tx | pause-tx");
   process.exit(1);
 }
 steps[cmd]().catch((e) => {
