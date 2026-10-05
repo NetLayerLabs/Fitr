@@ -55,6 +55,7 @@ export const SPOKEN_ISSUE: Record<FormIssue, string> = {
 export const SPOKEN_CHALLENGE: Record<ChallengeType, string> = {
   raise_right_hand: "Raise your right hand!",
   raise_left_hand: "Raise your left hand!",
+  raise_hand: "Raise a hand!",
   hold_still_top: "Stand tall and hold still!",
 };
 

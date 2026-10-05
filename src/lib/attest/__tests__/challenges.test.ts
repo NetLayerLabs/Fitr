@@ -8,6 +8,8 @@ import {
   planChallenges,
 } from "../challenges";
 import { pushupSessionFrames, squatSessionFrames, withRaisedHand } from "./helpers";
+import { LM } from "@/lib/pose/landmarks";
+import type { PoseFrame } from "@/lib/pose/types";
 
 describe("detectRaisedHand", () => {
   const base = pushupSessionFrames();
@@ -69,7 +71,8 @@ describe("planChallenges", () => {
     const rng = mulberry32(9);
     const short = planChallenges("pushup", 10, rng);
     expect(short).toHaveLength(1);
-    expect(["raise_right_hand", "raise_left_hand"]).toContain(short[0].type);
+    // Push-ups are filmed side-on: the far hand is hidden, so either hand answers.
+    expect(short[0].type).toBe("raise_hand");
     expect(short[0].atMsFromStart).toBeGreaterThanOrEqual(6000);
     expect(short[0].atMsFromStart).toBeLessThan(14000);
     const long = planChallenges("squat", 50, rng);
@@ -79,9 +82,41 @@ describe("planChallenges", () => {
     expect(challengeTypesFor("plank")).not.toContain("hold_still_top");
   });
 
-  it("varies the asked hand across seeds", () => {
+  it("varies the asked hand across seeds for front-facing exercises", () => {
     const types = new Set<string>();
-    for (let s = 1; s < 40; s++) types.add(planChallenges("pushup", 10, mulberry32(s))[0].type);
-    expect(types).toEqual(new Set(["raise_right_hand", "raise_left_hand"]));
+    for (let s = 1; s < 40; s++) types.add(planChallenges("jumping_jack", 20, mulberry32(s))[0].type);
+    expect([...types].filter((t) => t.startsWith("raise_")).sort()).toEqual(["raise_left_hand", "raise_right_hand"]);
+  });
+
+  it("asks side-on exercises for either hand, never a specific one", () => {
+    for (let s = 1; s < 40; s++) {
+      for (const c of planChallenges("squat", 50, mulberry32(s))) expect(["raise_hand", "hold_still_top"]).toContain(c.type);
+    }
+    expect(challengeTypesFor("pullup")).not.toContain("raise_hand");
+  });
+});
+
+describe("raise_hand (either hand, side-on)", () => {
+  const frame = (t: number, wristY: number, side: "left" | "right"): PoseFrame => {
+    const lms = Array.from({ length: 33 }, () => ({ x: 0.5, y: 0.6, z: 0, visibility: 0.9 }));
+    lms[LM.NOSE] = { x: 0.5, y: 0.3, z: 0, visibility: 0.9 };
+    lms[LM.LEFT_SHOULDER] = { x: 0.5, y: 0.4, z: 0, visibility: 0.9 };
+    lms[LM.RIGHT_SHOULDER] = { x: 0.5, y: 0.4, z: 0, visibility: 0.2 }; // far side hidden
+    lms[LM.LEFT_HIP] = { x: 0.5, y: 0.7, z: 0, visibility: 0.9 };
+    lms[LM.RIGHT_HIP] = { x: 0.5, y: 0.7, z: 0, visibility: 0.2 };
+    lms[LM.LEFT_WRIST] = { x: 0.5, y: side === "left" ? wristY : 0.6, z: 0, visibility: 0.9 };
+    lms[LM.RIGHT_WRIST] = { x: 0.5, y: 0.6, z: 0, visibility: 0.1 };
+    return { timestampMs: t, landmarks: lms, imageWidth: 720, imageHeight: 1280 } as PoseFrame;
+  };
+
+  it("passes when the visible hand goes up, even though the asked-for side is hidden", () => {
+    const frames = Array.from({ length: 12 }, (_, i) => frame(i * 100, 0.1, "left"));
+    expect(detectChallenge("raise_hand", frames, 0, 2000).passed).toBe(true);
+    expect(detectChallenge("raise_right_hand", frames, 0, 2000).passed).toBe(false);
+  });
+
+  it("fails when no hand goes up", () => {
+    const frames = Array.from({ length: 12 }, (_, i) => frame(i * 100, 0.6, "left"));
+    expect(detectChallenge("raise_hand", frames, 0, 2000).passed).toBe(false);
   });
 });

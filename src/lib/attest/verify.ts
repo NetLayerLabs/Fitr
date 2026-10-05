@@ -80,8 +80,8 @@ export const VERIFY_DEFAULTS: VerifyConfig = Object.freeze({
   challengeSlackMs: 1500,
   teleportFraction: 0.25,
   teleportMaxDtMs: 150,
-  teleportMaxRatio: 0.01,
-  teleportMinCount: 3,
+  teleportMaxRatio: 0.03,
+  teleportMinCount: 5,
   boneDeviation: 0.4,
   boneMaxBadFraction: 0.15,
   boneMinFrames: 30,
@@ -180,6 +180,14 @@ const KEY_JOINTS = [
   LM.RIGHT_ANKLE,
 ];
 
+/** The same joint on the other side (KEY_JOINTS are left/right pairs: left odd, right = left + 1). */
+function mirrorJoint(j: number): number {
+  return j % 2 === 1 ? j + 1 : j - 1;
+}
+
+/** Fraction of the frame within which a joint landing on its twin's spot counts as a left/right swap. */
+const SWAP_TOLERANCE = 0.08;
+
 const BONES: ReadonlyArray<readonly [number, number]> = [
   [LM.LEFT_SHOULDER, LM.LEFT_ELBOW],
   [LM.LEFT_ELBOW, LM.LEFT_WRIST],
@@ -225,6 +233,10 @@ function teleportStats(frames: readonly PoseFrame[], cfg: VerifyConfig) {
       if (!visible(p) || !visible(q)) continue;
       compared = true;
       if (Math.hypot((p.x - q.x) * ar, p.y - q.y) > cfg.teleportFraction) {
+        // Side-on, the pose model often swaps left and right for a frame (the limbs overlap). A
+        // joint that lands where its twin just was is a label swap, not a body teleporting.
+        const twin = a.landmarks[mirrorJoint(j)];
+        if (visible(twin) && Math.hypot((twin.x - q.x) * ar, twin.y - q.y) <= SWAP_TOLERANCE) continue;
         jumped = true;
         break;
       }

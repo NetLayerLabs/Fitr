@@ -7,11 +7,16 @@
  * read the landmark of the requested side and never look at screen x.
  */
 import { LM } from "@/lib/pose/landmarks";
+import { EXERCISES } from "@/lib/exercises";
 import { EXERCISE_KINDS, type ExerciseKind, type Landmark, type PoseFrame } from "@/lib/pose/types";
 
-export type ChallengeType = "raise_right_hand" | "raise_left_hand" | "hold_still_top";
+export type ChallengeType = "raise_right_hand" | "raise_left_hand" | "raise_hand" | "hold_still_top";
 
-export const CHALLENGE_TYPES: readonly ChallengeType[] = ["raise_right_hand", "raise_left_hand", "hold_still_top"];
+export const CHALLENGE_TYPES: readonly ChallengeType[] = ["raise_right_hand", "raise_left_hand", "raise_hand", "hold_still_top"];
+
+/** Exercises filmed side-on: the far arm is hidden and left / right are easily swapped by the tracker. */
+const SIDE_ON = EXERCISE_KINDS.filter((k) => EXERCISES[k].camera === "side");
+const FRONT_ON = EXERCISE_KINDS.filter((k) => EXERCISES[k].camera !== "side");
 
 export interface ChallengeSpec {
   type: ChallengeType;
@@ -27,13 +32,21 @@ export const CHALLENGE_SPECS: Record<ChallengeType, ChallengeSpec> = {
     type: "raise_right_hand",
     prompt: "Raise your RIGHT hand above your head",
     windowMs: 6000,
-    exercises: EXERCISE_KINDS,
+    exercises: FRONT_ON,
   },
   raise_left_hand: {
     type: "raise_left_hand",
     prompt: "Raise your LEFT hand above your head",
     windowMs: 6000,
-    exercises: EXERCISE_KINDS,
+    exercises: FRONT_ON,
+  },
+  // Side-on the far hand is hidden behind the body, so either hand answers. The proof of a live
+  // person is responding to a random prompt at a random moment, not which hand.
+  raise_hand: {
+    type: "raise_hand",
+    prompt: "Raise one hand above your head",
+    windowMs: 6000,
+    exercises: SIDE_ON,
   },
   hold_still_top: {
     type: "hold_still_top",
@@ -104,7 +117,7 @@ export function planChallenges(
 ): PlannedChallenge[] {
   const count = minSessionMs(exercise, goalTarget) >= 30_000 ? 2 : 1;
   const allowed = challengeTypesFor(exercise);
-  const hands: ChallengeType[] = ["raise_right_hand", "raise_left_hand"];
+  const hands: ChallengeType[] = EXERCISES[exercise].camera === "side" ? ["raise_hand"] : ["raise_right_hand", "raise_left_hand"];
   const out: PlannedChallenge[] = [];
   let at = 6000 + Math.floor(random() * 8000);
   for (let i = 0; i < count; i++) {
@@ -197,13 +210,13 @@ function isHandRaised(
  */
 export function detectRaisedHand(
   frames: readonly PoseFrame[],
-  side: "left" | "right",
+  side: "left" | "right" | "either",
   fromMs: number,
   toMs: number,
   options: RaisedHandOptions = {},
 ): DetectionResult {
   const { minVisibility = 0.5, marginTorso = 0.15, holdMs = 300, minFrames = 3 } = options;
-  const other = side === "left" ? "right" : "left";
+  const other = side === "left" ? "right" : side === "right" ? "left" : null;
   let runStart: number | null = null;
   let runFrames = 0;
   let prevT: number | null = null;
@@ -216,9 +229,15 @@ export function detectRaisedHand(
     if (aspect !== null && f.landmarks.length > 0) {
       const torso = torsoLength(f.landmarks, aspect, minVisibility);
       if (torso !== null) {
-        const asked = isHandRaised(f.landmarks, aspect, side, minVisibility, marginTorso, torso);
-        const wrong = isHandRaised(f.landmarks, aspect, other, minVisibility, marginTorso, torso);
-        good = asked === true && wrong !== true;
+        if (other === null) {
+          good =
+            isHandRaised(f.landmarks, aspect, "left", minVisibility, marginTorso, torso) === true ||
+            isHandRaised(f.landmarks, aspect, "right", minVisibility, marginTorso, torso) === true;
+        } else {
+          const asked = isHandRaised(f.landmarks, aspect, side as "left" | "right", minVisibility, marginTorso, torso);
+          const wrong = isHandRaised(f.landmarks, aspect, other, minVisibility, marginTorso, torso);
+          good = asked === true && wrong !== true;
+        }
       }
     }
     // A frame gap > 300 ms breaks the run.
@@ -313,6 +332,8 @@ export function detectChallenge(
       return detectRaisedHand(frames, "right", fromMs, toMs);
     case "raise_left_hand":
       return detectRaisedHand(frames, "left", fromMs, toMs);
+    case "raise_hand":
+      return detectRaisedHand(frames, "either", fromMs, toMs);
     case "hold_still_top":
       return detectHoldStill(frames, fromMs, toMs);
   }

@@ -370,6 +370,13 @@ export class AttestService {
     try {
       const result = await session.finishing;
       session.result = result;
+      // One line per verdict for operations (journalctl -u fitr): public data only, no trace.
+      console.info(
+        `[attest] ${session.wallet.slice(0, 4)}…${session.wallet.slice(-4)} day=${session.dayIndex} crew=${session.crewId ?? 0n} ` +
+          `${session.exercise} ${result.count}/${result.goalTarget} verdict=${result.verdict}` +
+          (result.reasons.length ? ` reasons=${result.reasons.join(",")}` : "") +
+          (result.onchain ? ` onchain=${result.onchain.status}${"message" in result.onchain && result.onchain.message ? ` (${result.onchain.message})` : ""}` : ""),
+      );
       return result;
     } finally {
       session.finishing = null;
