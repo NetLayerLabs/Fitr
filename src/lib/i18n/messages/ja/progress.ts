@@ -1,5 +1,102 @@
 import type { NsMessages } from "../types";
 
-const progress: Partial<NsMessages<"progress">> = {};
+const progress: Partial<NsMessages<"progress">> = {
+  // Page
+  metaTitle: "記録",
+  metaDescription: "連続記録、自己ベスト、実績、ワークアウト履歴。すべてこの端末に保存されます。",
+  pageTitle: "記録",
+  pageEyebrow: "この端末に保存",
+
+  // Dashboard sections
+  loadingProgress: "記録を読み込み中…",
+  streakCalendarHeading: "連続記録カレンダー",
+  personalRecordsHeading: "自己ベスト",
+  awardsHeading: "実績",
+  historyHeading: "履歴",
+
+  // Stats
+  statsLabel: "あなたの統計",
+  currentStreak: "現在の連続記録",
+  bestStreak: "最長連続記録",
+  thisWeek: "今週",
+  totalReps: "合計レップ数",
+  dayUnit_one: "日",
+  dayUnit_other: "日",
+  workoutUnit_one: "回",
+  workoutUnit_other: "回",
+  hintTodayDone: "今日の目標は達成済みです。また明日。",
+  hintKeepGoing: "今日の目標を達成して記録を伸ばしましょう。",
+  hintStart: "毎日の目標を達成して連続記録を始めましょう。",
+
+  // Streak calendar
+  previousMonth: "前の月",
+  nextMonth: "次の月",
+  calendarDay: "{date}：{status}",
+  calendarDayToday: "{date}（今日）：{status}",
+  dayStatusUpcoming: "これから",
+  dayStatusGoalMet: "目標達成",
+  dayStatusActive: "運動済み、目標未達成",
+  dayStatusNotDoneYet: "まだ未実施",
+  dayStatusNoGoal: "目標なし",
+  calendarLegend_one: "{month}の目標達成日：{count}日",
+  calendarLegend_other: "{month}の目標達成日：{count}日",
+
+  // Personal records
+  recordsEmpty: "各種目の1セットでのベスト記録がここに表示されます。{link}して最初の記録を作りましょう。",
+  recordsEmptyLink: "ワークアウトを選択",
+  unitHeld: "キープ",
+  repUnit_one: "回",
+  repUnit_other: "回",
+
+  // Awards
+  awardsEarnedCount: "{total}個中{earned}個獲得",
+  awardEarnedSuffix: "（獲得済み）",
+  awardLockedSuffix: "（未獲得）",
+  awardEarnedOn: "{date}に獲得",
+  awardEarned: "獲得済み",
+  awardProgressLabel: "{title}の進捗",
+  awardFirstWorkoutTitle: "初ワークアウト",
+  awardFirstWorkoutDescription: "初めてのワークアウトを完了する。",
+  awardFirstGoalTitle: "目標達成者",
+  awardFirstGoalDescription: "初めて毎日の目標を達成する。",
+  awardStreak3Title: "3日連続",
+  awardStreak3Description: "3日連続で目標を達成する。",
+  awardStreak7Title: "7日連続",
+  awardStreak7Description: "7日連続で目標を達成する。",
+  awardStreak30Title: "30日連続",
+  awardStreak30Description: "30日連続で目標を達成する。",
+  awardReps100Title: "100レップ",
+  awardReps100Description: "カウントされたレップを合計100回記録する。",
+  awardReps1000Title: "1,000レップ",
+  awardReps1000Description: "カウントされたレップを合計1,000回記録する。",
+  awardPlankMinuteTitle: "プランク1分",
+  awardPlankMinuteDescription: "プランクを1回で丸1分キープする。",
+  awardVariety5Title: "いろいろ挑戦",
+  awardVariety5Description: "5種類の異なる種目に挑戦する。",
+  awardVerifiedDayTitle: "オンチェーン検証済み",
+  awardVerifiedDayDescription: "ステークした日をオンチェーンで検証済みの状態で完了する。",
+
+  // History
+  loadingHistory: "履歴を読み込み中…",
+  emptyTitle: "まだワークアウトがありません",
+  emptyText: "ワークアウトを完了するとここに表示されます。データはすべてこの端末に保存されます。",
+  startWorkout: "ワークアウトを始める",
+  workoutsLabel: "ワークアウト",
+  dayToday: "今日",
+  dayYesterday: "昨日",
+  goalDay: "目標日",
+  noVerifiedReps: "検証済みレップなし",
+  holdTotal: "{exercise} {time}",
+  sessionAt: "{time}",
+  notCounted: "{count}回はカウント外",
+  goalMet: "目標達成",
+  confirmDeleteOne: "このワークアウトを端末から削除しますか？",
+  confirmDeleteAll: "{count}件のワークアウトをすべて端末から削除しますか？",
+  confirmResetNote: "連続記録もリセットされ、元に戻すことはできません。",
+  deleteOne: "削除",
+  deleteAll: "すべて削除",
+  cancel: "キャンセル",
+  clearHistory: "履歴を消去",
+};
 
 export default progress;
