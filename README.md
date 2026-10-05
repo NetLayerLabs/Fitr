@@ -13,6 +13,20 @@ Product spec: [`FITR_PROJECT_SPEC.md`](./FITR_PROJECT_SPEC.md) · Vault program:
 [`anchor/SPEC.md`](./anchor/SPEC.md), [`anchor/MAINNET_RUNBOOK.md`](./anchor/MAINNET_RUNBOOK.md) ·
 Hosting: [`docs/deploy.md`](./docs/deploy.md) · Android APK: [`docs/android.md`](./docs/android.md).
 
+## The problem, and how Fitr solves it
+
+Wanting to get fit is easy; showing up is the hard part. Most fitness goals don't fail for lack of
+a plan. They fail because skipping today costs nothing and nobody checks the work.
+
+| The problem | The evidence | How Fitr solves it |
+| --- | --- | --- |
+| **We pay, then don't show up.** Good intentions are cheap. | Members on flat monthly gym plans averaged 4.3 visits a month, paying over $17 a visit when a $10 pass was on offer (DellaVigna & Malmendier, "Paying Not to Go to the Gym", *American Economic Review*, 2006). | You put your own SKR on today's goal. Show up and it comes back; skip it and it is gone. |
+| **Nobody checks the reps.** Workout logs count whatever you tell them, so a streak proves very little. | A half-rep, a skipped set or yesterday's video logs the same as the real thing in a self-reported log. | On-device pose AI holds every rep to a joint-angle standard; the server replays the session and issues random live challenges that a pre-recorded clip cannot answer. |
+| **Skipping costs nothing.** So "tomorrow" keeps winning. | Losses weigh about twice as much as equal gains (Tversky & Kahneman, 1992), and commitment contracts with money at stake have helped people keep promises they kept breaking (Giné, Karlan & Zinman, "Put Your Money Where Your Butt Is", *AEJ: Applied*, 2010). | Every day settles onchain by rules nobody can bend: finishers get their stake back plus a share of what the no-shows forfeited, and crews add friends who see whether you showed up. |
+
+Fitr is a commitment device, not an investment: if everyone shows up, everyone simply gets their
+own stake back.
+
 ## Live on Solana mainnet
 
 Fitr runs with real $SKR on mainnet, not devnet. Everything below can be checked onchain.
