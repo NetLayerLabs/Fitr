@@ -122,3 +122,8 @@
     transform: scaleX(1);
   }
 }
+
+/* The header runs wider than the page sections: half their side margin on wide screens. */
+.bar .inner {
+  max-width: calc((3 * 100% + 1120px) / 4 + 2 * var(--gutter));
+}
