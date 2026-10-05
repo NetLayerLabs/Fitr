@@ -26,3 +26,9 @@ Languages: English (source) + zh, ja, ko, it, es, fr, pt, de (`locales.ts`). The
 - Keep placeholders identical across languages; keep `SKR`, `Seeker`, `Solana`, `Fitr`, `Squads`,
   `Seed Vault` untranslated. Write "onchain" in English text.
 - Tests run in English (no provider = English), so existing English assertions stay valid.
+
+## Exercise names
+Use `src/lib/i18n/exercise.ts` everywhere an exercise name, a goal phrase ("20 push-ups",
+"45 seconds of plank") or a category label is shown: `const tx = useT("exercises");
+exerciseName(tx, kind)`, `exerciseGoal(tx, kind, n)`, `categoryLabel(tx, id)`. Do not translate
+`EXERCISES[kind].name` yourself.
