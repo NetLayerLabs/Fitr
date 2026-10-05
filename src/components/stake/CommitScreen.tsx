@@ -28,6 +28,7 @@ import type { VaultSnapshot } from "@/lib/solana/vault/read";
 import { estimatePayout } from "@/lib/solana/vault/status";
 import CommitmentPanel from "./CommitmentPanel";
 import PoolSummary from "./PoolSummary";
+import SponsorCard, { SponsoredNote } from "./SponsorCard";
 import StakeForm, { formatFeePercent, formatLocalDeadline, type StakeSubmit } from "./StakeForm";
 import { ExplorerLink, TxError, TxProgress } from "./TxStatus";
 import { formatHold } from "./form";
@@ -500,23 +501,37 @@ export function PoolCommitFlow({
           <p>New commitments are paused for maintenance. Claims still work, and your funds are safe.</p>
         </Notice>
       ) : target !== null ? (
-        <StakeForm
-          pool={pool}
-          cfg={cfg}
-          targetDay={target}
-          isTomorrow={target !== today}
-          decimals={SKR_DECIMALS}
-          label={solanaConfig.tokenLabel}
-          balance={balance}
-          solShortfall={solShortfall}
-          bundledClaim={settlement?.kind === "claim" ? bundledClaim : null}
-          busy={busy}
-          fixedExercise={crew?.fixedExercise ?? null}
-          fixedGoal={crew?.fixedGoal ?? null}
-          crewName={crew && crewId !== 0n ? crew.name || "your crew" : null}
-          onSubmit={submitCommit}
-        />
+        <>
+          <SponsoredNote pool={pool} />
+          <StakeForm
+            pool={pool}
+            cfg={cfg}
+            targetDay={target}
+            isTomorrow={target !== today}
+            decimals={SKR_DECIMALS}
+            label={solanaConfig.tokenLabel}
+            balance={balance}
+            solShortfall={solShortfall}
+            bundledClaim={settlement?.kind === "claim" ? bundledClaim : null}
+            busy={busy}
+            fixedExercise={crew?.fixedExercise ?? null}
+            fixedGoal={crew?.fixedGoal ?? null}
+            crewName={crew && crewId !== 0n ? crew.name || "your crew" : null}
+            onSubmit={submitCommit}
+          />
+        </>
       ) : null}
+
+      {pool.paused ? null : (
+        <SponsorCard
+          account={account}
+          owner={owner}
+          pool={pool}
+          crewId={crewId === 0n ? undefined : crewId}
+          crewName={crew && crewId !== 0n ? crew.name || "your crew" : null}
+          balance={balance}
+        />
+      )}
 
       {vault.error ? (
         <p className={styles.hint} role="status">

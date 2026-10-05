@@ -100,7 +100,8 @@ goal. It is a bonus funded by a sponsor's deposit, never yield.
    reserve may pay out per day. It is **0 on mainnet today**, so sponsoring is closed. Only the
    pool's authority can change it (for the global pool, the Squads multisig, 2-of-3). It can never
    be more than `max_stake` (10,000 SKR), so one day can never drain more than that.
-2. **Funding.** Anyone can deposit SKR into a pool's reserve with `fund_reserve`: in the app, through
+2. **Funding.** Anyone can deposit SKR into a pool's reserve with `fund_reserve`: in the app (Commit
+   tab → **Sponsor a day** card, or **Sponsor <crew>** on a crew's page, signed with Seed Vault), through
    the **"Sponsor a day" Blink** (`https://fitr.day/api/actions/sponsor?pool=<pool>`, also linked
    from `https://fitr.day/pool`), or from any wallet. While the tap is 0 the deposit is refused
    (`SponsorTapClosed`) and no tokens move, so money can never sit in a reserve nothing draws from.
@@ -114,6 +115,8 @@ goal. It is a bonus funded by a sponsor's deposit, never yield.
    roll over to the crew's next day with a completer instead.
 5. **Nobody can take it.** The reserve only ever leaves through the sponsor tap to people who
    completed. There is no withdraw instruction for it: not for the admin, not for Fitr.
+
+While a pool's reserve can pay a bonus, its stake form shows a **Sponsored** note with the amount.
 
 **Example.** The tap is 50 SKR. Ten people stake 100 SKR each and seven show up. Forfeits are
 300 SKR, Fitr's fee is 15 SKR, the sponsor adds 50 SKR, so the seven share 335 SKR: each gets their
