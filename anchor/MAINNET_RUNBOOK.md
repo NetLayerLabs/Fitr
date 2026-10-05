@@ -132,8 +132,8 @@ is permissionless and copies the global pool's authority, so a crew created befo
 deployer as its authority. A paused global pool rejects `create_crew` (and commits), so nobody can
 create a crew until Squads owns the pool and unpauses it (§7 step 5).
 
-The init-pool script is written by the ops package. It is built on the generated client
-(`getInitializePoolInstructionAsync`). Pass exactly the SPEC §9 values:
+The script is `scripts/solana/vault-admin.ts` (`init`, `propose`, `accept-tx`, `status`; it only
+simulates unless given `--send`), built on the generated client. It passes exactly these values:
 
 ```jsonc
 {
@@ -168,7 +168,7 @@ The init-pool script is written by the ops package. It is built on the generated
   ],
   "daily_sponsor_amount": 0,       // must be <= max_stake
   "require_sgt": true,
-  "finalize_delay_secs": 14400     // 4 h review window after the attest deadline (<= 12 h)
+  "finalize_delay_secs": 3600      // 1 h review window after the attest deadline (<= 12 h; founder's choice)
 }
 ```
 
@@ -221,7 +221,7 @@ From here on, pause, void, attestor rotation, config and fee withdrawal are all 
 | `solana program show <ID>` | Authority = SQUADS_VAULT; data length = .so size |
 | `solana-verify get-program-hash <ID> --url $RPC` | == the hash recorded in §2 |
 | `solana-verify verify-from-repo --remote --program-id <ID> https://github.com/<you>/fitr --library-name fitr_vault --mount-path anchor --commit-hash <deployed commit>` | Verified (the OtterSec API shows the "verified" badge on explorers) |
-| Pool PDA `["pool", SKR, 0u64 LE]` decoded with the generated `fetchPool` | every field equals §5; `version 1`, `crew_id 0`, `reserve = treasury_accrued = outstanding = 0`, `finalize_delay_secs = 14400`, `authority = SQUADS_VAULT`, `attestor = server key`; `paused` until §7 step 5 |
+| Pool PDA `["pool", SKR, 0u64 LE]` decoded with the generated `fetchPool` | every field equals §5; `version 1`, `crew_id 0`, `reserve = treasury_accrued = outstanding = 0`, `finalize_delay_secs = 3600`, `authority = SQUADS_VAULT`, `attestor = server key`; `paused` until §7 step 5 |
 | Vault PDA `["vault", pool]` | SPL token account, mint = SKR, owner = pool PDA, amount 0 |
 | App `.env` | `NEXT_PUBLIC_*` program id / mint / cluster point at mainnet; the server's attestor pubkey == `Pool.attestor` |
 
@@ -231,7 +231,7 @@ From here on, pause, void, attestor rotation, config and fee withdrawal are all 
 2. Do the workout. The server attests: check that `CompletionAttested` is in the tx logs.
 3. Second wallet, second Seeker if available (otherwise set `require_sgt` off just for the canary
    via Squads): commit 1 SKR and skip the workout.
-4. After `day_end + 1 h` (grace) `+ 4 h` (review window) the crank runs `finalize_day`. Then claim:
+4. After `day_end + 1 h` (grace) `+ 1 h` (review window) the crank runs `finalize_day`. Then claim:
    - expected payout = 1 + (1 × 0.95) = 1.95 SKR;
    - `treasury_accrued` = 0.05 SKR.
 5. Run `close_missed` and `sweep_day`, then check `vault.amount == outstanding + reserve + rollover + treasury_accrued`
