@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { CameraIcon, CheckIcon, PencilIcon, TrashIcon, UserIcon } from "@/components/icons/Icons";
 import Sheet from "@/components/ui/Sheet";
+import { useT } from "@/lib/i18n/I18nProvider";
 import AvatarCropper from "./AvatarCropper";
 import { MAX_AVATAR_INPUT_BYTES, MAX_NAME_LENGTH, setAvatar, setName, useAvatar, useProfileName } from "./avatar";
 import styles from "./You.module.css";
@@ -12,10 +13,11 @@ import styles from "./You.module.css";
  * display name, both stored on this device only. Wallet details live in the Wallet section.
  */
 export default function ProfileHeader() {
+  const t = useT("you");
   const avatar = useAvatar();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<"photoNotImage" | "photoTooLarge" | null>(null);
   const [cropFile, setCropFile] = useState<File | null>(null);
   const name = useProfileName();
   const [editingName, setEditingName] = useState(false);
@@ -41,23 +43,23 @@ export default function ProfileHeader() {
     if (inputRef.current) inputRef.current.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+      setError("photoNotImage");
       return;
     }
     if (file.size > MAX_AVATAR_INPUT_BYTES) {
-      setError("That image is too large.");
+      setError("photoTooLarge");
       return;
     }
     setCropFile(file);
   }
 
   return (
-    <section className={styles.profile} aria-label="Profile">
+    <section className={styles.profile} aria-label={t("profileLabel")}>
       <button
         type="button"
         className={styles.avatarButton}
         onClick={() => (avatar ? setMenuOpen(true) : choosePhoto())}
-        aria-label={avatar ? "Change profile photo" : "Add profile photo"}
+        aria-label={avatar ? t("changePhoto") : t("addPhoto")}
       >
         <span className={styles.avatar} data-has-photo={avatar ? "" : undefined}>
           {avatar ? (
@@ -97,26 +99,26 @@ export default function ProfileHeader() {
               }}
               onBlur={saveName}
               maxLength={MAX_NAME_LENGTH}
-              placeholder="Your name"
-              aria-label="Your name"
+              placeholder={t("namePlaceholder")}
+              aria-label={t("namePlaceholder")}
               autoComplete="nickname"
               enterKeyHint="done"
               autoFocus
             />
-            <button type="submit" className={styles.nameIconButton} aria-label="Save name" onMouseDown={(e) => e.preventDefault()}>
+            <button type="submit" className={styles.nameIconButton} aria-label={t("saveName")} onMouseDown={(e) => e.preventDefault()}>
               <CheckIcon size={18} />
             </button>
           </form>
         ) : (
           <div className={styles.nameRow}>
             <h2 className={styles.profileName} data-placeholder={name ? undefined : ""}>
-              {name || "Add your name"}
+              {name || t("addName")}
             </h2>
             <button
               type="button"
               className={styles.nameIconButton}
               onClick={startEditing}
-              aria-label={name ? "Edit name" : "Add your name"}
+              aria-label={name ? t("editName") : t("addName")}
             >
               <PencilIcon size={16} />
             </button>
@@ -124,12 +126,12 @@ export default function ProfileHeader() {
         )}
         {error ? (
           <p className={styles.avatarError} aria-live="polite">
-            {error}
+            {t(error)}
           </p>
         ) : null}
       </div>
 
-      <Sheet open={cropFile !== null} onClose={() => setCropFile(null)} title="Adjust photo">
+      <Sheet open={cropFile !== null} onClose={() => setCropFile(null)} title={t("adjustPhotoTitle")}>
         {cropFile ? (
           <AvatarCropper
             file={cropFile}
@@ -142,11 +144,11 @@ export default function ProfileHeader() {
         ) : null}
       </Sheet>
 
-      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Profile photo">
+      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title={t("photoMenuTitle")}>
         <div className={styles.avatarMenu}>
           <button type="button" className={styles.avatarMenuItem} onClick={choosePhoto}>
             <CameraIcon size={20} />
-            Choose a new photo
+            {t("chooseNewPhoto")}
           </button>
           <button
             type="button"
@@ -158,9 +160,9 @@ export default function ProfileHeader() {
             }}
           >
             <TrashIcon size={20} />
-            Remove photo
+            {t("removePhoto")}
           </button>
-          <p className={styles.avatarNote}>Your photo stays on this device. It is never uploaded.</p>
+          <p className={styles.avatarNote}>{t("photoStaysOnDevice")}</p>
         </div>
       </Sheet>
     </section>

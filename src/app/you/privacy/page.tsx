@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import PrivacyDoc from "@/components/you/info/PrivacyDoc";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Privacy",
-  description: "Your video never leaves your phone. What Fitr stores, what it sends, and when.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("you");
+  return { title: t("privacyTitle"), description: t("privacyDescription") };
+}
 
-export default function PrivacyPage() {
-  return <PrivacyDoc back="/you" />;
+export default async function PrivacyPage() {
+  const t = await getT("you");
+  return <PrivacyDoc back="/you" t={t} />;
 }

@@ -3,21 +3,37 @@
  * shows outside the WebView: the home-screen widget (WidgetState) and the clock-in reminders
  * (ReminderPlan). No React, no window: unit-tested on its own.
  */
-import { goalNoun } from "@/components/home/today";
 import type { TodayCommitment } from "@/components/stake/plan";
 import { EXERCISES } from "@/lib/exercises";
+import { activeLocale, tr, type Translator, type Vars } from "@/lib/i18n";
+import { exerciseGoal } from "@/lib/i18n/exercise";
 import type { ReminderPlan, WidgetMode, WidgetState } from "@/lib/native/bridge";
 import type { ExerciseKind } from "@/lib/pose/types";
 
 /** Notify this many minutes before the deadline. */
 export const REMINDER_OFFSETS_MIN: readonly number[] = Object.freeze([120, 30]);
 
-/** "20 push-ups", "60 seconds of plank"; "" when unknown. */
+/**
+ * The "exercises" translator in the active language, for text built outside render (these labels
+ * go to the Android widget and notifications from effects, never into the rendered page).
+ */
+function exercisesTranslator(): Translator<"exercises"> {
+  const t = ((key: string, vars?: Vars) => tr("exercises", key as never, vars)) as Translator<"exercises">;
+  t.plural = (key, count, vars) => {
+    const all = { count, ...vars };
+    const k = `${key}_${new Intl.PluralRules(activeLocale()).select(count)}`;
+    const s = tr("exercises", k as never, all);
+    return s === k ? tr("exercises", `${key}_other` as never, all) : s;
+  };
+  t.locale = activeLocale();
+  return t;
+}
+
+/** "20 push-ups", "60 seconds of plank" (in the app's language); "" when unknown. */
 export function goalLabel(exercise: ExerciseKind | undefined, target: number | undefined): string {
   if (!exercise || !target || target <= 0) return "";
-  const info = EXERCISES[exercise];
-  if (!info) return "";
-  return `${target} ${goalNoun(info.name, info.unit, target)}`;
+  if (!EXERCISES[exercise]) return "";
+  return exerciseGoal(exercisesTranslator(), exercise, target);
 }
 
 /** /workout/<exercise>, plus ?crew=<id> for a crew stake so the right pool is verified. */
@@ -86,10 +102,9 @@ export function reminderPlanFor(c: TodayCommitment, nowMs: number): ReminderPlan
   return {
     deadlineMs: c.deadlineMs,
     offsetsMin: [...REMINDER_OFFSETS_MIN],
-    title: goal ? `{left} left: ${goal}` : "{left} left to clock in",
-    body: stake
-      ? `Finish today or your ${stake} stake goes to the people who showed up.`
-      : "Finish today's workout before the deadline.",
+    // {left} stays in the text: the Android app fills it in when each notification fires.
+    title: goal ? tr("you", "nativeReminderTitleGoal", { goal }) : tr("you", "nativeReminderTitle"),
+    body: stake ? tr("you", "nativeReminderBodyStake", { stake }) : tr("you", "nativeReminderBody"),
     openPath: workoutPath(c.exercise, c.crewId),
   };
 }

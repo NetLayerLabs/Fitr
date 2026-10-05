@@ -5,7 +5,8 @@ import NativeSync from "@/components/native/NativeSync";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 import WalletProviders from "@/components/wallet/WalletProviders";
 import I18nProvider from "@/lib/i18n/I18nProvider";
-import { getLocale, getMessages } from "@/lib/i18n/server";
+import { makeTranslator } from "@/lib/i18n";
+import { getLocale, getMessages, getT } from "@/lib/i18n/server";
 import "./globals.css";
 
 /** Text face. Exposed as a CSS variable; globals.css composes it into --font-sans. */
@@ -29,23 +30,25 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Fitr",
-    template: "%s · Fitr",
-  },
-  description:
-    "Fitr counts your push-ups, squats and planks with on-device AI pose tracking. Every rep is checked by joint angles, and your video never leaves your phone.",
-  applicationName: "Fitr",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Fitr",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("you");
+  return {
+    title: {
+      default: "Fitr",
+      template: "%s · Fitr",
+    },
+    description: t("appDescription"),
+    applicationName: "Fitr",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: "Fitr",
+    },
+    formatDetection: {
+      telephone: false,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#0A0B0D",
@@ -60,12 +63,13 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const messages = await getMessages(locale);
+  const t = makeTranslator(locale, messages, "you");
   return (
     <html lang={locale} className={`${inter.variable} ${interTight.variable} ${geistMono.variable}`}>
       <body>
         <I18nProvider locale={locale} messages={messages}>
         <a className="skip-link" href="#main">
-          Skip to content
+          {t("skipToContent")}
         </a>
         <WalletProviders>
           <div className="app-frame">

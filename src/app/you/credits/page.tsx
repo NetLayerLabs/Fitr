@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import CreditsDoc from "@/components/you/info/CreditsDoc";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Credits & licenses",
-  description: "The open-source software, fonts and media Fitr is built with.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("you");
+  return { title: t("creditsTitle"), description: t("creditsDescription") };
+}
 
-export default function CreditsPage() {
-  return <CreditsDoc back="/you" />;
+export default async function CreditsPage() {
+  const [t, tx] = await Promise.all([getT("you"), getT("exercises")]);
+  return <CreditsDoc back="/you" t={t} tx={tx} />;
 }

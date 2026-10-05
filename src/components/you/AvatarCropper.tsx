@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type WheelEvent } from "react";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { AVATAR_SIZE } from "./avatar";
 import styles from "./AvatarCropper.module.css";
 
@@ -52,8 +53,9 @@ export interface AvatarCropperProps {
 
 /** Drag to position, pinch / wheel / slider to zoom, inside a circular preview. */
 export default function AvatarCropper({ file, onCancel, onSave }: AvatarCropperProps) {
+  const t = useT("you");
   const [img, setImg] = useState<HTMLImageElement | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<"cropOpenFailed" | "cropProcessFailed" | null>(null);
   const [frame, setFrame] = useState<Frame | null>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; scale: number } | null>(null);
@@ -74,7 +76,7 @@ export default function AvatarCropper({ file, onCancel, onSave }: AvatarCropperP
       });
     };
     image.onerror = () => {
-      if (!cancelled) setError("Couldn't open that image. Try a JPEG or PNG.");
+      if (!cancelled) setError("cropOpenFailed");
     };
     image.src = url;
     return () => {
@@ -87,17 +89,17 @@ export default function AvatarCropper({ file, onCancel, onSave }: AvatarCropperP
     return (
       <div className={styles.wrap}>
         <p className={styles.error} role="alert">
-          {error}
+          {t(error)}
         </p>
         <div className={styles.actions}>
           <button type="button" className={styles.secondary} onClick={onCancel}>
-            Close
+            {t("cropClose")}
           </button>
         </div>
       </div>
     );
   }
-  if (!img || !frame) return <p className={styles.loading}>Loading photo…</p>;
+  if (!img || !frame) return <p className={styles.loading}>{t("cropLoading")}</p>;
 
   const w = img.naturalWidth;
   const h = img.naturalHeight;
@@ -175,7 +177,7 @@ export default function AvatarCropper({ file, onCancel, onSave }: AvatarCropperP
     canvas.height = AVATAR_SIZE;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      setError("Couldn't process that image.");
+      setError("cropProcessFailed");
       return;
     }
     ctx.imageSmoothingQuality = "high";
@@ -189,7 +191,7 @@ export default function AvatarCropper({ file, onCancel, onSave }: AvatarCropperP
         ref={viewRef}
         className={styles.viewport}
         role="application"
-        aria-label="Photo framing. Drag or use arrow keys to move, pinch or plus and minus to zoom."
+        aria-label={t("cropViewportLabel")}
         tabIndex={0}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -214,7 +216,7 @@ export default function AvatarCropper({ file, onCancel, onSave }: AvatarCropperP
       </div>
 
       <label className={styles.zoom}>
-        <span className={styles.zoomLabel}>Zoom</span>
+        <span className={styles.zoomLabel}>{t("cropZoom")}</span>
         <input
           type="range"
           min={1}
@@ -225,14 +227,14 @@ export default function AvatarCropper({ file, onCancel, onSave }: AvatarCropperP
           className={styles.slider}
         />
       </label>
-      <p className={styles.hint}>Drag to position. Pinch or use the slider to zoom.</p>
+      <p className={styles.hint}>{t("cropHint")}</p>
 
       <div className={styles.actions}>
         <button type="button" className={styles.secondary} onClick={onCancel}>
-          Cancel
+          {t("cropCancel")}
         </button>
         <button type="button" className={styles.primary} onClick={save}>
-          Save photo
+          {t("cropSave")}
         </button>
       </div>
     </div>

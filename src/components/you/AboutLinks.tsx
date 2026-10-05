@@ -1,24 +1,23 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRightIcon, LockIcon, ShieldIcon, TrophyIcon } from "@/components/icons/Icons";
 import { BrandMark } from "@/components/brand/Brand";
 import { ArrowUpRightIcon } from "@/components/landing/LandingIcons";
 import { LANDING_LINKS } from "@/components/landing/links";
+import { useT } from "@/lib/i18n/I18nProvider";
 import AppVersion from "./AppVersion";
 import styles from "./You.module.css";
 
 const LINKS = [
-  {
-    href: "/you/verification",
-    title: "How verification works",
-    hint: "What Fitr checks, and what it can't",
-    Icon: ShieldIcon,
-  },
-  { href: "/you/privacy", title: "Privacy", hint: "Your video never leaves your phone", Icon: LockIcon },
-  { href: "/you/credits", title: "Credits & licenses", hint: "Open-source software we build on", Icon: TrophyIcon },
+  { href: "/you/verification", title: "verificationLinkTitle", hint: "verificationLinkHint", Icon: ShieldIcon },
+  { href: "/you/privacy", title: "privacyLinkTitle", hint: "privacyLinkHint", Icon: LockIcon },
+  { href: "/you/credits", title: "creditsLinkTitle", hint: "creditsLinkHint", Icon: TrophyIcon },
 ] as const;
 
 /** The public website, the trust, privacy and credits pages, plus the app version. */
 export default function AboutLinks({ version }: { version: string }) {
+  const t = useT("you");
   return (
     <>
       <ul className={styles.links} role="list">
@@ -29,11 +28,11 @@ export default function AboutLinks({ version }: { version: string }) {
               <BrandMark size={20} />
             </span>
             <span className={styles.linkText}>
-              <span className={styles.linkTitle}>Fitr website</span>
-              <span className={styles.linkHint}>fitr.day · share it with friends</span>
+              <span className={styles.linkTitle}>{t("websiteTitle")}</span>
+              <span className={styles.linkHint}>{t("websiteHint")}</span>
             </span>
             <ArrowUpRightIcon size={20} className={styles.chevron} aria-hidden="true" />
-            <span className="sr-only"> (opens in your browser)</span>
+            <span className="sr-only">{t("opensInBrowser")}</span>
           </a>
         </li>
         {LINKS.map(({ href, title, hint, Icon }) => (
@@ -43,8 +42,8 @@ export default function AboutLinks({ version }: { version: string }) {
                 <Icon size={20} />
               </span>
               <span className={styles.linkText}>
-                <span className={styles.linkTitle}>{title}</span>
-                <span className={styles.linkHint}>{hint}</span>
+                <span className={styles.linkTitle}>{t(title)}</span>
+                <span className={styles.linkHint}>{t(hint)}</span>
               </span>
               <ChevronRightIcon size={20} className={styles.chevron} aria-hidden="true" />
             </Link>
