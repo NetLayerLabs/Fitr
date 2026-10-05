@@ -8,6 +8,7 @@
  * pool's summary; useTodayCommitment() the single most urgent one (the global pool decides the
  * gates; a crew wins only when it is strictly more urgent, and then carries crewId / crewName).
  */
+import { failedVerificationEndTimes } from "@/lib/storage/verifyFailures";
 import { useCallback, useMemo } from "react";
 import type { Address } from "@solana/kit";
 import { useSeekerStatus, useSelectedWallet } from "@/components/wallet/hooks";
@@ -34,6 +35,9 @@ export interface TodayCommitments {
   pools: PoolTodayCommitment[];
 }
 
+/** How long a just-finished workout shows as "Verifying" on the Today card. */
+export const VERIFYING_WINDOW_MS = 3 * 60_000;
+
 export function useTodayCommitments(): TodayCommitments {
   const { owner } = useSelectedWallet();
   const seeker = useSeekerStatus(owner);
@@ -58,18 +62,25 @@ export function usePoolsToday(
   const sessions = useSessions();
   const nowMs = useNow();
 
+  // "Verifying" means: a workout that met the goal just ended and its verification may still be
+  // landing. It takes seconds, so after VERIFYING_WINDOW_MS (or once the server rejected that
+  // workout) the card goes back to the open stake with its Start button.
   const hasLocalGoalMet = useCallback(
-    (exercise: ExerciseKind, goal: number, startMs: number, endMs: number) =>
-      sessions.some(
+    (exercise: ExerciseKind, goal: number, startMs: number, endMs: number) => {
+      const failed = failedVerificationEndTimes();
+      return sessions.some(
         (s) =>
           s.exercise === exercise &&
           s.endedAt >= startMs &&
           s.endedAt < endMs &&
+          s.endedAt >= nowMs - VERIFYING_WINDOW_MS &&
+          !failed.has(s.endedAt) &&
           (exercise === "plank" || exercise === "wall_sit"
             ? Math.floor(s.summary.holdMs / 1000) >= goal
             : s.summary.reps >= goal),
-      ),
-    [sessions],
+      );
+    },
+    [sessions, nowMs],
   );
 
   if (!owner) {

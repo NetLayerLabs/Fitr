@@ -32,6 +32,7 @@ import StatusPanel from "./StatusPanel";
 import VerificationCard from "./VerificationCard";
 import { useWakeLock } from "./useWakeLock";
 import { ChallengeWatcher, VoiceCoach, type CoachLine } from "./voiceCoach";
+import { markVerificationFailed } from "@/lib/storage/verifyFailures";
 import styles from "./WorkoutScreen.module.css";
 
 type Stage = "setup" | "live" | "finished";
@@ -460,6 +461,12 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [live]);
+
+  // A rejected verification must not leave the Today card on "Verifying".
+  const failedEndedAt = verified.outcome?.kind === "failed" && result ? result.endedAt : null;
+  useEffect(() => {
+    if (failedEndedAt !== null) markVerificationFailed(failedEndedAt);
+  }, [failedEndedAt]);
 
   /** Persists the finished session. Returns false unless it reached localStorage. */
   function persist(): boolean {
