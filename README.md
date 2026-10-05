@@ -13,6 +13,9 @@ Product spec: [`FITR_PROJECT_SPEC.md`](./FITR_PROJECT_SPEC.md) · Vault program:
 [`anchor/SPEC.md`](./anchor/SPEC.md), [`anchor/MAINNET_RUNBOOK.md`](./anchor/MAINNET_RUNBOOK.md) ·
 Hosting: [`docs/deploy.md`](./docs/deploy.md) · Android APK: [`docs/android.md`](./docs/android.md).
 
+<img width="2980" height="1688" alt="image" src="https://github.com/user-attachments/assets/a5440536-3947-4cea-8c5c-5971b7905fa6" />
+
+
 ## The problem, and how Fitr solves it
 
 Wanting to get fit is easy; showing up is the hard part. Most fitness goals don't fail for lack of
