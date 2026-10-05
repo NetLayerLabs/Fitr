@@ -36,7 +36,7 @@ Fitr runs with real $SKR on mainnet, not devnet. Everything below can be checked
 
 | What | Address / link |
 | --- | --- |
-| Website and APK download | https://fitr.day (APK: https://fitr.day/download/fitr.apk) |
+| Website and APK download | https://fitr.day (APK: https://fitr.day/download/fitr.apk, Android app 1.2.0) |
 | Vault program | [`9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY`](https://explorer.solana.com/address/9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY) |
 | Global staking pool | [`2bbEw4ST1SbgJ3biXNf6cu4g78NorW6qEAhYQcGEQukz`](https://explorer.solana.com/address/2bbEw4ST1SbgJ3biXNf6cu4g78NorW6qEAhYQcGEQukz) |
 | Pool's SKR vault (token account) | [`F6bsJ6BhPUd33MaEvEohLDr6myZXyzUoMFZbZgY4xmVw`](https://explorer.solana.com/address/F6bsJ6BhPUd33MaEvEohLDr6myZXyzUoMFZbZgY4xmVw) |
@@ -74,7 +74,7 @@ multisig, and each day keeps the rules it started with):
 | Workouts | `/workouts` | All 16 exercises by muscle group (`?c=` / `?eq=none` filters); `/workout/<kind>` is the workout screen with form guide, 3-2-1 countdown and HUD |
 | Commit | `/commit` | Connect wallet (MWA), pick exercise, goal and stake, sign one transaction. Claims and settles past days in the same transaction. Solo / Crew switch; `/crew/<id>` is a crew's page |
 | Progress | `/progress` | Stats, streak calendar, personal records, awards (including "Verified onchain"), full history |
-| You | `/you` | Profile and wallet, settings (default camera, haptics, voice coach, clock-in reminders in the Android app, form guides), and the Verification, Privacy and Credits pages |
+| You | `/you` | Profile and wallet, settings (language, default camera, haptics, voice coach, clock-in reminders in the Android app, form guides), a link to the website, and the Verification, Privacy and Credits pages |
 
 `/history` and `/wallet` permanently redirect to `/progress` and `/you`.
 
@@ -214,14 +214,23 @@ README; `docs/android.md`). On top of MWA, camera and file chooser it adds a nat
 
 - `window.FitrNative` (contract in `src/lib/native/bridge.ts`, injected only on the app origin):
   `speak` / `stopSpeaking` (Android text-to-speech for the voice coach), notification permission,
-  `scheduleReminders` (clock-in reminders 2 h and 30 min before the stake deadline) and
-  `updateWidget` (the "Fitr · Today" home-screen widget).
+  `scheduleReminders` (clock-in reminders 2 h and 30 min before the stake deadline),
+  `updateWidget` (the "Fitr · Today" home-screen widget) and, since 1.2.0, `setSpeechLanguage`
+  (the voice coach speaks the app's language when the phone has a voice for it; the web app
+  feature-detects it and speaks English on older APKs or when no voice is installed).
 - `src/components/native/NativeSync.tsx` (mounted in the root layout) keeps the widget and reminders
   in step with today's commitment; it does nothing in a browser.
 - App shortcuts (long-press the icon) and verified App Links for `app.fitr.day` and `fitr.day/c/*`.
 
 The voice coach (`src/components/workout/voiceCoach.ts`) also works in a browser through the Web
 Speech API; it is on by default and can be switched off on the You tab.
+
+**Updating the app.** Screens and features come from the server, so most changes reach installed
+apps without a new APK (close and reopen Fitr). A new APK is only needed for native changes
+(`android/fitr-shell/gradle.properties`: `SOLANA_MOBILE_VERSION_NAME` / `_CODE`); build it with
+`android/build-release.sh` (release keystore from `~/.fitr/keys`, never in git) and publish it to
+`/var/www/fitr/download/fitr.apk`. It installs over the previous version (same signing key). The
+You tab shows the installed version ("Fitr 1.2.0").
 
 ## Staking and verification
 
@@ -238,8 +247,12 @@ Speech API; it is on by default and can be switched off on the You tab.
   and raw reason).
 - **Verification** (`src/lib/attest/`, `/api/attest/{start,chunk,finish}`): a staked workout
   streams pose landmarks (never video) to the server. The server replays them through the same rep
-  engine, checks the live challenges, then sends `attest_completion` with the attestor key
-  (`src/lib/attest/onchain.ts`, `src/lib/solana/server/attestor.ts`).
+  engine, checks the live challenges and tracking quality, then sends `attest_completion` with the
+  attestor key (`src/lib/attest/onchain.ts`, `src/lib/solana/server/attestor.ts`). The phone needs
+  data until the result appears; after that the app can be closed. A rejected workout leaves the
+  stake open (train again before the deadline), and the Today card returns to the Start button.
+  Every verdict is logged on the server (`journalctl -u fitr`: wallet short form, day, reps,
+  reasons, onchain status; never the trace).
 - **Crank** (`POST /api/crank`, `Authorization: Bearer $CRON_SECRET`): for the global pool and
   then every crew, finalizes past days after the review window, closes missed commitments, sweeps
   empty days, and syncs stale crews (`sync_crew`). A systemd timer calls it
@@ -316,8 +329,14 @@ it. "Cheat-resistant" is the claim, not "cheat-proof"; the limits are listed at 
 
 - Pose tracking runs on the phone; only skeleton points are sent, never video.
 - The server replays those points through the same rep engine and rejects half-reps by joint angle.
-- Random **live challenges** ("raise your right hand") are revealed by the server mid-set and must
-  appear in the stream, which defeats pre-recorded clips. A session cannot be reused across pools.
+- Random **live challenges** are revealed by the server at a random moment mid-set and must appear
+  in the stream within seconds, which defeats pre-recorded clips. Side-on exercises (14 of 16) ask
+  "Raise one hand above your head" (either hand: the far arm is hidden side-on); front-facing ones
+  (pull-ups, jumping jacks, high knees) ask for the right or the left hand; squat-type exercises can
+  also ask to "stand tall and hold still". A session cannot be reused across pools.
+- Tracking-quality checks reject spliced or synthetic traces (joints teleporting across the frame,
+  impossible bone lengths, reps faster than a human can do them, a trace running ahead of the
+  server's clock) while tolerating the pose model's one-frame left/right swaps when filmed side-on.
 
 **Verifiable build and deployment**
 
@@ -344,7 +363,7 @@ it. "Cheat-resistant" is the claim, not "cheat-proof"; the limits are listed at 
 - **Two internal security review rounds** (core vault, then crews). Every finding was fixed or
   explicitly accepted, and each attack is kept as an inverted regression test that must now fail
   (`anchor/programs/fitr-vault/tests/regression*.rs`; table in `anchor/SPEC.md` §11).
-- **App and server:** about 1,480 Vitest tests (rep engines, vault client, attestor, API routes,
+- **App and server:** about 1,500 Vitest tests (rep engines, vault client, attestor, API routes,
   components). `ops/deploy-vps.sh` refuses to deploy unless typecheck, lint and every test pass.
 
 **Server and hosting**
