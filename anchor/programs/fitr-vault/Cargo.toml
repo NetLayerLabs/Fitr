@@ -10,7 +10,9 @@ crate-type = ["cdylib", "lib"]
 name = "fitr_vault"
 
 [features]
-default = []
+# no-idl: drop Anchor's on-chain IDL upload instructions (about 41 KB, ~0.2 SOL of deploy rent). Nothing
+# reads an on-chain Anchor IDL: the app uses the Codama client generated from target/idl at build time.
+default = ["no-idl"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []

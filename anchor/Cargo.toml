@@ -6,6 +6,8 @@ resolver = "2"
 
 [profile.release]
 opt-level = "z"
+strip = true
+debug = false
 overflow-checks = true
 lto = "fat"
 codegen-units = 1
