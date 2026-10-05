@@ -5,13 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { IconProps } from "@/components/icons/Icons";
 import { WorkoutsIcon } from "@/components/workouts/WorkoutsIcon";
+import { useT } from "@/lib/i18n/I18nProvider";
+import type nav from "@/lib/i18n/messages/en/nav";
 import { isExerciseKind } from "@/lib/pose/types";
 import { CommitIcon, ProgressIcon, TodayIcon, YouIcon } from "./NavIcons";
 import styles from "./BottomNav.module.css";
 
 export interface NavItem {
   href: string;
-  label: string;
+  /** Tab label key in the "nav" namespace. */
+  labelKey: keyof typeof nav;
   Icon: (props: IconProps) => JSX.Element;
   /** The centre tab: a raised lime button. */
   primary?: boolean;
@@ -20,11 +23,11 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { href: "/", label: "Today", Icon: TodayIcon },
-  { href: "/workouts", label: "Workouts", Icon: WorkoutsIcon },
-  { href: "/commit", label: "Commit", Icon: CommitIcon, primary: true, also: ["/crew"] },
-  { href: "/progress", label: "Progress", Icon: ProgressIcon, also: ["/history"] },
-  { href: "/you", label: "You", Icon: YouIcon, also: ["/wallet"] },
+  { href: "/", labelKey: "tabToday", Icon: TodayIcon },
+  { href: "/workouts", labelKey: "tabWorkouts", Icon: WorkoutsIcon },
+  { href: "/commit", labelKey: "tabCommit", Icon: CommitIcon, primary: true, also: ["/crew"] },
+  { href: "/progress", labelKey: "tabProgress", Icon: ProgressIcon, also: ["/history"] },
+  { href: "/you", labelKey: "tabYou", Icon: YouIcon, also: ["/wallet"] },
 ];
 
 function matches(pathname: string, base: string): boolean {
@@ -59,14 +62,15 @@ export function isBottomNavVisible(pathname: string): boolean {
  * public landing page hides it with CSS (see isBottomNavVisible).
  */
 export default function BottomNav() {
+  const t = useT("nav");
   const pathname = usePathname() ?? "/";
   if (!isBottomNavVisible(pathname)) return null;
 
   return (
-    <nav className={styles.nav} aria-label="Primary" data-bottom-nav="">
+    <nav className={styles.nav} aria-label={t("primaryLabel")} data-bottom-nav="">
       <ul className={styles.list} role="list">
         {NAV_ITEMS.map((item) => {
-          const { href, label, Icon, primary } = item;
+          const { href, labelKey, Icon, primary } = item;
           const active = isNavItemActive(item, pathname);
           return (
             <li key={href} className={styles.item}>
@@ -83,7 +87,7 @@ export default function BottomNav() {
                 ) : (
                   <Icon size={24} />
                 )}
-                <span className={styles.label}>{label}</span>
+                <span className={styles.label}>{t(labelKey)}</span>
               </Link>
             </li>
           );

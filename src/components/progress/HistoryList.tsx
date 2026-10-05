@@ -1,54 +1,62 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import ExerciseThumb from "@/components/workouts/ExerciseThumb";
 import { CheckIcon, FlameIcon, HistoryIcon, TrashIcon } from "@/components/icons/Icons";
 import Button from "@/components/ui/Button";
-import { formatClock, formatValue, timeOfDayFormat } from "@/components/workout/format";
+import { formatClock, formatValue, nameInSentence, timeOfDayFormat } from "@/components/workout/format";
 import { useHydrated, useNow, useSessions } from "@/hooks/useSessions";
 import { EXERCISES, EXERCISE_LIST } from "@/lib/exercises";
+import { splitAround, SPLIT_MARK } from "@/components/home/today";
+import type { Translator } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseGoal, exerciseName } from "@/lib/i18n/exercise";
 import { clearSessions, type WorkoutSession } from "@/lib/storage/history";
 import { computeStreak, groupSessionsByDay, localDayIndex, type DayGroup } from "@/lib/storage/streak";
 import styles from "./HistoryList.module.css";
 
-const DAY_FORMAT = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "short", day: "numeric" });
-const DAY_FORMAT_WITH_YEAR = new Intl.DateTimeFormat(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-/** When a workout ended; "at 01:07" / "at 1:07 PM", never mistakable for a plank time like "1:07". */
-const TIME_FORMAT = timeOfDayFormat();
+function formatters(locale: string) {
+  return {
+    day: new Intl.DateTimeFormat(locale, { weekday: "long", month: "short", day: "numeric" }),
+    dayWithYear: new Intl.DateTimeFormat(locale, { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
+    /** When a workout ended; "at 01:07" / "at 1:07 PM", never mistakable for a plank time like "1:07". */
+    time: timeOfDayFormat(locale),
+  };
+}
+type Formatters = ReturnType<typeof formatters>;
 
-function dayLabel(group: DayGroup, today: number, nowMs: number): string {
-  if (group.day === today) return "Today";
-  if (group.day === today - 1) return "Yesterday";
+function dayLabel(t: Translator<"progress">, fmt: Formatters, group: DayGroup, today: number, nowMs: number): string {
+  if (group.day === today) return t("dayToday");
+  if (group.day === today - 1) return t("dayYesterday");
   const sameYear = new Date(group.dayStartMs).getFullYear() === new Date(nowMs).getFullYear();
-  return (sameYear ? DAY_FORMAT : DAY_FORMAT_WITH_YEAR).format(group.dayStartMs);
+  return (sameYear ? fmt.day : fmt.dayWithYear).format(group.dayStartMs);
 }
 
 /** "22 push-ups · 25 squats · 1:05 plank" for the exercises done that day. */
-function dayTotalsText(group: DayGroup): string {
+function dayTotalsText(t: Translator<"progress">, tx: Translator<"exercises">, group: DayGroup): string {
   const parts: string[] = [];
   for (const info of EXERCISE_LIST) {
     const value = group.totals[info.kind];
     if (value <= 0) continue;
-    parts.push(
-      info.unit === "seconds"
-        ? `${formatValue(value, "seconds")} ${info.name.toLowerCase()}`
-        : `${Math.floor(value)} ${info.name.toLowerCase()}`,
-    );
+    if (info.unit === "seconds") {
+      const exercise = nameInSentence(exerciseName(tx, info.kind), t.locale);
+      parts.push(t("holdTotal", { time: formatValue(value, "seconds"), exercise }));
+    } else {
+      parts.push(exerciseGoal(tx, info.kind, Math.floor(value)));
+    }
   }
   return parts.join(" · ");
 }
 
-function SessionRow({ session }: { session: WorkoutSession }) {
+function SessionRow({ session, fmt }: { session: WorkoutSession; fmt: Formatters }) {
+  const t = useT("progress");
+  const tx = useT("exercises");
   const info = EXERCISES[session.exercise];
   const timed = info.unit === "seconds";
   const { summary } = session;
   const value = timed ? formatClock(summary.holdMs) : String(summary.reps);
-  const unitLabel = timed ? "held" : summary.reps === 1 ? "rep" : "reps";
+  const unitLabel = timed ? t("unitHeld") : t.plural("repUnit", summary.reps);
+  const [atBefore, atAfter] = splitAround(t("sessionAt", { time: SPLIT_MARK }));
 
   return (
     <li className={styles.row}>
@@ -56,14 +64,18 @@ function SessionRow({ session }: { session: WorkoutSession }) {
         <ExerciseThumb kind={session.exercise} size={44} />
       </span>
       <div className={styles.rowBody}>
-        <p className={styles.rowTitle}>{info.name}</p>
+        <p className={styles.rowTitle}>{exerciseName(tx, session.exercise)}</p>
         <p className={styles.rowMeta}>
-          at <time dateTime={new Date(session.endedAt).toISOString()}>{TIME_FORMAT.format(session.endedAt)}</time>
-          {!timed && summary.rejectedReps > 0 ? <span className={styles.nowrap}> · {summary.rejectedReps} not counted</span> : null}
+          {atBefore}
+          <time dateTime={new Date(session.endedAt).toISOString()}>{fmt.time.format(session.endedAt)}</time>
+          {atAfter}
+          {!timed && summary.rejectedReps > 0 ? (
+            <span className={styles.nowrap}> · {t("notCounted", { count: summary.rejectedReps })}</span>
+          ) : null}
           {session.goalMet ? (
             <span className={styles.rowGoal}>
               {" "}
-              · <CheckIcon size={14} /> Goal met
+              · <CheckIcon size={14} /> {t("goalMet")}
             </span>
           ) : null}
         </p>
@@ -89,6 +101,9 @@ export interface HistoryListProps {
 /** Local workout history grouped by day, with streak stats and a guarded "Clear history". */
 export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }: HistoryListProps = {}) {
   const DayHeading = dayHeadingLevel === 3 ? "h3" : "h2";
+  const t = useT("progress");
+  const tx = useT("exercises");
+  const fmt = useMemo(() => formatters(t.locale), [t.locale]);
   const sessions = useSessions();
   const hydrated = useHydrated();
   const now = useNow();
@@ -114,7 +129,7 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
   if (!hydrated || now === 0) {
     return (
       <p className={styles.loading} role="status">
-        Loading your history…
+        {t("loadingHistory")}
       </p>
     );
   }
@@ -126,14 +141,14 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
           <HistoryIcon size={32} />
         </span>
         <DayHeading id="history-empty-heading" ref={emptyHeadingRef} tabIndex={-1} className={styles.emptyTitle}>
-          No workouts yet
+          {t("emptyTitle")}
         </DayHeading>
         <p className={styles.emptyText}>
-          Finish any workout and it shows up here. Everything stays on this device.
+          {t("emptyText")}
         </p>
         <div className={styles.cta}>
           <Button variant="primary" size="lg" href="/" trailingPlay>
-            Start a workout
+            {t("startWorkout")}
           </Button>
         </div>
       </section>
@@ -149,22 +164,22 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
       {showSummary ? (
       <dl className={styles.summary}>
         <div className={styles.summaryTile}>
-          <dt>Current streak</dt>
+          <dt>{t("currentStreak")}</dt>
           <dd>
             <FlameIcon size={20} className={styles.flame} />
             {streak.current}
-            <span className={styles.summaryUnit}>{streak.current === 1 ? "day" : "days"}</span>
+            <span className={styles.summaryUnit}>{t.plural("dayUnit", streak.current)}</span>
           </dd>
         </div>
         <div className={styles.summaryTile}>
-          <dt>Best streak</dt>
+          <dt>{t("bestStreak")}</dt>
           <dd>
             {streak.best}
-            <span className={styles.summaryUnit}>{streak.best === 1 ? "day" : "days"}</span>
+            <span className={styles.summaryUnit}>{t.plural("dayUnit", streak.best)}</span>
           </dd>
         </div>
         <div className={styles.summaryTile}>
-          <dt>Workouts</dt>
+          <dt>{t("workoutsLabel")}</dt>
           <dd>{sessions.length}</dd>
         </div>
       </dl>
@@ -177,19 +192,19 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
             <section key={group.day} className={styles.day} aria-labelledby={headingId}>
               <header className={styles.dayHeader}>
                 <DayHeading id={headingId} className={styles.dayTitle}>
-                  {dayLabel(group, today, now)}
+                  {dayLabel(t, fmt, group, today, now)}
                 </DayHeading>
                 {group.goalMet ? (
                   <p className={styles.dayBadge}>
                     <CheckIcon size={14} />
-                    Goal day
+                    {t("goalDay")}
                   </p>
                 ) : null}
               </header>
-              <p className={styles.dayTotals}>{dayTotalsText(group) || "No verified reps"}</p>
+              <p className={styles.dayTotals}>{dayTotalsText(t, tx, group) || t("noVerifiedReps")}</p>
               <ul className={styles.rows} role="list">
                 {group.sessions.map((session) => (
-                  <SessionRow key={session.id} session={session} />
+                  <SessionRow key={session.id} session={session} fmt={fmt} />
                 ))}
               </ul>
             </section>
@@ -201,10 +216,8 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
         {confirming ? (
           <div className={styles.confirm} role="group" aria-labelledby={confirmId}>
             <p id={confirmId} className={styles.confirmText}>
-              {sessions.length === 1
-                ? "Delete this workout from this device?"
-                : `Delete all ${sessions.length} workouts from this device?`}{" "}
-              This also resets your streak and can&apos;t be undone.
+              {sessions.length === 1 ? t("confirmDeleteOne") : t("confirmDeleteAll", { count: sessions.length })}{" "}
+              {t("confirmResetNote")}
             </p>
             <div className={styles.confirmActions}>
               <button
@@ -217,7 +230,7 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
                 }}
               >
                 <TrashIcon size={20} />
-                {sessions.length === 1 ? "Delete" : "Delete all"}
+                {sessions.length === 1 ? t("deleteOne") : t("deleteAll")}
               </button>
               <button
                 ref={cancelRef}
@@ -228,7 +241,7 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
                   setConfirming(false);
                 }}
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           </div>
@@ -243,7 +256,7 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
             }}
           >
             <TrashIcon size={20} />
-            Clear history
+            {t("clearHistory")}
           </button>
         )}
       </div>

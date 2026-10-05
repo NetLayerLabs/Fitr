@@ -1,4 +1,101 @@
 /** English source for the "progress" namespace. Keys are stable ids; values may use {placeholders}. */
-const progress = {} as const;
+const progress = {
+  // Page
+  metaTitle: "Progress",
+  metaDescription: "Your streak, personal records, awards and workout history, stored on this device.",
+  pageTitle: "Progress",
+  pageEyebrow: "Stored on this device",
+
+  // Dashboard sections
+  loadingProgress: "Loading your progress…",
+  streakCalendarHeading: "Streak calendar",
+  personalRecordsHeading: "Personal records",
+  awardsHeading: "Awards",
+  historyHeading: "History",
+
+  // Stats
+  statsLabel: "Your stats",
+  currentStreak: "Current streak",
+  bestStreak: "Best streak",
+  thisWeek: "This week",
+  totalReps: "Total reps",
+  dayUnit_one: "day",
+  dayUnit_other: "days",
+  workoutUnit_one: "workout",
+  workoutUnit_other: "workouts",
+  hintTodayDone: "Today's goal is done. See you tomorrow.",
+  hintKeepGoing: "Hit today's goal to keep it going.",
+  hintStart: "Hit a daily goal to start a streak.",
+
+  // Streak calendar
+  previousMonth: "Previous month",
+  nextMonth: "Next month",
+  calendarDay: "{date}: {status}",
+  calendarDayToday: "{date} (today): {status}",
+  dayStatusUpcoming: "upcoming",
+  dayStatusGoalMet: "goal met",
+  dayStatusActive: "worked out, goal not met",
+  dayStatusNotDoneYet: "not done yet",
+  dayStatusNoGoal: "no goal",
+  calendarLegend_one: "Goal met on {count} day in {month}",
+  calendarLegend_other: "Goal met on {count} days in {month}",
+
+  // Personal records
+  recordsEmpty: "Your best single set of each exercise shows up here. {link} to set your first record.",
+  recordsEmptyLink: "Pick a workout",
+  unitHeld: "held",
+  repUnit_one: "rep",
+  repUnit_other: "reps",
+
+  // Awards
+  awardsEarnedCount: "{earned} of {total} earned",
+  awardEarnedSuffix: " (earned)",
+  awardLockedSuffix: " (locked)",
+  awardEarnedOn: "Earned {date}",
+  awardEarned: "Earned",
+  awardProgressLabel: "{title} progress",
+  awardFirstWorkoutTitle: "First workout",
+  awardFirstWorkoutDescription: "Finish your first workout.",
+  awardFirstGoalTitle: "Goal getter",
+  awardFirstGoalDescription: "Hit a daily goal for the first time.",
+  awardStreak3Title: "3-day streak",
+  awardStreak3Description: "Meet your goal 3 days in a row.",
+  awardStreak7Title: "7-day streak",
+  awardStreak7Description: "Meet your goal 7 days in a row.",
+  awardStreak30Title: "30-day streak",
+  awardStreak30Description: "Meet your goal 30 days in a row.",
+  awardReps100Title: "100 reps",
+  awardReps100Description: "Log 100 counted reps in total.",
+  awardReps1000Title: "1,000 reps",
+  awardReps1000Description: "Log 1,000 counted reps in total.",
+  awardPlankMinuteTitle: "Plank minute",
+  awardPlankMinuteDescription: "Hold a plank for a full minute in one go.",
+  awardVariety5Title: "Mix it up",
+  awardVariety5Description: "Try 5 different exercises.",
+  awardVerifiedDayTitle: "Verified onchain",
+  awardVerifiedDayDescription: "Complete a staked day that is verified onchain.",
+
+  // History
+  loadingHistory: "Loading your history…",
+  emptyTitle: "No workouts yet",
+  emptyText: "Finish any workout and it shows up here. Everything stays on this device.",
+  startWorkout: "Start a workout",
+  workoutsLabel: "Workouts",
+  dayToday: "Today",
+  dayYesterday: "Yesterday",
+  goalDay: "Goal day",
+  noVerifiedReps: "No verified reps",
+  holdTotal: "{time} {exercise}",
+  sessionAt: "at {time}",
+  notCounted: "{count} not counted",
+  goalMet: "Goal met",
+  confirmDeleteOne: "Delete this workout from this device?",
+  confirmDeleteAll: "Delete all {count} workouts from this device?",
+  confirmResetNote: "This also resets your streak and can't be undone.",
+  deleteOne: "Delete",
+  deleteAll: "Delete all",
+  cancel: "Cancel",
+  clearHistory: "Clear history",
+} as const;
 
 export default progress;

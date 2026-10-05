@@ -24,7 +24,7 @@ export default function PageHeader({ title, eyebrow, action, back, flush = false
       {back !== undefined || action ? (
         <div className={styles.bar}>
           {back !== undefined ? (
-            <BackLink fallback={back} className={styles.back} label="Back">
+            <BackLink fallback={back} className={styles.back}>
               <ArrowLeftIcon size={22} />
             </BackLink>
           ) : (

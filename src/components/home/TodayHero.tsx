@@ -12,7 +12,17 @@ import { useTodayCommitment } from "@/hooks/useTodayCommitment";
 import { STANDING_ART, type ExerciseArt } from "@/lib/exerciseArt";
 import { EXERCISES } from "@/lib/exercises";
 import { isExerciseKind } from "@/lib/pose/types";
-import { formatTimeLeft, goalNoun, normalizeTodayState, spokenTimeLeft, type TodayState } from "./today";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { exerciseGoal } from "@/lib/i18n/exercise";
+import {
+  SPLIT_MARK,
+  formatTimeLeft,
+  goalParts,
+  normalizeTodayState,
+  splitAround,
+  spokenTimeLeft,
+  type TodayState,
+} from "./today";
 import styles from "./TodayHero.module.css";
 import { SkrText } from "@/components/brand/SkrAmount";
 
@@ -78,6 +88,8 @@ function Shell({
  * Start button, verifying, verified, claim or missed.
  */
 export default function TodayHero() {
+  const t = useT("today");
+  const tx = useT("exercises");
   const commitment = useTodayCommitment();
   const now = useNow();
   const state = normalizeTodayState(commitment?.state);
@@ -92,7 +104,7 @@ export default function TodayHero() {
   switch (state) {
     case "loading":
       return (
-        <Shell state={state} eyebrow="Today" title="Checking your commitment…" busy>
+        <Shell state={state} eyebrow={t("todayTitle")} title={t("heroLoadingTitle")} busy>
           <div className={styles.skeleton} aria-hidden="true" />
         </Shell>
       );
@@ -100,40 +112,54 @@ export default function TodayHero() {
     case "committed": {
       const deadline = commitment?.deadlineMs;
       const showTime = typeof deadline === "number" && now !== 0;
+      const [goalBefore, goalAfter] = info ? goalParts(tx, info.kind, target) : ["", ""];
+      const [stakeBefore, stakeAfter] = splitAround(t("atStake", { amount: SPLIT_MARK }));
       return (
         <Shell
           state={state}
-          eyebrow={`Your goal${crewTag}`}
+          eyebrow={`${t("heroGoalEyebrow")}${crewTag}`}
           title={
             info ? (
               <>
-                <span className={`numeral ${styles.big}`}>{target}</span>{" "}
-                <span className={styles.noun}>{goalNoun(info.name, info.unit, target)}</span>
+                {goalBefore.trim() ? (
+                  <>
+                    <span className={styles.noun}>{goalBefore.trim()}</span>{" "}
+                  </>
+                ) : null}
+                <span className={`numeral ${styles.big}`}>{target}</span>
+                {goalAfter.trim() ? (
+                  <>
+                    {" "}
+                    <span className={styles.noun}>{goalAfter.trim()}</span>
+                  </>
+                ) : null}
               </>
             ) : (
-              "Today's goal"
+              t("heroGoalFallback")
             )
           }
           action={
             info ? (
               <Cta href={workoutHrefFor(info.kind, crewId)} play>
-                Start
+                {t("start")}
               </Cta>
             ) : (
-              <Cta href={poolHref}>View commitment</Cta>
+              <Cta href={poolHref}>{t("viewCommitment")}</Cta>
             )
           }
         >
           <ul className={styles.meta} role="list">
             {showTime ? (
               <li>
-                <span aria-hidden="true">{formatTimeLeft(deadline, now)}</span>
-                <span className="sr-only">{spokenTimeLeft(deadline, now)}</span>
+                <span aria-hidden="true">{formatTimeLeft(t, deadline, now)}</span>
+                <span className="sr-only">{spokenTimeLeft(t, deadline, now)}</span>
               </li>
             ) : null}
             {commitment?.amountLabel ? (
               <li>
-                <strong className={styles.stake}><SkrText text={commitment.amountLabel} /></strong> at stake
+                {stakeBefore}
+                <strong className={styles.stake}><SkrText text={commitment.amountLabel} /></strong>
+                {stakeAfter}
               </li>
             ) : null}
           </ul>
@@ -143,10 +169,8 @@ export default function TodayHero() {
 
     case "verifying":
       return (
-        <Shell state={state} eyebrow="Almost there" title="Verifying your workout…" busy>
-          <p className={styles.body}>
-            Fitr is re-checking your reps and live challenges. This usually takes a moment.
-          </p>
+        <Shell state={state} eyebrow={t("verifyingEyebrow")} title={t("verifyingTitle")} busy>
+          <p className={styles.body}>{t("verifyingBody")}</p>
         </Shell>
       );
 
@@ -155,20 +179,19 @@ export default function TodayHero() {
         <Shell
           state={state}
           tone="lime"
-          eyebrow={`Today${crewTag}`}
+          eyebrow={`${t("todayTitle")}${crewTag}`}
           title={
             <>
               <span className={styles.check} aria-hidden="true">
                 <CheckIcon size={28} />
               </span>
-              Goal verified
+              {t("verifiedTitle")}
             </>
           }
-          action={<Cta href="/progress">See progress</Cta>}
+          action={<Cta href="/progress">{t("seeProgress")}</Cta>}
         >
           <p className={styles.body}>
-            {info ? `${target} ${goalNoun(info.name, info.unit, target)}, done and onchain. ` : "Done and onchain. "}
-            Your stake is safe. Come back tomorrow.
+            {info ? t("verifiedBodyWithGoal", { goal: exerciseGoal(tx, info.kind, target) }) : t("verifiedBody")}
           </p>
         </Shell>
       );
@@ -178,50 +201,65 @@ export default function TodayHero() {
         <Shell
           state={state}
           tone="lime"
-          eyebrow={`Ready to claim${crewTag}`}
+          eyebrow={`${t("claimEyebrow")}${crewTag}`}
           title={
             commitment?.claimableLabel ? (
               <span className={`numeral ${styles.big}`}><SkrText text={commitment.claimableLabel} /></span>
             ) : (
-              "Your stake is back"
+              t("claimFallbackTitle")
             )
           }
-          action={<Cta href={poolHref}>Claim</Cta>}
+          action={<Cta href={poolHref}>{t("claim")}</Cta>}
         >
-          <p className={styles.body}>You kept your word. Claim your stake and your share.</p>
+          <p className={styles.body}>{t("claimBody")}</p>
         </Shell>
       );
 
     case "missed":
       return (
-        <Shell state={state} eyebrow={`Goal missed${crewTag}`} title="Tomorrow is a new day" action={<Cta href={poolHref}>Commit again</Cta>}>
-          <p className={styles.body}>The deadline passed before a verified workout. Set a goal you can keep.</p>
+        <Shell
+          state={state}
+          eyebrow={`${t("missedEyebrow")}${crewTag}`}
+          title={t("missedTitle")}
+          action={<Cta href={poolHref}>{t("commitAgain")}</Cta>}
+        >
+          <p className={styles.body}>{t("missedBody")}</p>
         </Shell>
       );
 
     case "revoked":
       return (
-        <Shell state={state} eyebrow={`Under review${crewTag}`} title="Verification withdrawn" action={<Cta href={poolHref}>View details</Cta>}>
-          <p className={styles.body}>
-            Fitr&apos;s review withdrew today&apos;s verification. Your stake is not forfeited: you can claim it back
-            (no bonus) once the day closes.
-          </p>
+        <Shell
+          state={state}
+          eyebrow={`${t("revokedEyebrow")}${crewTag}`}
+          title={t("revokedTitle")}
+          action={<Cta href={poolHref}>{t("viewDetails")}</Cta>}
+        >
+          <p className={styles.body}>{t("revokedBody")}</p>
         </Shell>
       );
 
     case "not_seeker":
       return (
-        <Shell state={state} eyebrow="Train free" title="Commitments need a Seeker" action={<Cta href="/workouts">Pick a workout</Cta>}>
-          <p className={styles.body}>
-            Staking is for Solana Seeker owners. Every workout and rep counter is still yours.
-          </p>
+        <Shell
+          state={state}
+          eyebrow={t("trainFreeEyebrow")}
+          title={t("notSeekerTitle")}
+          action={<Cta href="/workouts">{t("pickWorkout")}</Cta>}
+        >
+          <p className={styles.body}>{t("notSeekerBody")}</p>
         </Shell>
       );
 
     case "vault_unavailable":
       return (
-        <Shell state={state} eyebrow="Train free" title="Commitments are paused" action={<Cta href="/workouts">Pick a workout</Cta>}>
-          <p className={styles.body}>Staking is offline right now. Your workouts still count.</p>
+        <Shell
+          state={state}
+          eyebrow={t("trainFreeEyebrow")}
+          title={t("pausedTitle")}
+          action={<Cta href="/workouts">{t("pickWorkout")}</Cta>}
+        >
+          <p className={styles.body}>{t("pausedBody")}</p>
         </Shell>
       );
 
@@ -231,15 +269,13 @@ export default function TodayHero() {
       return (
         <Shell
           state={state}
-          eyebrow="Today"
-          title="Put your word on the line"
-          action={<Cta href="/commit">Commit</Cta>}
+          eyebrow={t("todayTitle")}
+          title={t("commitTitle")}
+          action={<Cta href="/commit">{t("commit")}</Cta>}
           art={STANDING_ART}
         >
           <p className={styles.body}>
-            {state === "no_wallet"
-              ? "Connect your wallet, pick a goal and stake SKR on showing up today."
-              : "Pick a goal and stake SKR on showing up today. Hit it and your stake comes back."}
+            {state === "no_wallet" ? t("commitBodyNoWallet") : t("commitBody")}
           </p>
         </Shell>
       );

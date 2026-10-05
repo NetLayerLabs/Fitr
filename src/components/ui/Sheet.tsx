@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { CloseIcon } from "@/components/icons/Icons";
+import { useT } from "@/lib/i18n/I18nProvider";
 import styles from "./Sheet.module.css";
 
 export interface SheetProps {
@@ -21,6 +22,7 @@ const FOCUSABLE =
  * to the opener. The slide-up animation is dropped under prefers-reduced-motion.
  */
 export default function Sheet({ open, onClose, title, children }: SheetProps) {
+  const t = useT("common");
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const onCloseRef = useRef(onClose);
@@ -96,7 +98,7 @@ export default function Sheet({ open, onClose, title, children }: SheetProps) {
           <h2 id={titleId} className={styles.title}>
             {title}
           </h2>
-          <button type="button" className={styles.close} onClick={onClose} aria-label="Close">
+          <button type="button" className={styles.close} onClick={onClose} aria-label={t("close")}>
             <CloseIcon size={20} />
           </button>
         </header>

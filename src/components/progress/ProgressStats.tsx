@@ -1,41 +1,39 @@
+"use client";
+
 import StatTile from "@/components/ui/StatTile";
+import { useT } from "@/lib/i18n/I18nProvider";
 import type { ProgressStats as Stats } from "@/lib/storage/awards";
 import styles from "./Progress.module.css";
 
-const NUMBER = new Intl.NumberFormat();
-
-function days(n: number): string {
-  return n === 1 ? "day" : "days";
-}
-
 /** Headline numbers: current streak (hero), best streak, this week, total reps. */
 export default function ProgressStats({ stats }: { stats: Stats }) {
+  const t = useT("progress");
   return (
-    <section className={styles.stats} aria-label="Your stats">
+    <section className={styles.stats} aria-label={t("statsLabel")}>
       <div className={styles.hero}>
-        <p className={styles.eyebrow}>Current streak</p>
+        <p className={styles.eyebrow}>{t("currentStreak")}</p>
         <p className={styles.heroValue}>
           <span className={styles.heroNumber} data-zero={stats.currentStreak === 0 || undefined}>
             {stats.currentStreak}
           </span>
-          <span className={styles.heroUnit}>{days(stats.currentStreak)}</span>
+          <span className={styles.heroUnit}>{t.plural("dayUnit", stats.currentStreak)}</span>
         </p>
         <p className={styles.heroHint}>
           {stats.todayDone
-            ? "Today's goal is done. See you tomorrow."
+            ? t("hintTodayDone")
             : stats.currentStreak > 0
-              ? "Hit today's goal to keep it going."
-              : "Hit a daily goal to start a streak."}
+              ? t("hintKeepGoing")
+              : t("hintStart")}
         </p>
       </div>
       <div className={styles.tiles}>
-        <StatTile label="Best streak" value={stats.bestStreak} unit={days(stats.bestStreak)} />
+        <StatTile label={t("bestStreak")} value={stats.bestStreak} unit={t.plural("dayUnit", stats.bestStreak)} />
         <StatTile
-          label="This week"
+          label={t("thisWeek")}
           value={stats.workoutsThisWeek}
-          unit={stats.workoutsThisWeek === 1 ? "workout" : "workouts"}
+          unit={t.plural("workoutUnit", stats.workoutsThisWeek)}
         />
-        <StatTile label="Total reps" value={NUMBER.format(stats.totalReps)} />
+        <StatTile label={t("totalReps")} value={new Intl.NumberFormat(t.locale).format(stats.totalReps)} />
       </div>
     </section>
   );

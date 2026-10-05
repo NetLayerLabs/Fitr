@@ -2,6 +2,7 @@
 
 import { FlameIcon } from "@/components/icons/Icons";
 import { useHydrated, useNow, useSessions } from "@/hooks/useSessions";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { computeStreak, type StreakInfo } from "@/lib/storage/streak";
 import styles from "./Streak.module.css";
 
@@ -16,6 +17,7 @@ export function useStreak(): StreakInfo | null {
 
 /** Header pill: flame + current streak. */
 export function StreakBadge() {
+  const t = useT("today");
   const streak = useStreak();
   const current = streak?.current ?? null;
 
@@ -23,7 +25,7 @@ export function StreakBadge() {
     <p className={styles.badge} data-hot={current !== null && current > 0 ? "" : undefined}>
       <FlameIcon size={18} />
       <span className={styles.value}>{current ?? "–"}</span>
-      <span className={styles.unit}>day streak</span>
+      <span className={styles.unit}>{t("dayStreak")}</span>
     </p>
   );
 }
@@ -39,12 +41,13 @@ export function StreakValue({ which = "current" }: { which?: "current" | "best" 
  * by the caller). The unit only appears once the number is known.
  */
 export function StreakDays({ which = "current", valueClassName }: { which?: "current" | "best"; valueClassName?: string }) {
+  const t = useT("today");
   const streak = useStreak();
   const n = streak ? streak[which] : null;
   return (
     <>
       <span className={valueClassName}>{n ?? "–"}</span>
-      {n === null ? null : ` ${n === 1 ? "day" : "days"}`}
+      {n === null ? null : ` ${t.plural("dayUnit", n)}`}
     </>
   );
 }

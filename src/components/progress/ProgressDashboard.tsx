@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useHydrated, useNow, useSessions } from "@/hooks/useSessions";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { computeAwards, computeProgressStats, personalRecords } from "@/lib/storage/awards";
 import AwardsGrid from "./AwardsGrid";
 import HistoryList from "./HistoryList";
@@ -20,6 +21,7 @@ export interface ProgressDashboardProps {
 
 /** The Progress tab: stats, streak calendar, records, awards, then the full history. */
 export default function ProgressDashboard({ verifiedOnChainDays }: ProgressDashboardProps) {
+  const t = useT("progress");
   const sessions = useSessions();
   const hydrated = useHydrated();
   const now = useNow();
@@ -37,7 +39,7 @@ export default function ProgressDashboard({ verifiedOnChainDays }: ProgressDashb
   if (!derived) {
     return (
       <p className={styles.muted} role="status">
-        Loading your progress…
+        {t("loadingProgress")}
       </p>
     );
   }
@@ -48,28 +50,28 @@ export default function ProgressDashboard({ verifiedOnChainDays }: ProgressDashb
 
       <section className={styles.section} aria-labelledby="progress-calendar-heading">
         <h2 id="progress-calendar-heading" className={styles.sectionTitle}>
-          Streak calendar
+          {t("streakCalendarHeading")}
         </h2>
         <StreakCalendar sessions={sessions} nowMs={now} headingId="progress-calendar-heading" />
       </section>
 
       <section className={styles.section} aria-labelledby="progress-records-heading">
         <h2 id="progress-records-heading" className={styles.sectionTitle}>
-          Personal records
+          {t("personalRecordsHeading")}
         </h2>
         <PersonalRecords records={derived.records} />
       </section>
 
       <section className={styles.section} aria-labelledby="progress-awards-heading">
         <h2 id="progress-awards-heading" className={styles.sectionTitle}>
-          Awards
+          {t("awardsHeading")}
         </h2>
         <AwardsGrid awards={derived.awards} />
       </section>
 
       <section className={styles.section} aria-labelledby="progress-history-heading">
         <h2 id="progress-history-heading" className={styles.sectionTitle}>
-          History
+          {t("historyHeading")}
         </h2>
         <HistoryList showSummary={false} dayHeadingLevel={3} />
       </section>

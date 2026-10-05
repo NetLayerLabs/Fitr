@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import OfflinePage from "@/app/offline/page";
+import { en } from "@/lib/i18n/messages";
+import { makeTranslator } from "@/lib/i18n/translate";
+
+vi.mock("@/lib/i18n/server", () => ({
+  getT: async (ns: "common") => makeTranslator("en", en, ns),
+}));
 import { ARC_END, ARC_PATH, F_BARS, MARK_VIEWBOX } from "@/components/pwa/markGeometry";
 import { FitrMark } from "../Icons";
 
@@ -30,8 +36,8 @@ describe("FitrMark", () => {
     expect(container.querySelector("path")?.getAttribute("d")).toBe(ARC_PATH);
   });
 
-  it("matches the offline page's mark", () => {
-    const { container } = render(<OfflinePage />);
+  it("matches the offline page's mark", async () => {
+    const { container } = render(await OfflinePage());
     expect(container.querySelector("svg path")?.getAttribute("d")).toBe(ARC_PATH);
     expect(container.querySelectorAll("svg rect")).toHaveLength(F_BARS.length);
   });

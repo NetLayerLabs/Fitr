@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getT } from "@/lib/i18n/server";
 import { ARC_END, ARC_PATH, F_BARS, KNOB_RADIUS, MARK_VIEWBOX, RING_RADIUS } from "@/components/pwa/markGeometry";
 import styles from "./page.module.css";
 
@@ -8,12 +9,13 @@ import styles from "./page.module.css";
  * that fail while offline and have no cached copy. The address bar keeps the URL that failed,
  * so "Try again" is a plain full reload of that URL (works even if no JS has loaded).
  */
-export const metadata: Metadata = {
-  title: "Offline",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("common");
+  return { title: t("offlineMetaTitle"), robots: { index: false, follow: false } };
+}
 
-export default function OfflinePage() {
+export default async function OfflinePage() {
+  const t = await getT("common");
   return (
     <div className={styles.page}>
       <section className={styles.card} aria-labelledby="offline-title">
@@ -31,22 +33,22 @@ export default function OfflinePage() {
 
         <p className={styles.eyebrow}>Fitr</p>
         <h1 id="offline-title" className={styles.title}>
-          You&rsquo;re offline
+          {t("offlineTitle")}
         </h1>
         <p className={styles.body}>
-          This screen isn&rsquo;t saved on this device yet. Reconnect, then try again.
+          {t("offlineBody")}
         </p>
         <p className={styles.note}>
-          Screens you&rsquo;ve opened before stay available offline, and pose tracking always runs on your phone.
+          {t("offlineNote")}
         </p>
 
         <div className={styles.actions}>
           {/* href="" reloads the current URL: the page that failed, not /offline. */}
           <a className={styles.primary} href="">
-            Try again
+            {t("tryAgain")}
           </a>
           <Link className={styles.secondary} href="/">
-            Home
+            {t("home")}
           </Link>
         </div>
       </section>

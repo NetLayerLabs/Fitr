@@ -6,6 +6,7 @@
  * Day math reuses streak.ts (local calendar days, DST-safe; a session belongs to the day it ended).
  */
 import { EXERCISES } from "@/lib/exercises";
+import type progressMessages from "@/lib/i18n/messages/en/progress";
 import { EXERCISE_KINDS, type ExerciseKind } from "@/lib/pose/types";
 import type { WorkoutSession } from "./history";
 import { computeStreak, countedDays, dayIndexToLocalMidnight, localDayIndex, sessionDay } from "./streak";
@@ -188,31 +189,30 @@ export type AwardId =
   | "variety-5"
   | "verified-day";
 
+/** A key of the "progress" message namespace (award titles and descriptions live there). */
+export type ProgressMessageKey = keyof typeof progressMessages & string;
+
 export interface AwardDefinition {
   id: AwardId;
-  title: string;
-  /** How to earn it, phrased as the goal. */
-  description: string;
+  /** Title, as a "progress" message key (translate with useT("progress")). */
+  titleKey: ProgressMessageKey;
+  /** How to earn it, phrased as the goal ("progress" message key). */
+  descriptionKey: ProgressMessageKey;
   /** Target for the progress meter. */
   target: number;
 }
 
 export const AWARD_DEFINITIONS: readonly AwardDefinition[] = Object.freeze([
-  { id: "first-workout", title: "First workout", description: "Finish your first workout.", target: 1 },
-  { id: "first-goal", title: "Goal getter", description: "Hit a daily goal for the first time.", target: 1 },
-  { id: "streak-3", title: "3-day streak", description: "Meet your goal 3 days in a row.", target: 3 },
-  { id: "streak-7", title: "7-day streak", description: "Meet your goal 7 days in a row.", target: 7 },
-  { id: "streak-30", title: "30-day streak", description: "Meet your goal 30 days in a row.", target: 30 },
-  { id: "reps-100", title: "100 reps", description: "Log 100 counted reps in total.", target: 100 },
-  { id: "reps-1000", title: "1,000 reps", description: "Log 1,000 counted reps in total.", target: 1000 },
-  { id: "plank-minute", title: "Plank minute", description: "Hold a plank for a full minute in one go.", target: 60 },
-  { id: "variety-5", title: "Mix it up", description: "Try 5 different exercises.", target: 5 },
-  {
-    id: "verified-day",
-    title: "Verified onchain",
-    description: "Complete a staked day that is verified onchain.",
-    target: 1,
-  },
+  { id: "first-workout", titleKey: "awardFirstWorkoutTitle", descriptionKey: "awardFirstWorkoutDescription", target: 1 },
+  { id: "first-goal", titleKey: "awardFirstGoalTitle", descriptionKey: "awardFirstGoalDescription", target: 1 },
+  { id: "streak-3", titleKey: "awardStreak3Title", descriptionKey: "awardStreak3Description", target: 3 },
+  { id: "streak-7", titleKey: "awardStreak7Title", descriptionKey: "awardStreak7Description", target: 7 },
+  { id: "streak-30", titleKey: "awardStreak30Title", descriptionKey: "awardStreak30Description", target: 30 },
+  { id: "reps-100", titleKey: "awardReps100Title", descriptionKey: "awardReps100Description", target: 100 },
+  { id: "reps-1000", titleKey: "awardReps1000Title", descriptionKey: "awardReps1000Description", target: 1000 },
+  { id: "plank-minute", titleKey: "awardPlankMinuteTitle", descriptionKey: "awardPlankMinuteDescription", target: 60 },
+  { id: "variety-5", titleKey: "awardVariety5Title", descriptionKey: "awardVariety5Description", target: 5 },
+  { id: "verified-day", titleKey: "awardVerifiedDayTitle", descriptionKey: "awardVerifiedDayDescription", target: 1 },
 ]);
 
 export interface AwardStatus extends AwardDefinition {

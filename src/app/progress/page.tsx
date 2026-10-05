@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
 import ProgressOnChain from "@/components/progress/ProgressOnChain";
 import PageHeader from "@/components/ui/PageHeader";
+import { getT } from "@/lib/i18n/server";
 import styles from "./page.module.css";
 
-export const metadata: Metadata = {
-  title: "Progress",
-  description: "Your streak, personal records, awards and workout history, stored on this device.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT("progress");
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
-export default function ProgressPage() {
+export default async function ProgressPage() {
+  const t = await getT("progress");
   return (
     <div className={styles.page}>
-      <PageHeader flush eyebrow="Stored on this device" title="Progress" />
+      <PageHeader flush eyebrow={t("pageEyebrow")} title={t("pageTitle")} />
       <ProgressOnChain />
     </div>
   );

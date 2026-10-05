@@ -1,23 +1,17 @@
+"use client";
+
 import { CoinIcon } from "@/components/icons/Icons";
 import Button from "@/components/ui/Button";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { solanaConfig } from "@/lib/solana/config";
 import CommitmentWalletRow from "./CommitmentWalletRow";
 import { StreakDays } from "./Streak";
 import styles from "./CommitmentCard.module.css";
 
 const STEPS = [
-  {
-    title: "Stake",
-    body: "Pick your daily goal and how much SKR to lock. Both are fixed onchain when you commit.",
-  },
-  {
-    title: "Show up",
-    body: "Hit your goal, counted on-device by pose tracking and re-checked by Fitr's verifier. Your stake comes back plus a share of the pool.",
-  },
-  {
-    title: "Or pay up",
-    body: "Miss it and your stake goes to the people who showed up, minus a 5% fee.",
-  },
+  { id: "stake", title: "stepStakeTitle", body: "stepStakeBody" },
+  { id: "show-up", title: "stepShowUpTitle", body: "stepShowUpBody" },
+  { id: "pay-up", title: "stepPayUpTitle", body: "stepPayUpBody" },
 ] as const;
 
 /**
@@ -26,6 +20,7 @@ const STEPS = [
  * availability and the stake flow).
  */
 export default function CommitmentCard() {
+  const t = useT("today");
   return (
     <section className={styles.card} aria-labelledby="commit-heading">
       <div className={styles.head}>
@@ -33,18 +28,18 @@ export default function CommitmentCard() {
           <CoinIcon size={22} />
         </span>
         <h2 id="commit-heading" className={styles.title}>
-          Daily $SKR Commitment
+          {t("commitmentCardTitle")}
         </h2>
       </div>
 
       <ol className={styles.steps}>
         {STEPS.map((step, i) => (
-          <li key={step.title} className={styles.step}>
+          <li key={step.id} className={styles.step}>
             <span className={styles.stepIndex} aria-hidden="true">
               {i + 1}
             </span>
             <p>
-              <strong className={styles.stepTitle}>{step.title}.</strong> {step.body}
+              <strong className={styles.stepTitle}>{t(step.title)}</strong> {t(step.body)}
             </p>
           </li>
         ))}
@@ -52,18 +47,18 @@ export default function CommitmentCard() {
 
       <dl className={styles.stats}>
         <div className={styles.stat}>
-          <dt>Current streak</dt>
+          <dt>{t("currentStreak")}</dt>
           <dd>
             <StreakDays valueClassName={styles.statValue} />
           </dd>
         </div>
         <div className={styles.stat}>
-          <dt>Pool multiplier</dt>
+          <dt>{t("poolMultiplier")}</dt>
           <dd>
             <span className={styles.statValue} aria-hidden="true">
               —
             </span>
-            <span className="sr-only">Not available yet</span>
+            <span className="sr-only">{t("notAvailableYet")}</span>
           </dd>
         </div>
       </dl>
@@ -71,10 +66,10 @@ export default function CommitmentCard() {
       <CommitmentWalletRow />
 
       <Button variant="primary" size="lg" block trailingPlay href="/commit" aria-describedby="stake-note">
-        Commit {solanaConfig.tokenLabel}
+        {t("commitToken", { token: solanaConfig.tokenLabel })}
       </Button>
       <p id="stake-note" className={styles.note}>
-        You choose the goal and the stake. Nothing is staked until you sign in your wallet.
+        {t("stakeNote")}
       </p>
     </section>
   );

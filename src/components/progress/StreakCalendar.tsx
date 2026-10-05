@@ -1,27 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons/Icons";
+import { useT } from "@/lib/i18n/I18nProvider";
+import type { Translator } from "@/lib/i18n";
 import { CALENDAR_FIRST_MONTH, monthCalendar, type CalendarDay } from "@/lib/storage/awards";
 import type { WorkoutSession } from "@/lib/storage/history";
 import styles from "./Progress.module.css";
 
 // 2024-01-01 was a Monday: format the 7 weekday names in the user's locale, Monday first.
 const WEEKDAYS = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 1 + i));
-const NARROW = new Intl.DateTimeFormat(undefined, { weekday: "narrow" });
-const LONG_WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: "long" });
-const FULL_DATE = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
-const DAY_OF_MONTH = new Intl.DateTimeFormat(undefined, { day: "numeric" });
-const MONTH_YEAR = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
-const MONTH = new Intl.DateTimeFormat(undefined, { month: "long" });
+
+function formatters(locale: string) {
+  return {
+    narrow: new Intl.DateTimeFormat(locale, { weekday: "narrow" }),
+    longWeekday: new Intl.DateTimeFormat(locale, { weekday: "long" }),
+    fullDate: new Intl.DateTimeFormat(locale, { weekday: "long", month: "long", day: "numeric" }),
+    dayOfMonth: new Intl.DateTimeFormat(locale, { day: "numeric" }),
+    monthYear: new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }),
+    month: new Intl.DateTimeFormat(locale, { month: "long" }),
+  };
+}
 
 const FIRST = CALENDAR_FIRST_MONTH.year * 12 + CALENDAR_FIRST_MONTH.month;
 
-function status(day: CalendarDay): string {
-  if (day.isFuture) return "upcoming";
-  if (day.goalMet) return "goal met";
-  if (day.active) return "worked out, goal not met";
-  return day.isToday ? "not done yet" : "no goal";
+function status(t: Translator<"progress">, day: CalendarDay): string {
+  if (day.isFuture) return t("dayStatusUpcoming");
+  if (day.goalMet) return t("dayStatusGoalMet");
+  if (day.active) return t("dayStatusActive");
+  return day.isToday ? t("dayStatusNotDoneYet") : t("dayStatusNoGoal");
 }
 
 /**
@@ -37,13 +44,15 @@ export default function StreakCalendar({
   nowMs: number;
   headingId: string;
 }) {
+  const t = useT("progress");
+  const fmt = useMemo(() => formatters(t.locale), [t.locale]);
   const now = new Date(nowMs);
   const last = Math.max(FIRST, now.getFullYear() * 12 + now.getMonth());
   const [picked, setPicked] = useState<number | null>(null);
   const shown = Math.min(last, Math.max(FIRST, picked ?? last));
   const { year, month, weeks, goalDays } = monthCalendar(sessions, nowMs, Math.floor(shown / 12), shown % 12);
   const monthStart = new Date(year, month, 1);
-  const label = MONTH_YEAR.format(monthStart);
+  const label = fmt.monthYear.format(monthStart);
 
   return (
     <div className={styles.calendarWrap}>
@@ -53,7 +62,7 @@ export default function StreakCalendar({
           className={styles.calendarNavButton}
           onClick={() => setPicked(shown - 1)}
           disabled={shown <= FIRST}
-          aria-label="Previous month"
+          aria-label={t("previousMonth")}
         >
           <ChevronLeftIcon size={18} />
         </button>
@@ -65,7 +74,7 @@ export default function StreakCalendar({
           className={styles.calendarNavButton}
           onClick={() => setPicked(shown + 1)}
           disabled={shown >= last}
-          aria-label="Next month"
+          aria-label={t("nextMonth")}
         >
           <ChevronRightIcon size={18} />
         </button>
@@ -75,8 +84,8 @@ export default function StreakCalendar({
         <thead>
           <tr>
             {WEEKDAYS.map((d) => (
-              <th key={d.getDay()} scope="col" abbr={LONG_WEEKDAY.format(d)}>
-                {NARROW.format(d)}
+              <th key={d.getDay()} scope="col" abbr={fmt.longWeekday.format(d)}>
+                {fmt.narrow.format(d)}
               </th>
             ))}
           </tr>
@@ -94,10 +103,12 @@ export default function StreakCalendar({
                       data-today={day.isToday ? "" : undefined}
                       data-future={day.isFuture ? "" : undefined}
                     >
-                      <span aria-hidden="true">{DAY_OF_MONTH.format(day.dayStartMs)}</span>
+                      <span aria-hidden="true">{fmt.dayOfMonth.format(day.dayStartMs)}</span>
                       <span className="sr-only">
-                        {FULL_DATE.format(day.dayStartMs)}
-                        {day.isToday ? " (today)" : ""}: {status(day)}
+                        {t(day.isToday ? "calendarDayToday" : "calendarDay", {
+                          date: fmt.fullDate.format(day.dayStartMs),
+                          status: status(t, day),
+                        })}
                       </span>
                     </span>
                   )}
@@ -109,7 +120,7 @@ export default function StreakCalendar({
       </table>
       <p id={`${headingId}-summary`} className={styles.calendarLegend}>
         <span className={styles.legendSwatch} aria-hidden="true" />
-        Goal met on {goalDays} {goalDays === 1 ? "day" : "days"} in {MONTH.format(monthStart)}
+        {t.plural("calendarLegend", goalDays, { month: fmt.month.format(monthStart) })}
       </p>
     </div>
   );

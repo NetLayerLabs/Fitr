@@ -10,6 +10,7 @@
  */
 import { failedVerificationEndTimes } from "@/lib/storage/verifyFailures";
 import { useCallback, useMemo } from "react";
+import { useT } from "@/lib/i18n/I18nProvider";
 import type { Address } from "@solana/kit";
 import { useSeekerStatus, useSelectedWallet } from "@/components/wallet/hooks";
 import { deriveTodayCommitment, type TodayCommitment, type TodayInputs } from "@/components/stake/plan";
@@ -54,6 +55,7 @@ export function usePoolsToday(
   vault: Pick<VaultState, "status" | "snapshot">,
   seeker: Pick<AsyncState<SeekerStatus>, "status" | "data">,
 ): TodayCommitments {
+  const tc = useT("crews");
   const sgtMint = seeker.data?.sgtMint ?? null;
   const crews = useMyCrews(vault.snapshot ? owner : null);
   const crewList = useMemo(() => crews.data ?? [], [crews.data]);
@@ -102,7 +104,7 @@ export function usePoolsToday(
     const snap = crewVaults.data?.get(crew.crewId.toString());
     if (!snap) continue;
     const t = deriveTodayCommitment({ ...base, vault: "ready", snapshot: snap });
-    pools.push({ ...t, crewId: crew.crewId, crewName: crewDisplayName(crew) });
+    pools.push({ ...t, crewId: crew.crewId, crewName: crewDisplayName(crew, tc) });
   }
   const best = mostUrgentToday(global, pools.slice(1));
   // The global pool keeps the original shape (no crew fields) for existing consumers.
