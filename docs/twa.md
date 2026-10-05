@@ -143,7 +143,7 @@ PWA-via-Bubblewrap page) before submitting. As of the last known process:
 1. **Publisher portal / CLI.** Publishing happens either through the Solana Mobile publisher portal
    or the `@solana-mobile/dapp-store-cli` (`npx dapp-store init`, then `create publisher`,
    `create app`, `create release`, `publish submit`). Either way, the publisher, app and each release
-   are recorded on-chain as NFTs. That needs a Solana keypair funded with a little SOL, and the media
+   are recorded onchain as NFTs. That needs a Solana keypair funded with a little SOL, and the media
    gets uploaded to decentralized storage.
 2. **Assets:** the signed release APK from step 4, a 512×512 icon (reuse
    `https://fitr.app/icons/icon-512.png`), a banner (1200×600 was required), several phone

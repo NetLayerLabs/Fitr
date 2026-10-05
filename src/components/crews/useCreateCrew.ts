@@ -76,7 +76,7 @@ export function useCreateCrew(account: UiWalletAccount) {
           error: timeout
             ? "Your wallet sent it, but the network has not confirmed it yet. Check the explorer, then refresh."
             : err instanceof ConfirmationError
-              ? "Creating the crew failed on-chain. Nothing was charged except the network fee."
+              ? "Creating the crew failed onchain. Nothing was charged except the network fee."
               : friendlyTxError(err, solanaConfig.tokenLabel),
         }));
         return null;

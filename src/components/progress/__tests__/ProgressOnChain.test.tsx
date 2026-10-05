@@ -25,7 +25,7 @@ afterEach(() => {
 });
 
 describe("ProgressOnChain", () => {
-  it("leaves the on-chain award locked without a wallet", () => {
+  it("leaves the onchain award locked without a wallet", () => {
     m.owner = null;
     render(<ProgressOnChain />);
     expect(m.props.at(-1)?.verifiedOnChainDays).toBeUndefined();

@@ -77,7 +77,7 @@ export class ConfirmationError extends Error {
     readonly outcome: Exclude<PollOutcome, "confirmed" | "finalized">,
     readonly signature: Signature,
   ) {
-    super(outcome === "failed" ? "The transaction failed on-chain" : "Confirmation timed out");
+    super(outcome === "failed" ? "The transaction failed onchain" : "Confirmation timed out");
     this.name = "ConfirmationError";
   }
 }

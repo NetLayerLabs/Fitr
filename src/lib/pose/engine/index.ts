@@ -39,7 +39,7 @@
  *  - These checks raise the bar; they cannot prove that a live human did the reps on this
  *    device right now. A replayed or deep-faked video of a real workout pointed at the
  *    camera would pass, and so would a patched client that skips the engine and reports
- *    made-up numbers. Only server/on-chain side attestation (e.g. hardware-backed device
+ *    made-up numbers. Only server/onchain side attestation (e.g. hardware-backed device
  *    attestation, liveness challenges, or sampled pose-trace review) can narrow that gap.
  *  - 2D angles from one camera are view dependent. The thresholds assume a side view;
  *    a front view under-reads elbow / knee flexion and may reject valid reps.

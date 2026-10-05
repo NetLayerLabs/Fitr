@@ -42,7 +42,7 @@ export function catalogQuery({ category, noEquipment }: CatalogFilter): string {
   return query ? `?${query}` : "";
 }
 
-/** Exercises matching the filter, in on-chain code order. */
+/** Exercises matching the filter, in onchain code order. */
 export function filterExercises({ category, noEquipment }: CatalogFilter): ExerciseInfo[] {
   return EXERCISE_LIST.filter(
     (info) => (category === "all" || info.category === category) && (!noEquipment || info.equipment === "none"),

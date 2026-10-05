@@ -103,7 +103,7 @@ describe("commitMetadata (GET)", () => {
     expect(m.description).not.toMatch(/earn/i);
   });
 
-  it("clamps the goal to the on-chain limits and defaults the exercise", async () => {
+  it("clamps the goal to the onchain limits and defaults the exercise", async () => {
     const chain = new FakeChain();
     const { pool, data } = await seedPool(chain);
     const low = commitMetadata({ kind: "ok", address: pool, pool: data }, { pool: null, exercise: "plank", goal: 1 });

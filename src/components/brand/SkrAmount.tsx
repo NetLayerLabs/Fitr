@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from "react";
 import styles from "./SkrAmount.module.css";
 
 /**
- * The official $SKR token logo (from the mint's on-chain metadata:
+ * The official $SKR token logo (from the mint's onchain metadata:
  * r2.solanamobiledappstore.com/skr/seeker.png), shown after amounts instead of the "SKR" text.
  * Screen readers (and textContent) still read "15 SKR": the logo is aria-hidden and the label is visually hidden.
  */

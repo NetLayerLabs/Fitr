@@ -92,7 +92,7 @@ export interface DashboardStats {
   sponsorReserve: bigint;
   /** Global pool: most added from the reserve to one day's bonus. */
   dailySponsorAmount: bigint;
-  /** Sponsor SKR added to recent finalized days still on-chain (all pools). */
+  /** Sponsor SKR added to recent finalized days still onchain (all pools). */
   recentSponsored: bigint;
   /** Global pool, newest first, at most 7. */
   recentDays: DayRow[];

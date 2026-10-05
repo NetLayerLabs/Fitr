@@ -5,7 +5,7 @@ Each exercise is a folder `src/lib/pose/exercises/<kind>/`, where `<kind>` is it
 `createRepEngine(kind)` (`src/lib/pose/engine/index.ts`) and the form-guide demo
 (`src/components/workout/GuideDemo.tsx`) only go through the registry.
 
-The order of `EXERCISE_KINDS` is the **on-chain exercise code** (0..15). Never reorder it.
+The order of `EXERCISE_KINDS` is the **onchain exercise code** (0..15). Never reorder it.
 New kinds are only ever appended.
 
 ## What you own (engine agent for `<kind>`)

@@ -8,7 +8,7 @@ import styles from "./CommitmentCard.module.css";
 const STEPS = [
   {
     title: "Stake",
-    body: "Pick your daily goal and how much SKR to lock. Both are fixed on-chain when you commit.",
+    body: "Pick your daily goal and how much SKR to lock. Both are fixed onchain when you commit.",
   },
   {
     title: "Show up",

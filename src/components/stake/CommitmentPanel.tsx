@@ -108,7 +108,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
           return (
             <Card key={e.day} as="section" tone="elevated" padding="lg" aria-label={`Verified commitment, ${formatDayLabel(e.day, cfg)}`}>
               <p className={styles.verified}>
-                <CheckIcon size={18} /> Verified on-chain
+                <CheckIcon size={18} /> Verified onchain
               </p>
               <p className={styles.goalLine}>
                 <GoalLine code={c.exercise} goal={c.goalTarget} />
@@ -150,7 +150,7 @@ export default function CommitmentPanel({ entries, today, cfg, pool, fmt, settle
             ) : null}
             {isToday ? (
               <p className={styles.fine}>
-                When you finish, Fitr re-checks the session and marks it complete on-chain. It usually takes under a
+                When you finish, Fitr re-checks the session and marks it complete onchain. It usually takes under a
                 minute.
               </p>
             ) : null}

@@ -167,7 +167,7 @@ describe("runCrank", () => {
     expect(v3.sent).toHaveLength(0);
   });
 
-  it("reports on-chain failures without throwing", async () => {
+  it("reports onchain failures without throwing", async () => {
     await seedDay(1);
     vault.failOnChainWith = 6000;
     const r = await runCrank(vault.context(), { nowSecs: vault.nowSecs, send: fastSend });

@@ -18,7 +18,7 @@
  */
 
 export interface ReminderPlan {
-  /** When the commitment must be done (epoch ms, the on-chain attest deadline or commit window). */
+  /** When the commitment must be done (epoch ms, the onchain attest deadline or commit window). */
   deadlineMs: number;
   /** Notify this many minutes before the deadline, e.g. [120, 30]. Past times are skipped. */
   offsetsMin: number[];

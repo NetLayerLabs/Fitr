@@ -123,7 +123,7 @@ export function useVaultTx(account: UiWalletAccount) {
           error: timeout
             ? "Your wallet sent it, but the network has not confirmed it yet. Check the explorer, then refresh."
             : err instanceof ConfirmationError
-              ? "The transaction failed on-chain. Nothing was staked. Refresh and try again."
+              ? "The transaction failed onchain. Nothing was staked. Refresh and try again."
               : friendlyTxError(err, solanaConfig.tokenLabel),
         }));
       } finally {

@@ -14,7 +14,7 @@ const STEPS: readonly Step[] = [
   {
     title: "Commit",
     body: "Pick an exercise, set your daily goal and choose how much SKR to stake. One transaction, signed on your phone.",
-    detail: "Goal minimums are enforced on-chain",
+    detail: "Goal minimums are enforced onchain",
     Icon: TargetIcon,
   },
   {
@@ -25,14 +25,14 @@ const STEPS: readonly Step[] = [
   },
   {
     title: "Get verified",
-    body: "Fitr's verification server replays your pose data and checks random live challenges, then marks the day complete on-chain.",
+    body: "Fitr's verification server replays your pose data and checks random live challenges, then marks the day complete onchain.",
     detail: "Live challenges, rep by rep",
     Icon: ShieldIcon,
   },
   {
     title: "Settle",
     body: "Hit your goal and claim your stake back plus a share of what no-shows forfeited. Miss it and your stake goes to the people who showed up.",
-    detail: "Paid out by the on-chain vault",
+    detail: "Paid out by the onchain vault",
     Icon: CoinIcon,
   },
 ];

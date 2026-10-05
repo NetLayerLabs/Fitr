@@ -92,7 +92,7 @@ export interface FinishResponse {
   goalTarget: number;
   /** Stable reason codes (VerifyReason) when verdict is "fail". */
   reasons: string[];
-  /** hex sha256 session hash (written on-chain on pass). */
+  /** hex sha256 session hash (written onchain on pass). */
   sessionHash: string;
   /** null when the verdict is "fail". */
   onchain: FinishOnchainStatus | null;

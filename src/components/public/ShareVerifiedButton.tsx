@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * "Share" on the verified-on-chain result: opens the share sheet with the public card
+ * "Share" on the verified-onchain result: opens the share sheet with the public card
  * https://fitr.day/s/<wallet>/<day> (its preview image is read from the chain). The day is passed
  * in when known; otherwise today's commitment is looked up on tap.
  */
@@ -77,8 +77,8 @@ export default function ShareVerifiedButton({ dayIndex = null, pool = null, crew
       const outcome = await shareLink(
         {
           url,
-          title: "Verified on-chain · Fitr",
-          text: label ? `I did ${label} today, verified on-chain with Fitr. Join me tomorrow:` : "My workout is verified on-chain with Fitr. Join me tomorrow:",
+          title: "Verified onchain · Fitr",
+          text: label ? `I did ${label} today, verified onchain with Fitr. Join me tomorrow:` : "My workout is verified onchain with Fitr. Join me tomorrow:",
         },
         typeof navigator === "undefined" ? undefined : navigator,
       );

@@ -11,7 +11,7 @@ export interface VerificationCardProps {
   /** Connection / start problem without a verdict. */
   error: string | null;
   unit: GoalUnit;
-  /** Retry the on-chain submission (when the outcome is retryable). */
+  /** Retry the onchain submission (when the outcome is retryable). */
   onRetry?: () => void;
   /** Pool day of the verified stake, for the Share link (looked up on tap when omitted). */
   shareDayIndex?: number | null;
@@ -40,7 +40,7 @@ export default function VerificationCard({ status, outcome, error, unit, onRetry
           <CheckIcon size={22} />
         </span>
         <div>
-          <p className={styles.verifyTitle}>Verified on-chain ✓</p>
+          <p className={styles.verifyTitle}>Verified onchain ✓</p>
           <p className={styles.verifyText}>
             {formatValue(outcome.count, unit)} of {formatGoal(outcome.goalTarget, unit)} confirmed by the verifier. Your stake is
             claimable once the day settles.

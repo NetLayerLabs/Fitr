@@ -209,8 +209,8 @@ export const AWARD_DEFINITIONS: readonly AwardDefinition[] = Object.freeze([
   { id: "variety-5", title: "Mix it up", description: "Try 5 different exercises.", target: 5 },
   {
     id: "verified-day",
-    title: "Verified on-chain",
-    description: "Complete a staked day that is verified on-chain.",
+    title: "Verified onchain",
+    description: "Complete a staked day that is verified onchain.",
     target: 1,
   },
 ]);
@@ -219,12 +219,12 @@ export interface AwardStatus extends AwardDefinition {
   unlocked: boolean;
   /** Progress toward `target`, clamped to it. */
   progress: number;
-  /** When it was unlocked, when known from local history (null for on-chain or locked awards). */
+  /** When it was unlocked, when known from local history (null for onchain or locked awards). */
   unlockedAt: number | null;
 }
 
 export interface AwardOptions {
-  /** Days verified complete on-chain, when the caller knows it. Unknown means 0. */
+  /** Days verified complete onchain, when the caller knows it. Unknown means 0. */
   verifiedOnChainDays?: number;
 }
 

@@ -113,7 +113,7 @@ export class FakeVault {
   dayNotOverLag = 0;
   /** Next sendTransaction throws this program error in preflight. */
   failNextWith: number | null = null;
-  /** Next transaction lands but fails on-chain with this program error. */
+  /** Next transaction lands but fails onchain with this program error. */
   failOnChainWith: number | null = null;
   priorityFeeCalls = 0;
   private statuses = new Map<string, { err: unknown }>();

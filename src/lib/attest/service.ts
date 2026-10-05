@@ -73,7 +73,7 @@ export const SERVICE_DEFAULTS: AttestServiceConfig = Object.freeze({
 
 export interface AttestServiceDeps {
   store?: AttestStore;
-  /** The on-chain adapter, or a getter (resolved per call so it can be swapped at runtime). */
+  /** The onchain adapter, or a getter (resolved per call so it can be swapped at runtime). */
   onchain?: AttestOnchain | (() => AttestOnchain);
   now?: () => number;
   random?: () => number;
@@ -185,7 +185,7 @@ export class AttestService {
     }
     if (commitment.status !== "committed") throw new AttestError(409, "conflict", "This day is already verified");
     if (commitment.exercise !== exercise || commitment.goalTarget !== goalTarget) {
-      throw new AttestError(409, "conflict", "Exercise or goal differs from the on-chain commitment");
+      throw new AttestError(409, "conflict", "Exercise or goal differs from the onchain commitment");
     }
 
     const id = this.newId();
@@ -455,7 +455,7 @@ export class AttestService {
     }
   }
 
-  /** On-chain session_started_at: server start time, never before the commit (clock skew). */
+  /** Onchain session_started_at: server start time, never before the commit (clock skew). */
   private sessionStartedAtSec(session: AttestSession): number {
     return Math.max(Math.floor(session.startedAtServer / 1000), Math.ceil(session.committedAt));
   }
@@ -489,7 +489,7 @@ interface AttestGlobals {
 const G = globalThis as typeof globalThis & { __fitrAttest?: AttestGlobals };
 const globals = (G.__fitrAttest ??= {});
 
-/** Overrides the on-chain adapter (B2 wiring, tests). Pass null to restore the default. */
+/** Overrides the onchain adapter (B2 wiring, tests). Pass null to restore the default. */
 export function setAttestOnchain(impl: AttestOnchain | null): void {
   globals.onchain = impl;
 }

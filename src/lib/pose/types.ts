@@ -34,7 +34,7 @@ export interface PoseFrame {
 }
 
 /**
- * Every exercise Fitr can count. The order of EXERCISE_KINDS is the on-chain exercise code
+ * Every exercise Fitr can count. The order of EXERCISE_KINDS is the onchain exercise code
  * (0..15) stored with each stake: NEVER reorder or remove entries, only append.
  */
 export type ExerciseKind =
@@ -55,7 +55,7 @@ export type ExerciseKind =
   | "jumping_jack"
   | "high_knees";
 
-/** All kinds in on-chain code order (index = code). Append-only. */
+/** All kinds in onchain code order (index = code). Append-only. */
 export const EXERCISE_KINDS: readonly ExerciseKind[] = Object.freeze([
   "pushup",
   "squat",

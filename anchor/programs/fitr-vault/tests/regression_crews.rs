@@ -413,7 +413,7 @@ fn fixture(name: &str) -> Vec<u8> {
 
 /// ECON-MP-2 (economics-multipool poc2). Decision: the Sybil bound is per pool by design and is
 /// now documented as such (SPEC §8); the cross-pool reuse of one workout is refused off-chain by
-/// the attestor. On-chain this test pins what holds: one Seeker commits at most once per pool per
+/// the attestor. Onchain this test pins what holds: one Seeker commits at most once per pool per
 /// day, and turning the SGT gate on in the global pool gates every crew immediately (a crew's
 /// own stale require_sgt = false cannot be used to skip it).
 #[test]

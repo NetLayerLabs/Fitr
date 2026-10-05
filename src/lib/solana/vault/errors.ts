@@ -185,6 +185,6 @@ export function friendlyTxError(err: unknown, tokenLabel = "SKR"): string {
   if (/blockhash|BlockhashNotFound|expired/i.test(msg)) return "The network was slow and the request expired. Please try again.";
   if (/rate.?limit|429/i.test(msg)) return "Too many requests. Wait a few seconds and try again.";
   if (/network|fetch|timeout|timed out|Failed to fetch/i.test(msg)) return "Network problem. Check your connection and try again.";
-  if (/AccountNotInitialized|3012/.test(msg)) return "Something changed on-chain. Refresh and try again.";
+  if (/AccountNotInitialized|3012/.test(msg)) return "Something changed onchain. Refresh and try again.";
   return "Something went wrong. Refresh and try again.";
 }

@@ -64,7 +64,7 @@ describe("mapShareCard", () => {
     expect(card.stake).toBe("50 SKR");
     expect(card.streak).toBe(7);
     expect(card.bestStreak).toBe(9);
-    expect(card.headline).toBe("Verified on-chain · 32 push-ups · Day streak 7");
+    expect(card.headline).toBe("Verified onchain · 32 push-ups · Day streak 7");
     expect(card.dateLabel).toBe("Sep 25, 2026");
     expect(card.explorerAccount).toBe(C_ADDR);
     expect(card.isGlobalPool).toBe(true);
@@ -74,7 +74,7 @@ describe("mapShareCard", () => {
     const committed = mapShareCard({ ...base, commitment: makeCommitment(D0, { exercise: Exercise.Plank, goalTarget: 60 }, POOL), profile: null });
     expect(committed.state).toBe("committed");
     expect(committed.challenge).toBe("60 s plank");
-    expect(committed.headline).toBe("Committed on-chain · 60 s plank");
+    expect(committed.headline).toBe("Committed onchain · 60 s plank");
     const revoked = mapShareCard({ ...base, commitment: makeCommitment(D0, { status: CommitmentStatus.Revoked }, POOL), profile: null });
     expect(revoked.state).toBe("revoked");
     expect(revoked.streak).toBeNull();
@@ -90,7 +90,7 @@ describe("mapShareCard", () => {
     expect(card.challenge).toBeNull();
     expect(card.streak).toBe(2);
     expect(card.explorerAccount).toBe(P_ADDR);
-    expect(card.headline).toBe("Verified on-chain · Day streak 2");
+    expect(card.headline).toBe("Verified onchain · Day streak 2");
   });
 
   it("ignores another wallet's or another day's accounts", () => {
@@ -123,7 +123,7 @@ describe("loadShareCard", () => {
     await seedProfile(chain, pool, makeProfile(USER, { hasCompleted: true, lastCompletedDay: D0, completedDaysMask: 3n }));
     const r = await loadShareCard(chain.rpc(), { programAddress: PROGRAM, mint: MINT, wallet: USER, dayIndex: D0 });
     expect(r.kind).toBe("ok");
-    if (r.kind === "ok") expect(r.card.headline).toBe("Verified on-chain · 25 push-ups · Day streak 2");
+    if (r.kind === "ok") expect(r.card.headline).toBe("Verified onchain · 25 push-ups · Day streak 2");
   });
 
   it("no_pool while the vault is not deployed", async () => {

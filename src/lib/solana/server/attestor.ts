@@ -347,7 +347,7 @@ export async function sendServerInstructions(
       "failed",
       code,
       signature,
-      code === null ? "Transaction failed on-chain" : `Transaction failed on-chain (program error ${code})`,
+      code === null ? "Transaction failed onchain" : `Transaction failed onchain (program error ${code})`,
     );
   }
   if (outcome === "timeout") {

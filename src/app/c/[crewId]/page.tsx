@@ -8,7 +8,7 @@ import { exerciseArt, STANDING_ART } from "@/lib/exerciseArt";
 import { crewInvitePath, crewPath, parseCrewId } from "@/lib/solana/vault/crews";
 
 /**
- * Public crew invite: https://fitr.day/c/<crewId>. Server-rendered from the on-chain crew pool
+ * Public crew invite: https://fitr.day/c/<crewId>. Server-rendered from the onchain crew pool
  * (read server side; the browser never talks to Solana here) with link-preview metadata.
  *
  * Inside the Android app the same path arrives on app.fitr.day (App Links keep the path), so on

@@ -150,7 +150,7 @@ export function parseInviteInput(input: string | null | undefined): bigint | nul
 export const CREW_NAME_BYTES = 32;
 
 /**
- * Invisible / direction-changing characters: valid UTF-8 on-chain, but they can make a name read
+ * Invisible / direction-changing characters: valid UTF-8 onchain, but they can make a name read
  * as something else (e.g. a right-to-left override). Refused on create, stripped on display.
  */
 const UNSAFE_NAME_CHARS = /[\u0000-\u001f\u007f-\u009f\u200b\u200c\u200e\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g;
@@ -168,7 +168,7 @@ export function crewNameError(name: string): string | null {
   return null;
 }
 
-/** The on-chain [u8; 32] name: trimmed UTF-8, zero padded. Throws on an invalid name. */
+/** The onchain [u8; 32] name: trimmed UTF-8, zero padded. Throws on an invalid name. */
 export function encodeCrewName(name: string): Uint8Array {
   const err = crewNameError(name);
   if (err) throw new Error(err);
@@ -178,7 +178,7 @@ export function encodeCrewName(name: string): Uint8Array {
 }
 
 /**
- * The name stored on-chain (up to the first NUL) with invisible / direction-changing characters
+ * The name stored onchain (up to the first NUL) with invisible / direction-changing characters
  * removed, or "" when it is not valid UTF-8. Anyone can create a crew, so this is display-safe
  * text, never trusted for anything else.
  */

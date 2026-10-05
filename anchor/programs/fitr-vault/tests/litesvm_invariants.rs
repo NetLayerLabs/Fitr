@@ -14,7 +14,7 @@
 //! wrong signer, too early, double claim, ...).
 //!
 //! An independent Rust model predicts whether each transaction must succeed; a mismatch fails the
-//! test. After EVERY transaction the on-chain state is compared field-by-field with the model and
+//! test. After EVERY transaction the onchain state is compared field-by-field with the model and
 //! the SPEC.md invariants are asserted:
 //!   I1  vault.amount == outstanding + reserve + rollover + treasury_accrued (no direct donations)
 //!   I1b outstanding == sum over live DayStates of their remaining liability
@@ -40,7 +40,7 @@ use solana_signer::Signer;
 use std::collections::{BTreeMap, BTreeSet};
 
 const STAKE_CEILING: u64 = 1_000_000 * SKR;
-/// All 16 exercises, in on-chain code order (independent of Exercise::ALL).
+/// All 16 exercises, in onchain code order (independent of Exercise::ALL).
 const EXERCISES: [Exercise; 16] = [
     Exercise::Pushup,
     Exercise::Squat,
@@ -194,13 +194,13 @@ struct MProfile {
     tcomp: u32,
     tmiss: u32,
     bonus: u64,
-    /// Completed (attested, not revoked) days, as the on-chain 64-day mask + carry records them.
+    /// Completed (attested, not revoked) days, as the onchain 64-day mask + carry records them.
     done: BTreeSet<u32>,
     last_amount: u64,
 }
 
 impl MProfile {
-    /// Consecutive completed days ending at `x` (independent of the on-chain bitmap).
+    /// Consecutive completed days ending at `x` (independent of the onchain bitmap).
     fn streak_at(&self, x: u32) -> u16 {
         let mut n = 0u16;
         let mut d = x as i64;
@@ -230,7 +230,7 @@ struct Model {
     cfg: Cfg,
     paused_since: i64,
     total_paused: i64,
-    /// Live copy of the GLOBAL pool's pause state (crews read it on-chain; audit CREW-1).
+    /// Live copy of the GLOBAL pool's pause state (crews read it onchain; audit CREW-1).
     g_paused: bool,
     g_paused_since: i64,
     g_total_paused: i64,
@@ -667,7 +667,7 @@ impl World {
                 last_amount: op.last_completed_amount,
             };
             if mp.has {
-                // the on-chain mask/carry must describe exactly the model's completed-day set
+                // the onchain mask/carry must describe exactly the model's completed-day set
                 for back in 0..64u32 {
                     let x = mp.last - back;
                     let on = op.completed_days_mask >> back & 1 == 1;

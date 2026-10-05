@@ -157,7 +157,7 @@ export default function StakeForm(p: StakeFormProps) {
             Miss it and your stake is forfeited to the {p.crewName ? "crew members" : "people"} who showed up. Fitr
             keeps a {fee} fee on forfeited stakes only.
           </li>
-          <li>Goal and stake are locked on-chain when you sign. There is no cancel.</li>
+          <li>Goal and stake are locked onchain when you sign. There is no cancel.</li>
         </ul>
       </section>
 

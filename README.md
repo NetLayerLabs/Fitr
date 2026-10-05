@@ -3,9 +3,9 @@
 A fitness **commitment** app for the Solana Seeker. You pick a daily goal (one of 16 exercises,
 reps or seconds), stake the amount of $SKR you choose, and show up. On-device pose AI (MediaPipe
 Pose Landmarker, in the browser) counts every rep; Fitr's verification server re-checks the
-session, including live challenges, and marks the day complete on-chain. Hit the goal and your
+session, including live challenges, and marks the day complete onchain. Hit the goal and your
 stake comes back plus a pro-rata share of what others forfeited. Miss it and your stake goes to
-the people who showed up. Fitr's only fee is 5% of forfeited stakes (read from the on-chain
+the people who showed up. Fitr's only fee is 5% of forfeited stakes (read from the onchain
 pool). It is a commitment device, not an investment, and it is cheat-resistant, not cheat-proof.
 Video never leaves the phone.
 
@@ -20,7 +20,7 @@ Hosting: [`docs/deploy.md`](./docs/deploy.md) · Android APK: [`docs/android.md`
 | Today | `/` | Greeting and streak, one adaptive card (commit, today's goal with Start, verifying, verified, claim, missed, verification withdrawn), today's activity, quick start |
 | Workouts | `/workouts` | All 16 exercises by muscle group (`?c=` / `?eq=none` filters); `/workout/<kind>` is the workout screen with form guide, 3-2-1 countdown and HUD |
 | Commit | `/commit` | Connect wallet (MWA), pick exercise, goal and stake, sign one transaction. Claims and settles past days in the same transaction. Solo / Crew switch; `/crew/<id>` is a crew's page |
-| Progress | `/progress` | Stats, streak calendar, personal records, awards (including "Verified on-chain"), full history |
+| Progress | `/progress` | Stats, streak calendar, personal records, awards (including "Verified onchain"), full history |
 | You | `/you` | Profile and wallet, settings (default camera, haptics, voice coach, clock-in reminders in the Android app, form guides), and the Verification, Privacy and Credits pages |
 
 `/history` and `/wallet` permanently redirect to `/progress` and `/you`.
@@ -38,7 +38,7 @@ The same Next server answers both hosts behind nginx:
 
 ## Crews (group commitments)
 
-A crew is its own on-chain pool `["pool", mint, crew_id]` (anchor/SPEC.md §2.7). Anyone creates
+A crew is its own onchain pool `["pool", mint, crew_id]` (anchor/SPEC.md §2.7). Anyone creates
 one with `create_crew` (about 0.005 SOL rent, no special powers for the creator), optionally
 with a fixed exercise and goal. Friends join by link (`https://fitr.day/c/<id>`, which opens
 `/crew/<id>` in the app), stake their own SKR on the same day, and the no-shows fund the members
@@ -88,7 +88,7 @@ Speech API; it is on by default and can be switched off on the You tab.
 ## Staking and verification
 
 - **Vault program** (`anchor/programs/fitr-vault`): one pool per mint, with the goal and stake
-  bounds, fee, attestor key and review window all set on-chain. Each day goes commit → attest →
+  bounds, fee, attestor key and review window all set onchain. Each day goes commit → attest →
   finalize → claim / close_missed → sweep. The TypeScript client in
   `src/lib/solana/vault/generated` is generated from the IDL (`npm run codegen:vault`).
 - **Client** (`src/lib/solana/vault/{read,status,instructions,errors}.ts`, `src/components/stake/`):

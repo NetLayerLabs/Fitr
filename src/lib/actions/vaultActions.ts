@@ -3,7 +3,7 @@
  * building over an injected chain context, so tests run them against an in-memory RPC.
  *
  * Every POST returns an UNSIGNED v0 transaction whose fee payer (and only signer) is the posted
- * account, simulated first: a transaction that would fail on-chain is never returned; the user
+ * account, simulated first: a transaction that would fail onchain is never returned; the user
  * gets a clear ActionError instead (no Seeker, pool missing, not enough SKR, already committed…).
  */
 import {

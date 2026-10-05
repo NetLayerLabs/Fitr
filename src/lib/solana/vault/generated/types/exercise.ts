@@ -17,7 +17,7 @@ import {
 
 /**
  * Exercise a commitment is for. Borsh-encoded as one byte (the variant index).
- * The order is FROZEN: codes are stored on-chain in Commitment.exercise and index
+ * The order is FROZEN: codes are stored onchain in Commitment.exercise and index
  * Pool.goal_limits. New exercises are only ever appended.
  */
 export enum Exercise {

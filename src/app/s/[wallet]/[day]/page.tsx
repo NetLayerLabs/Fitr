@@ -73,13 +73,13 @@ export default async function SharePage(props: PageProps<"/s/[wallet]/[day]">) {
   return (
     <PublicShell>
       <section className={styles.notice} aria-labelledby="share-missing">
-        <p className={styles.eyebrow}>{opensSoon ? "Verified on-chain" : "Live data unavailable"}</p>
+        <p className={styles.eyebrow}>{opensSoon ? "Verified onchain" : "Live data unavailable"}</p>
         <h1 id="share-missing" className={styles.title}>
           {opensSoon ? "This card goes live with the vault" : "We couldn't reach Solana just now"}
         </h1>
         <p className={styles.lede}>
           {opensSoon
-            ? "Fitr's on-chain vault isn't open yet, so there is no workout to show here. Once staking is live, this card shows a verified day straight from the chain."
+            ? "Fitr's onchain vault isn't open yet, so there is no workout to show here. Once staking is live, this card shows a verified day straight from the chain."
             : "Refresh in a minute: the card is read straight from the chain."}
         </p>
       </section>

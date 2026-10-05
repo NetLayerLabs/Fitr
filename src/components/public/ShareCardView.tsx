@@ -8,18 +8,18 @@ import styles from "./Public.module.css";
 
 export interface ShareCardViewProps {
   card: ShareCardData;
-  /** Explorer link for the card's account (null when there is nothing on-chain to show). */
+  /** Explorer link for the card's account (null when there is nothing onchain to show). */
   explorerUrl: string | null;
 }
 
 const BADGE: Record<ShareCardData["state"], { text: string; tone?: "muted" | "warn" }> = {
-  verified: { text: "Verified on-chain" },
+  verified: { text: "Verified onchain" },
   committed: { text: "Committed · workout pending", tone: "muted" },
   revoked: { text: "Not verified", tone: "warn" },
   not_found: { text: "No commitment found", tone: "muted" },
 };
 
-/** The public "Verified on-chain" card: data read from the chain, plus the Join me CTA. */
+/** The public "Verified onchain" card: data read from the chain, plus the Join me CTA. */
 export default function ShareCardView({ card, explorerUrl }: ShareCardViewProps) {
   const art = (card.exercise && exerciseArt(card.exercise)) || STANDING_ART;
   const badge = BADGE[card.state];
@@ -81,7 +81,7 @@ export default function ShareCardView({ card, explorerUrl }: ShareCardViewProps)
           </p>
           {explorerUrl ? (
             <a className={styles.link} href={explorerUrl} target="_blank" rel="noopener noreferrer">
-              View the on-chain record ↗
+              View the onchain record ↗
             </a>
           ) : null}
         </div>

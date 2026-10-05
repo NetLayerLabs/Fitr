@@ -60,7 +60,7 @@ export interface ResolvedChallenge {
 /**
  * The challenge a commit in `pool` will use: the crew's fixed exercise/goal when it has one, else
  * the requested exercise (default push-ups) and goal (default the exercise default), clamped to
- * the pool's on-chain goal limits so the transaction never fails GoalOutOfBounds.
+ * the pool's onchain goal limits so the transaction never fails GoalOutOfBounds.
  */
 export function resolveChallenge(
   pool: Pick<Pool, "hasFixedExercise" | "fixedExercise" | "fixedGoalTarget" | "goalLimits">,

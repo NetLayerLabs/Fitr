@@ -48,7 +48,7 @@ async function expectError(p: Promise<unknown>, status: number, code: string) {
 }
 
 describe("AttestService happy path", () => {
-  it("start -> chunks (challenge revealed only when due) -> finish passes and submits on-chain", async () => {
+  it("start -> chunks (challenge revealed only when due) -> finish passes and submits onchain", async () => {
     const { clock, onchain, service } = setup();
     const start = await service.start(START);
     expect(start.challengePlan).toEqual([{ id: "c1", atMsFromStart: 8000, windowMs: 6000, type: null }]);
@@ -162,7 +162,7 @@ describe("AttestService failures", () => {
     );
   });
 
-  it("answers 503 not_configured until the on-chain adapter exists", async () => {
+  it("answers 503 not_configured until the onchain adapter exists", async () => {
     const service = new AttestService({ onchain: notConfiguredOnchain });
     await expectError(service.start(START), 503, "not_configured");
   });

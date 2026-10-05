@@ -37,7 +37,7 @@ export default function StakeBanner({ status, commitment, otherExercise, error }
         </span>
         <div>
           <p className={styles.stakeTitle}>Verified today</p>
-          <p className={styles.stakeText}>Your {formatGoal(commitment.goalTarget, info.unit)} are already recorded on-chain. Extra sets are just for you.</p>
+          <p className={styles.stakeText}>Your {formatGoal(commitment.goalTarget, info.unit)} are already recorded onchain. Extra sets are just for you.</p>
         </div>
       </section>
     );

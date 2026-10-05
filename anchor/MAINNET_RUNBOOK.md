@@ -81,7 +81,7 @@ ls -l target/deploy/fitr_vault.so                                # record the si
 
 ## 3. Cost (exact formula; mainnet rent = 5,080 lamports per byte incl. 128-byte header)
 
-The `anchor build` binary is **554,472 bytes** (16-exercise build with crews and sponsored days). Two size settings, no behaviour change: `opt-level = "z"` + `strip` in `anchor/Cargo.toml`, and the `no-idl` default feature in `programs/fitr-vault/Cargo.toml`, which drops Anchor's on-chain IDL upload instructions (nothing reads an on-chain Anchor IDL). At the defaults it was 671,192 bytes, 3.41 SOL. Re-run the formula with the verifiable build's size.
+The `anchor build` binary is **554,472 bytes** (16-exercise build with crews and sponsored days). Two size settings, no behaviour change: `opt-level = "z"` + `strip` in `anchor/Cargo.toml`, and the `no-idl` default feature in `programs/fitr-vault/Cargo.toml`, which drops Anchor's onchain IDL upload instructions (nothing reads an onchain Anchor IDL). At the defaults it was 671,192 bytes, 3.41 SOL. Re-run the formula with the verifiable build's size.
 
 | Item | Formula | Lamports | SOL |
 |---|---|---|---|
@@ -98,7 +98,7 @@ The `anchor build` binary is **554,472 bytes** (16-exercise build with crews and
   byte, and each upgrade needs a temporary buffer of the new size (refunded when the upgrade lands).
 - The ProgramData rent is a deposit, not a fee: `solana program close` returns it to the authority if the
   program is ever retired.
-- On-chain IDL: `anchor idl init` is not available (built with `no-idl`). To let explorers decode
+- Onchain IDL: `anchor idl init` is not available (built with `no-idl`). To let explorers decode
   Fitr transactions, publish the IDL with the Program Metadata program instead
   (`npx @solana-program/program-metadata write idl <PROGRAM_ID> anchor/target/idl/fitr_vault.json`), optional,
   rent about 0.6 SOL for the 90 KB JSON (refundable), so only if wanted.
@@ -357,7 +357,7 @@ Rules:
   is swept. The crank (`/api/crank`) visits the global pool first, then every crew in crew-id
   order, uses the SPEC §2.4 memcmp filters and retries 6009 `DayNotOver`. `truncated: true` in its
   report means the 40-transaction / 90 s budget ran out; the next run continues.
-- **Review window:** between a day's attest deadline and its finalize time, compare on-chain
+- **Review window:** between a day's attest deadline and its finalize time, compare onchain
   completions with the server's sessions; on a mismatch, pause and void (10.2).
 - **Attestor:** watch the `CompletionAttested` count per hour against the server's own session
   count; a mismatch means a key leak.

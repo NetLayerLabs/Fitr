@@ -178,7 +178,7 @@ const PASS = {
 };
 
 describe("WorkoutScreen: verified (staked) workouts", () => {
-  it("shows the stake, verifies live with a challenge prompt, and links the on-chain proof", async () => {
+  it("shows the stake, verifies live with a challenge prompt, and links the onchain proof", async () => {
     const server = attestServer(() => PASS);
     renderStaked(server);
 
@@ -207,7 +207,7 @@ describe("WorkoutScreen: verified (staked) workouts", () => {
     fireEvent.click(screen.getByRole("button", { name: /End workout/ }));
     expect(screen.getByRole("heading", { name: "Workout complete" })).toBeTruthy();
 
-    expect(await screen.findByText("Verified on-chain ✓")).toBeTruthy();
+    expect(await screen.findByText("Verified onchain ✓")).toBeTruthy();
     const link = screen.getByRole("link", { name: "View transaction" });
     expect(link.getAttribute("href")).toBe("https://explorer.solana.com/tx/5igTx");
     expect(server.paths.at(-1)).toBe("/api/attest/finish");

@@ -1,5 +1,5 @@
 /**
- * Stake form rules: per-exercise goal bounds and stake bounds come from the on-chain Pool, never
+ * Stake form rules: per-exercise goal bounds and stake bounds come from the onchain Pool, never
  * from client constants (the program re-checks both). Pure.
  */
 import { EXERCISE_LIST, EXERCISES, type ExerciseInfo } from "@/lib/exercises";

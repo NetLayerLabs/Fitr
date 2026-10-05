@@ -1,5 +1,5 @@
 /**
- * What a user's (pool, day) slot means right now, derived only from on-chain state + time.
+ * What a user's (pool, day) slot means right now, derived only from onchain state + time.
  * Mirrors the program's rules (anchor/SPEC.md §3–§5) so the UI never offers an action the
  * program would reject. Pure.
  */

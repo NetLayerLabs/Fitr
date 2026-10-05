@@ -78,7 +78,7 @@ export default function CreateCrewForm({ account, owner, globalPool }: CreateCre
           className={styles.input}
           value={name}
           onChange={(e) => {
-            // Keep within the 32-byte on-chain field (emoji are up to 4 bytes).
+            // Keep within the 32-byte onchain field (emoji are up to 4 bytes).
             const v = e.target.value;
             if (new TextEncoder().encode(v.trim()).length <= CREW_NAME_BYTES) setName(v);
           }}
@@ -138,7 +138,7 @@ export default function CreateCrewForm({ account, owner, globalPool }: CreateCre
       </Button>
       <p className={styles.fine}>
         One signature · about {formatSol(CREATE_CREW_RENT_LAMPORTS, { maxFractionDigits: 4 })} of account rent (not
-        refunded). Creating a crew gives you no special powers over it: the same on-chain rules apply to everyone.
+        refunded). Creating a crew gives you no special powers over it: the same onchain rules apply to everyone.
       </p>
     </form>
   );

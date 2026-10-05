@@ -16,16 +16,16 @@ export interface PauseState {
 }
 
 export interface DayConfig {
-  /** Day d starts at d * dayLengthSecs + dayOffsetSecs. Immutable on-chain. */
+  /** Day d starts at d * dayLengthSecs + dayOffsetSecs. Immutable onchain. */
   dayOffsetSecs: number;
-  /** 300..=86_400. Immutable on-chain. */
+  /** 300..=86_400. Immutable onchain. */
   dayLengthSecs: number;
   /** Commits for day d are accepted while now < dayStart(d) + commitCutoffSecs. */
   commitCutoffSecs: number;
-  /** Attest for day d while now <= dayEnd(d) + attestGraceSecs (snapshotted per day on-chain). */
+  /** Attest for day d while now <= dayEnd(d) + attestGraceSecs (snapshotted per day onchain). */
   attestGraceSecs: number;
   /**
-   * Review window between the attest deadline and finalize (snapshotted per day on-chain as
+   * Review window between the attest deadline and finalize (snapshotted per day onchain as
    * DayState.finalizeDelaySecs). 0 when unknown.
    */
   finalizeDelaySecs?: number;

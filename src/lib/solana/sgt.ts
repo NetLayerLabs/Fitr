@@ -1,7 +1,7 @@
 /**
  * Seeker Genesis Token (SGT) check. Pure and shared (server routes, attestor, tests).
  *
- * Rules (vault brief §2.6, mirroring the on-chain `token_checks.rs` and Solana Mobile's rule):
+ * Rules (vault brief §2.6, mirroring the onchain `token_checks.rs` and Solana Mobile's rule):
  * - the mint is owned by Token-2022;
  * - its TokenGroupMember extension has group == SGT_GROUP and mint == the mint itself
  *   (this carries the guarantee: only the group's update authority can add members);

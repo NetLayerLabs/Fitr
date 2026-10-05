@@ -375,13 +375,13 @@ export interface SessionHashInput {
   dayIndex: number;
   exercise: string;
   goalTarget: number;
-  /** Unix seconds when the server started the session (the on-chain session_started_at). */
+  /** Unix seconds when the server started the session (the onchain session_started_at). */
   sessionStartedAt: number;
   contentHash: Uint8Array;
 }
 
 /**
- * The 32-byte session hash written on-chain: binds the session parameters to the trace content.
+ * The 32-byte session hash written onchain: binds the session parameters to the trace content.
  * sha256("fitr-session-v1|wallet|dayIndex|exercise|goalTarget|sessionStartedAt|" || contentHash).
  */
 export async function sessionHash(input: SessionHashInput): Promise<Uint8Array> {

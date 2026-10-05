@@ -10,7 +10,7 @@
  *   record()  every processed frame goes into the recorder
  *   (loop)    a chunk is POSTed every ~3 s (every 1 s around live checks); a chunk response may
  *             reveal a live check, shown as a big HUD prompt with a countdown and a haptic buzz
- *   finish()  flush the remaining chunks, POST /api/attest/finish -> verified on-chain (with the
+ *   finish()  flush the remaining chunks, POST /api/attest/finish -> verified onchain (with the
  *             signature) or an honest failure reason
  *
  * Unstaked workouts never touch the network: with no wallet or no matching commitment the
@@ -189,7 +189,7 @@ export type VerifiedStatus =
   | "checking"
   /** Staked for this exercise today and not verified yet. */
   | "ready"
-  /** Already verified on-chain today. */
+  /** Already verified onchain today. */
   | "already"
   | "starting"
   | "recording"
@@ -596,11 +596,11 @@ function mapFinish(res: FinishResponse, explorer: (sig: string) => string): Veri
     return { kind: "verified", count: res.count, goalTarget: res.goalTarget, signature: null, explorerUrl: null };
   }
   if (on?.status === "not_configured") {
-    return { kind: "error", message: "Your workout passed, but on-chain verification isn't available right now.", retryable: false };
+    return { kind: "error", message: "Your workout passed, but onchain verification isn't available right now.", retryable: false };
   }
   return {
     kind: "error",
-    message: on?.status === "error" ? `Your workout passed, but recording it on-chain failed: ${on.message}` : "Verification failed.",
+    message: on?.status === "error" ? `Your workout passed, but recording it onchain failed: ${on.message}` : "Verification failed.",
     retryable: true,
   };
 }

@@ -1,6 +1,6 @@
 /**
  * Crews (multi-pool) in the attestor: /start names the pool, the session attests for that pool,
- * and "already verified" is tracked per pool. The on-chain adapter reads the crew's Pool.
+ * and "already verified" is tracked per pool. The onchain adapter reads the crew's Pool.
  */
 import { generateKeyPairSigner, type Address } from "@solana/kit";
 import { beforeEach, describe, expect, it } from "vitest";

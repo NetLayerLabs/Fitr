@@ -138,7 +138,7 @@ describe("VerifiedSessionController", () => {
     expect(c.getSnapshot().status).toBe("off");
   });
 
-  it("runs start -> chunks -> live check -> finish -> verified on-chain", async () => {
+  it("runs start -> chunks -> live check -> finish -> verified onchain", async () => {
     const server = fakeServer();
     const c = controller(server);
     await c.lookup(WALLET, async () => STAKE);
@@ -254,7 +254,7 @@ describe("VerifiedSessionController", () => {
     expect(new Set(seqs)).toEqual(new Set([0, 1]));
   });
 
-  it("a passing workout whose on-chain submission failed can retry just the submission", async () => {
+  it("a passing workout whose onchain submission failed can retry just the submission", async () => {
     let attempt = 0;
     const server = fakeServer({
       finish: () =>

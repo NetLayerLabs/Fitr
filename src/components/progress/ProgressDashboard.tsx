@@ -12,8 +12,8 @@ import styles from "./Progress.module.css";
 
 export interface ProgressDashboardProps {
   /**
-   * Days verified complete on-chain for the connected wallet, when known. Unlocks the
-   * "Verified on-chain" award; leave undefined until the vault read is wired in.
+   * Days verified complete onchain for the connected wallet, when known. Unlocks the
+   * "Verified onchain" award; leave undefined until the vault read is wired in.
    */
   verifiedOnChainDays?: number;
 }

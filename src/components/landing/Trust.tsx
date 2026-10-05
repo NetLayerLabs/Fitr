@@ -17,7 +17,7 @@ function settle() {
   return { forfeited, fee, shared, bonus };
 }
 
-/** Why it holds up: cheat resistance, privacy, on-chain transparency and the one fee. */
+/** Why it holds up: cheat resistance, privacy, onchain transparency and the one fee. */
 export default function Trust() {
   const { forfeited, fee, shared, bonus } = settle();
   return (
@@ -42,7 +42,7 @@ export default function Trust() {
             </span>
             <h3 className={styles.cardTitle}>Cheat-resistant by design</h3>
             <p className={styles.body}>
-              Backed by live challenges and on-chain rules, built to catch half-reps and
+              Backed by live challenges and onchain rules, built to catch half-reps and
               pre-recorded clips before a day is marked complete.
             </p>
             <ul className={styles.list} role="list">

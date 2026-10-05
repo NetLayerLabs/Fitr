@@ -26,7 +26,7 @@ export default function PoolSummary({ dayState, decimals, label, yourStatus }: P
         </h2>
         <span className={styles.live}>
           <span className={styles.liveDot} aria-hidden="true" />
-          On-chain
+          Onchain
         </span>
       </div>
       <div className={styles.stats}>

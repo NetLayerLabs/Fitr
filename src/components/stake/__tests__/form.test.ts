@@ -17,7 +17,7 @@ import {
 const pool = makePool();
 const SKR = 1_000_000n;
 
-describe("goal bounds come from the on-chain pool", () => {
+describe("goal bounds come from the onchain pool", () => {
   it("per exercise, with seconds for plank / wall sit", () => {
     expect(goalBounds(pool, "pushup")).toEqual({ min: 10, max: 1000 });
     expect(goalBounds(pool, "plank")).toEqual({ min: 30, max: 3600 });

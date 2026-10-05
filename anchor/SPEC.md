@@ -1,6 +1,6 @@
 # fitr-vault program specification
 
-Fitr's on-chain commitment vault (Anchor 0.31.1, Solana 2.1 toolchain). A user stakes an amount of
+Fitr's onchain commitment vault (Anchor 0.31.1, Solana 2.1 toolchain). A user stakes an amount of
 the pool mint that they choose ($SKR on mainnet) on a workout goal that they choose for one pool day.
 Fitr's verification server (the **attestor**) re-checks the session and marks the day complete. After
 the day:
@@ -48,7 +48,7 @@ Tests (LiteSVM 0.6.1, Rust) load `target/deploy/fitr_vault.so`, so build first:
 | `tests/litesvm_edge.rs` | Short-day end-to-end flow (600 s day). One-tx `[claim(d-1), commit(d)]` with one signer. Every reachable error path (§7). Config snapshots. Pause semantics. Void. Account substitution. Token-2022 mint allow-list. Upgrade-authority-gated init. |
 | `tests/litesvm_sgt.rs` | Real mainnet SGT fixtures: gate on/off, counterfeit mint, one device one commit per day, SGT path in the one-tx daily loop, per-crew DeviceLock (one commit per device per day per pool; another pool's lock is rejected). |
 | `tests/litesvm_crews.rs` | `create_crew`: config copy (every field), validations (crew_id 0, duplicate id, name, fixed goal without exercise, goal bounds, paused global pool, a crew passed as the config source), fixed exercise/goal enforcement at commit, creator has no powers (update/pause/propose/void/withdraw/attest/revoke), per-pool authority transfer, the worked example settled in a crew next to a global day with the same wallets, cross-pool account mixing for every token-moving or settling instruction, sponsored days per pool. |
-| `tests/litesvm_invariants.rs` | Seeded, model-based randomized test: 4 × 64 = 256 scenarios, ≈ 31k transactions, ≈ 870 pools. **Multi-pool:** each scenario runs the global pool plus 1–5 crews (created at setup and mid-run with random, sometimes duplicate or invalid ids/rules), each with its own independent model, and the same wallets stake in several pools. Injected cross-pool attacks (another pool's vault or pool account in claim/commit/fund/withdraw/finalize) must fail. Invariants §6 are checked for EVERY pool after EVERY transaction. The model covers revocation (refund-only), pause accounting and deadline extension, the finalize review window, per-day trust snapshots, crew fixed rules and the order-independent streak (an independent completed-day set checked bit by bit against the on-chain mask). `FITR_FUZZ_SCENARIOS` / `FITR_FUZZ_SEED` scale it. |
+| `tests/litesvm_invariants.rs` | Seeded, model-based randomized test: 4 × 64 = 256 scenarios, ≈ 31k transactions, ≈ 870 pools. **Multi-pool:** each scenario runs the global pool plus 1–5 crews (created at setup and mid-run with random, sometimes duplicate or invalid ids/rules), each with its own independent model, and the same wallets stake in several pools. Injected cross-pool attacks (another pool's vault or pool account in claim/commit/fund/withdraw/finalize) must fail. Invariants §6 are checked for EVERY pool after EVERY transaction. The model covers revocation (refund-only), pause accounting and deadline extension, the finalize review window, per-day trust snapshots, crew fixed rules and the order-independent streak (an independent completed-day set checked bit by bit against the onchain mask). `FITR_FUZZ_SCENARIOS` / `FITR_FUZZ_SEED` scale it. |
 | `tests/regression.rs` | The 2026-10 audit PoCs (AUD-AT-1, F1–F4, SM-1–SM-3), ported and inverted: each attack must now fail and honest users keep their principal (§11). |
 
 LiteSVM uses the old default rent of 6,960 lamports per byte. Mainnet uses 5,080. Tests never assert
@@ -453,7 +453,7 @@ All invariants hold **per pool** (global and each crew), with I7 summed over eve
 
 | Id | Invariant |
 |---|---|
-| I1 | `vault.amount == outstanding + reserve + rollover + treasury_accrued`. On-chain the program enforces `>=` in `withdraw_treasury`; a direct donation can only make the left side larger. The global pool's `rollover` is always 0. |
+| I1 | `vault.amount == outstanding + reserve + rollover + treasury_accrued`. Onchain the program enforces `>=` in `withdraw_treasury`; a direct donation can only make the left side larger. The global pool's `rollover` is always 0. |
 | I1b | `outstanding == Σ live DayState.liability()`. |
 | I2 | Each commitment pays out at most once: it is closed on claim, and `init` stops re-creation while the commit window is closed. |
 | I3 | Paid for day d (principal + bonus) ≤ `total_staked_d + sponsor_d + rollover_d`. |
@@ -558,7 +558,7 @@ There are 17 events, emitted with `emit!` as program logs:
   how friends commit together). Off-chain, the attestor binds each live-challenge session to one
   (pool, wallet, day) and refuses to attest the same `session_hash` / challenge transcript in a
   second pool, so one faked session cannot be cashed in several pools. Pitch: "cheat-resistant, backed by live challenges
-  and on-chain rules", never "un-cheatable".
+  and onchain rules", never "un-cheatable".
 
 ## 9. Mainnet parameters (InitPoolParams)
 
@@ -620,5 +620,5 @@ PoC inverted):
 | CREW-1 / ECON-MP-3: global pause and attestor rotation do not reach crews; a leaked attestor keeps attesting new crew days | medium / low | `global_pool` read live by commit / attest / revoke / finalize: global pause blocks every crew (pause time extends crew windows); every new day snapshots the global attestor; commit applies `global.require_sgt`; global authority may revoke; permissionless `sync_crew` propagates authority / attestor / require_sgt in batches | `crew_1_global_pause_and_attestor_rotation_reach_crews`, `econ_mp_3_global_pause_freezes_live_crew_days`, `crew_1_global_pause_extends_crew_attest_window`, `crew_1b_crew_spam_does_not_multiply_incident_work`, `crew_1_global_authority_can_revoke_on_unsynced_crews` |
 | CREW-2 / ECON-MP-1: zero-completer crew forfeits stranded in the reserve, later captured by whoever completes when the tap opens | low / medium | crew `rollover`: net forfeit (and dust) of a no-completer crew day joins the crew's next finalized day with a completer, pro rata; never the reserve or the tap; `fund_reserve` rejected while the tap is 0 (`SponsorTapClosed`) | `crew_2_zero_completer_crew_forfeits_roll_over`, `econ_mp_1_rollover_goes_to_the_next_completer_not_a_stranger` |
 | CREW-3: tightening goal limits bricks a fixed-goal crew | low | `Pool::validate` keeps `fixed_goal_target` within `goal_limits[fixed_exercise]` | `crew_3_fixed_goal_crew_cannot_be_bricked` (+ unit `fixed_goal_stays_within_goal_limits`) |
-| CREW-4: crew_id is first-come; an optimistic invite link can point at a squatter's crew | low | not changed on-chain (the PDA scheme stays `[pool, mint, crew_id]`): client uses a CSPRNG id (`randomCrewId`), shares the link only after its own `create_crew` confirmed, join screen renders creator / name / challenge from chain (§2.7) | client (`crews.ts`, `useCreateCrew.ts`) |
+| CREW-4: crew_id is first-come; an optimistic invite link can point at a squatter's crew | low | not changed onchain (the PDA scheme stays `[pool, mint, crew_id]`): client uses a CSPRNG id (`randomCrewId`), shares the link only after its own `create_crew` confirmed, join screen renders creator / name / challenge from chain (§2.7) | client (`crews.ts`, `useCreateCrew.ts`) |
 | ECON-MP-2: one Seeker stakes `max_stake` in every pool on one day | low | documented: the bound is per pool (§8); attestor refuses to reuse one session across pools; global SGT gate covers crews | `econ_mp_2_sgt_bound_is_per_pool_and_the_global_gate_covers_crews` |

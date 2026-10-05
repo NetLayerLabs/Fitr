@@ -24,7 +24,7 @@ describe("public views", () => {
       profileAddress: POOL,
     });
     const html = renderToStaticMarkup(<ShareCardView card={card} explorerUrl="https://explorer.solana.com/address/x" />);
-    expect(html).toContain("Verified on-chain");
+    expect(html).toContain("Verified onchain");
     expect(html).toContain("30 push-ups");
     expect(html).toContain("https://dial.to/?action=solana-action%3Ahttps%3A%2F%2Ffitr.day%2Fapi%2Factions%2Fcommit%3Fexercise%3Dpushup%26goal%3D30");
     expect(html).toContain("https://fitr.day/download/fitr.apk");

@@ -103,7 +103,7 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
             </Button>
           }
         >
-          <p>We couldn&apos;t find this crew on-chain. Check the invite link, or staking may not be open yet.</p>
+          <p>We couldn&apos;t find this crew onchain. Check the invite link, or staking may not be open yet.</p>
         </Notice>
       </Frame>
     );
@@ -315,7 +315,7 @@ export default function CrewScreen({ crewId }: { crewId: bigint }) {
           <p className={styles.fine}>
             Bonus is what members got on top of their own stake back, from crew members who missed (Fitr keeps a{" "}
             {snapshot.pool.feeBps / 100}% fee on forfeits only). {solanaConfig.tokenLabel} amounts come from the crew&apos;s
-            on-chain profiles.
+            onchain profiles.
           </p>
           {BigInt(snapshot.pool.rollover) > 0n ? (
             <p className={styles.fine}>

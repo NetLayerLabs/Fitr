@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 const TITLE = "Live pool stats";
 const DESCRIPTION =
-  "Live on-chain stats for Fitr: SKR at stake today, completion rate, SKR paid to the people who showed up, sponsored days and top streaks.";
+  "Live onchain stats for Fitr: SKR at stake today, completion rate, SKR paid to the people who showed up, sponsored days and top streaks.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_ORIGIN),
@@ -57,7 +57,7 @@ export default async function PoolPage() {
         </h1>
         <p className={styles.lede}>
           {opensSoon
-            ? "Fitr's on-chain vault isn't open yet. Once it is, this page shows the SKR at stake today, the completion rate, what the people who showed up were paid, sponsored days and the top streaks, read straight from the chain."
+            ? "Fitr's onchain vault isn't open yet. Once it is, this page shows the SKR at stake today, the completion rate, what the people who showed up were paid, sponsored days and the top streaks, read straight from the chain."
             : "These stats are read straight from the chain. Refresh in a minute."}
         </p>
       </section>

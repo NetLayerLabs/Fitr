@@ -121,7 +121,7 @@ object FitrWidget {
             }
             "verifying" -> {
                 title = "Verifying…"
-                sub = "$goal done · checking on-chain"
+                sub = "$goal done · checking onchain"
                 cta = "Open"
             }
             "verified" -> {

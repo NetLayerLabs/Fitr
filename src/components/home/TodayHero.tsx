@@ -167,7 +167,7 @@ export default function TodayHero() {
           action={<Cta href="/progress">See progress</Cta>}
         >
           <p className={styles.body}>
-            {info ? `${target} ${goalNoun(info.name, info.unit, target)}, done and on-chain. ` : "Done and on-chain. "}
+            {info ? `${target} ${goalNoun(info.name, info.unit, target)}, done and onchain. ` : "Done and onchain. "}
             Your stake is safe. Come back tomorrow.
           </p>
         </Shell>

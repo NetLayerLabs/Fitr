@@ -32,11 +32,11 @@ export default function VerificationDoc({ back }: { back?: string }) {
           <li>checks the movement is physically plausible: bone lengths stay constant, joints don&apos;t teleport, the pace is human;</li>
           <li>checks timing against its own clock, and rejects a session that was already submitted.</li>
         </ul>
-        <p>Only when all of that passes does the server mark your day complete on-chain.</p>
+        <p>Only when all of that passes does the server mark your day complete onchain.</p>
 
         <h2>3. The blockchain enforces the money rules</h2>
         <p>
-          Your stake sits in an on-chain vault program on Solana, not with Fitr. The program enforces the deadlines,
+          Your stake sits in an onchain vault program on Solana, not with Fitr. The program enforces the deadlines,
           one commitment per wallet per day, the payout math (your stake back plus a pro-rata share of forfeited
           stakes, minus a 5% fee taken only from forfeits) and no double claims. Fitr can&apos;t move your stake to
           itself, and if a day is voided everyone is refunded.

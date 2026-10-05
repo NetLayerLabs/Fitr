@@ -182,7 +182,7 @@ describe("computeAwards", () => {
     expect(award(awards, "first-goal").unlocked).toBe(true);
   });
 
-  it("unlocks the verified award only from the on-chain count", () => {
+  it("unlocks the verified award only from the onchain count", () => {
     expect(award(computeAwards([session(at(2026, 10, 1), { goalMet: true })]), "verified-day").unlocked).toBe(false);
     expect(award(computeAwards([], { verifiedOnChainDays: 2 }), "verified-day")).toMatchObject({
       unlocked: true,

@@ -1,5 +1,5 @@
 /**
- * Crew page math over on-chain accounts of ONE crew pool: today's members, the crew streak and
+ * Crew page math over onchain accounts of ONE crew pool: today's members, the crew streak and
  * the leaderboard. Pure: no network, no React.
  */
 import type { Address } from "@solana/kit";
@@ -102,7 +102,7 @@ export function crewDayOutcome(ds: CrewDayInput | undefined, cfg: DayConfig, now
 export interface CrewStreak {
   /** Consecutive days, ending today or yesterday, where everyone who committed was verified. */
   current: number;
-  /** Longest such run among the days still on-chain. */
+  /** Longest such run among the days still onchain. */
   best: number;
   /** Today counts already (everyone who committed is verified). */
   todayCounted: boolean;
@@ -168,7 +168,7 @@ export interface LeaderboardRow {
   rank: number;
 }
 
-/** The on-chain streak, or 0 when the member's last verified day is older than yesterday. */
+/** The onchain streak, or 0 when the member's last verified day is older than yesterday. */
 export function liveStreak(p: Pick<UserProfile, "hasCompleted" | "lastCompletedDay" | "currentStreak">, today: number): number {
   if (!p.hasCompleted) return 0;
   return p.lastCompletedDay >= today - 1 ? p.currentStreak : 0;

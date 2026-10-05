@@ -11,7 +11,7 @@ import { FORM_GUIDES, placementSteps } from "@/lib/formGuide";
 import { EXERCISE_KINDS, isExerciseKind } from "@/lib/pose/types";
 
 describe("exercise catalogue", () => {
-  it("pins the on-chain codes (append-only, never reorder)", () => {
+  it("pins the onchain codes (append-only, never reorder)", () => {
     expect(EXERCISE_KINDS).toEqual([
       "pushup",
       "squat",

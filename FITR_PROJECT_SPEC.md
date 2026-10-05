@@ -5,7 +5,7 @@
 
 Fitr is **not** a move-to-earn app. You put your own $SKR on the line that you'll do today's workout: show up and you keep your stake (plus a share of what no-shows forfeited); skip and you lose it. Loss aversion, not token emissions, drives the habit.
 
-Fitr tackles the #1 issue in Web3 fitness apps (cheating via phone shakers) by running an **on-device AI pose estimation model** (MediaPipe, GPU-accelerated in the browser/WebView) that validates real physical exercise (Push-ups, Squats, Planks). It is **cheat-resistant, backed by live challenges and on-chain rules**: joint-angle rep verification on the phone, random live challenges checked by a verification service, one Seeker = one stake, and transparent on-chain settlement. It combines this with the **Solana Mobile Stack (SMS/MWA)** and **$SKR Anti-Sloth Commitment Vaults** on **Solana mainnet** (real $SKR) to create a daily fitness habit loop.
+Fitr tackles the #1 issue in Web3 fitness apps (cheating via phone shakers) by running an **on-device AI pose estimation model** (MediaPipe, GPU-accelerated in the browser/WebView) that validates real physical exercise (Push-ups, Squats, Planks). It is **cheat-resistant, backed by live challenges and onchain rules**: joint-angle rep verification on the phone, random live challenges checked by a verification service, one Seeker = one stake, and transparent onchain settlement. It combines this with the **Solana Mobile Stack (SMS/MWA)** and **$SKR Anti-Sloth Commitment Vaults** on **Solana mainnet** (real $SKR) to create a daily fitness habit loop.
 
 ---
 
@@ -39,7 +39,7 @@ Fitr tackles the #1 issue in Web3 fitness apps (cheating via phone shakers) by r
 ### 1. On-Device AI Pose Estimation Engine
 - **Model:** MediaPipe Pose / TensorFlow Lite running on the Android NPU.
 - **Mechanism:** Tracks 33 3D body landmark points at 30 FPS locally on the phone.
-- **Verification:** Measures joint angle flexes (e.g., elbow flex < 90° for valid push-up, knee flex < ~95° for valid squat) to count only full-range reps; partial, too-fast and bad-form reps are rejected. Cheat-resistant, not "un-cheatable": client-side checks raise the bar, and live challenges plus on-chain rules close the rest of the gap.
+- **Verification:** Measures joint angle flexes (e.g., elbow flex < 90° for valid push-up, knee flex < ~95° for valid squat) to count only full-range reps; partial, too-fast and bad-form reps are rejected. Cheat-resistant, not "un-cheatable": client-side checks raise the bar, and live challenges plus onchain rules close the rest of the gap.
 
 ### 2. Android Sensor Fusion Layer
 - **Sensors:** Android Pedometer (step counter), Accelerometer, and CameraX telemetry.
@@ -51,7 +51,7 @@ Fitr tackles the #1 issue in Web3 fitness apps (cheating via phone shakers) by r
 
 ### 4. $SKR "Anti-Sloth" Commitment Vaults ($10,000 SKR Track Target)
 - **Network:** Solana mainnet, real $SKR (mint `SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3`, SPL Token, 6 decimals).
-- **Staking Mechanics:** Each user chooses how much $SKR to commit and sets their own daily goal (exercise + reps or plank seconds, with minimums of 10 push-ups / 15 squats / 30 s plank). Stake and goal are locked on-chain together; on-chain min/max are safety rails, not a product limit.
+- **Staking Mechanics:** Each user chooses how much $SKR to commit and sets their own daily goal (exercise + reps or plank seconds, with minimums of 10 push-ups / 15 squats / 30 s plank). Stake and goal are locked onchain together; onchain min/max are safety rails, not a product limit.
 - **Settlement (zero-sum, no emissions):**
   - **Goal Achieved:** 100% of your stake back + a pro-rata share of that day's forfeited stakes (streaks add up to +50% weight).
   - **Goal Missed:** Your stake is forfeited to that day's pool and shared among the people who showed up.

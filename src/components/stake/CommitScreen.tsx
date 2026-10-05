@@ -52,7 +52,7 @@ function Shell({ children, eyebrow = "Daily commitment" }: { children: ReactNode
   );
 }
 
-/** `feeBps` comes from the on-chain Pool once it is read; before that the copy names no number. */
+/** `feeBps` comes from the onchain Pool once it is read; before that the copy names no number. */
 function HowItWorks({ feeBps }: { feeBps?: number }) {
   return (
     <Card as="section" padding="md" aria-labelledby="how-title">
@@ -62,11 +62,11 @@ function HowItWorks({ feeBps }: { feeBps?: number }) {
       <ol className={styles.how}>
         <li>
           <strong>Commit.</strong> Pick one exercise, your goal, and how much {solanaConfig.tokenLabel} to lock. It is
-          fixed on-chain when you sign.
+          fixed onchain when you sign.
         </li>
         <li>
           <strong>Show up.</strong> Your phone counts every rep; Fitr re-checks the session with live challenges and
-          marks it complete on-chain.
+          marks it complete onchain.
         </li>
         <li>
           <strong>Settle.</strong> Hit it and your stake comes back plus a share of what others forfeited. Miss it and
@@ -223,7 +223,7 @@ export default function CommitScreen() {
             </Button>
           }
         >
-          <p>We couldn&apos;t read the on-chain pool. Check your connection and try again.</p>
+          <p>We couldn&apos;t read the onchain pool. Check your connection and try again.</p>
         </Notice>
       </Shell>
     );

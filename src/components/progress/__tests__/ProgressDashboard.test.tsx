@@ -98,8 +98,8 @@ describe("ProgressDashboard", () => {
     expect(within(history).getByRole("button", { name: /Clear history/ })).toBeTruthy();
   });
 
-  it("unlocks the on-chain award from the optional prop", () => {
+  it("unlocks the onchain award from the optional prop", () => {
     render(<ProgressDashboard verifiedOnChainDays={1} />);
-    expect(award("Verified on-chain")).toBe("earned");
+    expect(award("Verified onchain")).toBe("earned");
   });
 });

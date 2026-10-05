@@ -43,7 +43,7 @@ export default function CrewInvitePage({ crewId, result }: CrewInvitePageProps) 
           </h1>
           <p className={styles.lede}>
             {soon
-              ? "Fitr's on-chain vault isn't live yet, so no crew can exist so far. Install the app now and this link will work the day staking opens."
+              ? "Fitr's onchain vault isn't live yet, so no crew can exist so far. Install the app now and this link will work the day staking opens."
               : "The link may be mistyped, or the crew was never created. Ask your friend for a fresh invite, or start your own crew in the app."}
           </p>
           <div className={styles.inviteCtas}>

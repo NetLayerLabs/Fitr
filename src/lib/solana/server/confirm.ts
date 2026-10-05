@@ -37,7 +37,7 @@ function defaultSleep(ms: number, signal?: AbortSignal): Promise<void> {
 
 /**
  * Polls until the transaction reaches `commitment` ("confirmed" is also satisfied by
- * "finalized", which is then returned), fails on-chain ("failed"), or `timeoutMs` passes
+ * "finalized", which is then returned), fails onchain ("failed"), or `timeoutMs` passes
  * ("timeout"). Transient RPC errors are retried until the timeout.
  */
 export async function pollSignature(

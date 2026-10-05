@@ -1,5 +1,5 @@
 /**
- * On-chain side of the attestor, injected so the verification core stays testable.
+ * Onchain side of the attestor, injected so the verification core stays testable.
  *
  * The default export is the real vault adapter (createVaultOnchain): it reads the user's
  * Commitment with the generated decoders and submits attest_completion signed by
@@ -50,7 +50,7 @@ export interface SubmitAttestationParams {
   reps: number;
   /** 32-byte session hash (see trace.ts sessionHash). */
   sessionHash: Uint8Array;
-  /** Unix seconds the server started the session (the on-chain session_started_at). */
+  /** Unix seconds the server started the session (the onchain session_started_at). */
   sessionStartedAt: number;
   /** The pool: 0 / omitted = the global pool, else a crew (anchor/SPEC.md §2.7). */
   crewId?: bigint;
@@ -69,7 +69,7 @@ export interface AttestOnchain {
 
 export class AttestNotConfiguredError extends Error {
   constructor() {
-    super("Attestor on-chain access is not configured");
+    super("Attestor onchain access is not configured");
     this.name = "AttestNotConfiguredError";
   }
 }

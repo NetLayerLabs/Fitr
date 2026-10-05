@@ -44,7 +44,7 @@ describe("pollSignature", () => {
     expect(await pollSignature(s.rpc, SIG, { ...s.opts, commitment: "finalized" })).toBe("finalized");
   });
 
-  test("an on-chain error is failed", async () => {
+  test("an onchain error is failed", async () => {
     const s = setup([{ err: { InstructionError: [0, "Custom"] }, confirmationStatus: "confirmed" }]);
     expect(await pollSignature(s.rpc, SIG, s.opts)).toBe("failed");
   });

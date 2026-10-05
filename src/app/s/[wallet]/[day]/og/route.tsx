@@ -1,6 +1,6 @@
 /**
  * Open Graph image for a share card (1200×630 PNG): lime on black, the athlete photo for the
- * exercise, "Verified on-chain · 30 push-ups · Day streak 7". Read from the chain like the page.
+ * exercise, "Verified onchain · 30 push-ups · Day streak 7". Read from the chain like the page.
  * A route handler (not opengraph-image.tsx) because the card's crew pool is a query parameter.
  */
 import { readFile } from "node:fs/promises";
@@ -59,9 +59,9 @@ function lines(card: ShareCardData | null): { badge: string; big: string; sub: s
   if (!card) return { badge: "FITR", big: "Put your word on the line", sub: "Stake SKR on your daily workout · Solana Seeker" };
   const badge =
     card.state === "verified"
-      ? "VERIFIED ON-CHAIN"
+      ? "VERIFIED ONCHAIN"
       : card.state === "committed"
-        ? "COMMITTED ON-CHAIN"
+        ? "COMMITTED ONCHAIN"
         : card.state === "revoked"
           ? "NOT VERIFIED"
           : "FITR";

@@ -14,7 +14,7 @@ export type ExerciseLevel = "beginner" | "intermediate" | "advanced";
 export interface ExerciseInfo {
   kind: ExerciseKind;
   /**
-   * On-chain exercise code stored with each stake (the vault's u8). Equals the index in
+   * Onchain exercise code stored with each stake (the vault's u8). Equals the index in
    * EXERCISE_KINDS. Never renumber.
    */
   code: number;
@@ -363,15 +363,15 @@ export const EXERCISES: Record<ExerciseKind, ExerciseInfo> = {
   },
 };
 
-/** Every exercise in on-chain code order. */
+/** Every exercise in onchain code order. */
 export const EXERCISE_LIST: readonly ExerciseInfo[] = Object.freeze(EXERCISE_KINDS.map((kind) => EXERCISES[kind]));
 
-/** kind -> on-chain code. */
+/** kind -> onchain code. */
 export const EXERCISE_CODE: Readonly<Record<ExerciseKind, number>> = Object.freeze(
   Object.fromEntries(EXERCISE_KINDS.map((kind, code) => [kind, code])) as Record<ExerciseKind, number>,
 );
 
-/** On-chain code -> kind, or null for an unknown code. */
+/** Onchain code -> kind, or null for an unknown code. */
 export function exerciseFromCode(code: number): ExerciseKind | null {
   return Number.isInteger(code) && code >= 0 && code < EXERCISE_KINDS.length ? EXERCISE_KINDS[code] : null;
 }

@@ -4,7 +4,7 @@ use crate::math;
 use anchor_lang::prelude::*;
 
 /// Exercise a commitment is for. Borsh-encoded as one byte (the variant index).
-/// The order is FROZEN: codes are stored on-chain in Commitment.exercise and index
+/// The order is FROZEN: codes are stored onchain in Commitment.exercise and index
 /// Pool.goal_limits. New exercises are only ever appended.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace, Debug)]
 pub enum Exercise {
@@ -744,7 +744,7 @@ mod tests {
 
     #[test]
     fn exercise_encoding_is_stable() {
-        // FROZEN on-chain codes: never reorder, only append.
+        // FROZEN onchain codes: never reorder, only append.
         let expected = [
             (Exercise::Pushup, 0u8),
             (Exercise::Squat, 1),

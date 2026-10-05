@@ -10,7 +10,7 @@ const STEPS: Array<{ phase: VaultTxPhase; label: string }> = [
   { phase: "preparing", label: "Preparing" },
   { phase: "simulating", label: "Checking with the network" },
   { phase: "signing", label: "Approve in your wallet" },
-  { phase: "confirming", label: "Confirming on-chain" },
+  { phase: "confirming", label: "Confirming onchain" },
 ];
 
 export function TxProgress({ phase }: { phase: VaultTxPhase }) {

@@ -1,6 +1,6 @@
 /**
- * "Verified on-chain" share card: everything shown on /s/<wallet>/<day> and its Open Graph image
- * comes from the on-chain Commitment + UserProfile (never from the URL), so a card can't be faked
+ * "Verified onchain" share card: everything shown on /s/<wallet>/<day> and its Open Graph image
+ * comes from the onchain Commitment + UserProfile (never from the URL), so a card can't be faked
  * by editing the link. Mapping is pure; `loadShareCard` reads the chain through an injected RPC.
  */
 import {
@@ -66,7 +66,7 @@ export interface ShareCardData {
   dateLabel: string | null;
   /** Account to inspect on the explorer: the Commitment, else the UserProfile. */
   explorerAccount: Address | null;
-  /** "Verified on-chain · 30 push-ups · Day streak 7". */
+  /** "Verified onchain · 30 push-ups · Day streak 7". */
   headline: string;
 }
 
@@ -122,7 +122,7 @@ export interface ShareInputs {
   tokenLabel?: string;
 }
 
-/** Pure: on-chain accounts → what the card shows. */
+/** Pure: onchain accounts → what the card shows. */
 export function mapShareCard(i: ShareInputs): ShareCardData {
   const c = i.commitment && i.commitment.user === i.wallet && i.commitment.dayIndex === i.dayIndex ? i.commitment : null;
   const p = i.profile && i.profile.user === i.wallet ? i.profile : null;
@@ -145,8 +145,8 @@ export function mapShareCard(i: ShareInputs): ShareCardData {
     start = null;
   }
   const parts: string[] = [];
-  if (state === "verified") parts.push("Verified on-chain");
-  else if (state === "committed") parts.push("Committed on-chain");
+  if (state === "verified") parts.push("Verified onchain");
+  else if (state === "committed") parts.push("Committed onchain");
   else if (state === "revoked") parts.push("Not verified");
   else parts.push("No commitment found");
   if (challenge && state !== "not_found") parts.push(challenge);

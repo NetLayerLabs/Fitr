@@ -136,7 +136,7 @@ export default function PoolDashboard({ stats: s, tokenLabel, poolExplorerUrl, u
               </tbody>
             </table>
           )}
-          <p className={styles.small}>Settled days are closed on-chain after everyone is paid, so this list only covers recent days.</p>
+          <p className={styles.small}>Settled days are closed onchain after everyone is paid, so this list only covers recent days.</p>
         </section>
 
         <section className={styles.panel} aria-labelledby="streaks-title">
