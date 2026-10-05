@@ -1,5 +1,102 @@
 import type { NsMessages } from "../types";
 
-const progress: Partial<NsMessages<"progress">> = {};
+const progress: Partial<NsMessages<"progress">> = {
+  // Page
+  metaTitle: "기록",
+  metaDescription: "연속 기록, 개인 최고 기록, 배지, 운동 기록이 이 기기에 저장돼요.",
+  pageTitle: "기록",
+  pageEyebrow: "이 기기에 저장됨",
+
+  // Dashboard sections
+  loadingProgress: "기록을 불러오는 중…",
+  streakCalendarHeading: "연속 기록 달력",
+  personalRecordsHeading: "개인 최고 기록",
+  awardsHeading: "배지",
+  historyHeading: "운동 기록",
+
+  // Stats
+  statsLabel: "내 통계",
+  currentStreak: "현재 연속 기록",
+  bestStreak: "최고 연속 기록",
+  thisWeek: "이번 주",
+  totalReps: "총 횟수",
+  dayUnit_one: "일",
+  dayUnit_other: "일",
+  workoutUnit_one: "회 운동",
+  workoutUnit_other: "회 운동",
+  hintTodayDone: "오늘 목표를 달성했어요. 내일 또 만나요.",
+  hintKeepGoing: "오늘 목표를 달성해서 연속 기록을 이어가세요.",
+  hintStart: "하루 목표를 달성하면 연속 기록이 시작돼요.",
+
+  // Streak calendar
+  previousMonth: "이전 달",
+  nextMonth: "다음 달",
+  calendarDay: "{date}: {status}",
+  calendarDayToday: "{date}(오늘): {status}",
+  dayStatusUpcoming: "예정",
+  dayStatusGoalMet: "목표 달성",
+  dayStatusActive: "운동함, 목표 미달성",
+  dayStatusNotDoneYet: "아직 안 함",
+  dayStatusNoGoal: "목표 없음",
+  calendarLegend_one: "{month}에 {count}일 목표 달성",
+  calendarLegend_other: "{month}에 {count}일 목표 달성",
+
+  // Personal records
+  recordsEmpty: "운동별 한 세트 최고 기록이 여기에 표시돼요. {link}해서 첫 기록을 세워 보세요.",
+  recordsEmptyLink: "운동을 선택",
+  unitHeld: "유지",
+  repUnit_one: "회",
+  repUnit_other: "회",
+
+  // Awards
+  awardsEarnedCount: "{total}개 중 {earned}개 획득",
+  awardEarnedSuffix: " (획득)",
+  awardLockedSuffix: " (잠김)",
+  awardEarnedOn: "{date} 획득",
+  awardEarned: "획득",
+  awardProgressLabel: "{title} 진행도",
+  awardFirstWorkoutTitle: "첫 운동",
+  awardFirstWorkoutDescription: "첫 운동을 완료하세요.",
+  awardFirstGoalTitle: "목표 달성자",
+  awardFirstGoalDescription: "처음으로 하루 목표를 달성하세요.",
+  awardStreak3Title: "3일 연속",
+  awardStreak3Description: "3일 연속으로 목표를 달성하세요.",
+  awardStreak7Title: "7일 연속",
+  awardStreak7Description: "7일 연속으로 목표를 달성하세요.",
+  awardStreak30Title: "30일 연속",
+  awardStreak30Description: "30일 연속으로 목표를 달성하세요.",
+  awardReps100Title: "100회",
+  awardReps100Description: "인정된 횟수를 총 100회 기록하세요.",
+  awardReps1000Title: "1,000회",
+  awardReps1000Description: "인정된 횟수를 총 1,000회 기록하세요.",
+  awardPlankMinuteTitle: "플랭크 1분",
+  awardPlankMinuteDescription: "플랭크를 한 번에 1분 동안 버티세요.",
+  awardVariety5Title: "다양하게",
+  awardVariety5Description: "서로 다른 운동 5가지를 해 보세요.",
+  awardVerifiedDayTitle: "온체인 검증",
+  awardVerifiedDayDescription: "스테이킹한 날을 완료하고 온체인 검증을 받으세요.",
+
+  // History
+  loadingHistory: "운동 기록을 불러오는 중…",
+  emptyTitle: "아직 운동 기록이 없어요",
+  emptyText: "운동을 마치면 여기에 표시돼요. 모든 기록은 이 기기에만 저장돼요.",
+  startWorkout: "운동 시작하기",
+  workoutsLabel: "운동",
+  dayToday: "오늘",
+  dayYesterday: "어제",
+  goalDay: "목표일",
+  noVerifiedReps: "검증된 횟수 없음",
+  holdTotal: "{exercise} {time}",
+  sessionAt: "{time}",
+  notCounted: "{count}회 미인정",
+  goalMet: "목표 달성",
+  confirmDeleteOne: "이 운동을 기기에서 삭제할까요?",
+  confirmDeleteAll: "운동 {count}개를 모두 기기에서 삭제할까요?",
+  confirmResetNote: "연속 기록도 초기화되며 되돌릴 수 없어요.",
+  deleteOne: "삭제",
+  deleteAll: "모두 삭제",
+  cancel: "취소",
+  clearHistory: "기록 지우기",
+};
 
 export default progress;
