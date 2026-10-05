@@ -1,5 +1,102 @@
 import type { NsMessages } from "../types";
 
-const progress: Partial<NsMessages<"progress">> = {};
+const progress: Partial<NsMessages<"progress">> = {
+  // Page
+  metaTitle: "Fortschritt",
+  metaDescription: "Deine Streak, Bestleistungen, Auszeichnungen und dein Trainingsverlauf, gespeichert auf diesem Gerät.",
+  pageTitle: "Fortschritt",
+  pageEyebrow: "Auf diesem Gerät gespeichert",
+
+  // Dashboard sections
+  loadingProgress: "Dein Fortschritt lädt…",
+  streakCalendarHeading: "Streak-Kalender",
+  personalRecordsHeading: "Bestleistungen",
+  awardsHeading: "Auszeichnungen",
+  historyHeading: "Verlauf",
+
+  // Stats
+  statsLabel: "Deine Statistik",
+  currentStreak: "Aktuelle Streak",
+  bestStreak: "Beste Streak",
+  thisWeek: "Diese Woche",
+  totalReps: "Wdh. gesamt",
+  dayUnit_one: "Tag",
+  dayUnit_other: "Tage",
+  workoutUnit_one: "Workout",
+  workoutUnit_other: "Workouts",
+  hintTodayDone: "Heutiges Ziel erreicht. Bis morgen!",
+  hintKeepGoing: "Erreich dein heutiges Ziel, um dranzubleiben.",
+  hintStart: "Erreich ein Tagesziel, um eine Streak zu starten.",
+
+  // Streak calendar
+  previousMonth: "Vorheriger Monat",
+  nextMonth: "Nächster Monat",
+  calendarDay: "{date}: {status}",
+  calendarDayToday: "{date} (heute): {status}",
+  dayStatusUpcoming: "anstehend",
+  dayStatusGoalMet: "Ziel erreicht",
+  dayStatusActive: "trainiert, Ziel nicht erreicht",
+  dayStatusNotDoneYet: "noch offen",
+  dayStatusNoGoal: "kein Ziel",
+  calendarLegend_one: "Ziel an {count} Tag im {month} erreicht",
+  calendarLegend_other: "Ziel an {count} Tagen im {month} erreicht",
+
+  // Personal records
+  recordsEmpty: "Hier erscheint dein bester Satz jeder Übung. {link}, um deine erste Bestleistung aufzustellen.",
+  recordsEmptyLink: "Wähl ein Workout",
+  unitHeld: "gehalten",
+  repUnit_one: "Wdh.",
+  repUnit_other: "Wdh.",
+
+  // Awards
+  awardsEarnedCount: "{earned} von {total} erhalten",
+  awardEarnedSuffix: " (erhalten)",
+  awardLockedSuffix: " (gesperrt)",
+  awardEarnedOn: "Erhalten am {date}",
+  awardEarned: "Erhalten",
+  awardProgressLabel: "Fortschritt: {title}",
+  awardFirstWorkoutTitle: "Erstes Workout",
+  awardFirstWorkoutDescription: "Schließ dein erstes Workout ab.",
+  awardFirstGoalTitle: "Zielstrebig",
+  awardFirstGoalDescription: "Erreich zum ersten Mal ein Tagesziel.",
+  awardStreak3Title: "3-Tage-Streak",
+  awardStreak3Description: "Erreich dein Ziel 3 Tage in Folge.",
+  awardStreak7Title: "7-Tage-Streak",
+  awardStreak7Description: "Erreich dein Ziel 7 Tage in Folge.",
+  awardStreak30Title: "30-Tage-Streak",
+  awardStreak30Description: "Erreich dein Ziel 30 Tage in Folge.",
+  awardReps100Title: "100 Wdh.",
+  awardReps100Description: "Sammle insgesamt 100 gezählte Wiederholungen.",
+  awardReps1000Title: "1.000 Wdh.",
+  awardReps1000Description: "Sammle insgesamt 1.000 gezählte Wiederholungen.",
+  awardPlankMinuteTitle: "Plank-Minute",
+  awardPlankMinuteDescription: "Halte eine Plank eine volle Minute am Stück.",
+  awardVariety5Title: "Abwechslung",
+  awardVariety5Description: "Probier 5 verschiedene Übungen aus.",
+  awardVerifiedDayTitle: "Onchain bestätigt",
+  awardVerifiedDayDescription: "Schließ einen Einsatz-Tag ab, der onchain bestätigt wird.",
+
+  // History
+  loadingHistory: "Dein Verlauf lädt…",
+  emptyTitle: "Noch keine Workouts",
+  emptyText: "Schließ ein Workout ab und es erscheint hier. Alles bleibt auf diesem Gerät.",
+  startWorkout: "Workout starten",
+  workoutsLabel: "Workouts",
+  dayToday: "Heute",
+  dayYesterday: "Gestern",
+  goalDay: "Zieltag",
+  noVerifiedReps: "Keine bestätigten Wdh.",
+  holdTotal: "{time} {exercise}",
+  sessionAt: "um {time}",
+  notCounted: "{count} nicht gezählt",
+  goalMet: "Ziel erreicht",
+  confirmDeleteOne: "Dieses Workout von diesem Gerät löschen?",
+  confirmDeleteAll: "Alle {count} Workouts von diesem Gerät löschen?",
+  confirmResetNote: "Damit wird auch deine Streak zurückgesetzt. Das kann nicht rückgängig gemacht werden.",
+  deleteOne: "Löschen",
+  deleteAll: "Alle löschen",
+  cancel: "Abbrechen",
+  clearHistory: "Verlauf löschen",
+};
 
 export default progress;
