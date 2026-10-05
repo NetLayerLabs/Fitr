@@ -27,10 +27,27 @@ Fitr runs with real $SKR on mainnet, not devnet. Everything below can be checked
 | Staked mint | $SKR [`SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3`](https://explorer.solana.com/address/SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3) |
 | Public pool dashboard | https://fitr.day/pool |
 
-Pool rules as deployed: stakes from 1 to 10,000 SKR; staking needs a Seeker Genesis Token; one
-commitment per Seeker per day per pool; 5% fee on forfeited stakes only; days run 00:00 to 24:00
-UTC, commitments close at 18:00 UTC, verification closes one hour after the day ends, and a one-hour
-review window follows before anyone can claim.
+**Global pool rules as deployed** (all read from the pool account, changeable only by the
+multisig, and each day keeps the rules it started with):
+
+| Rule | Value |
+| --- | --- |
+| Stake per commitment | 1 to 10,000 SKR, chosen by the user |
+| Goal | one of 16 exercises, at least the per-exercise minimum (e.g. 10 push-ups, 15 squats, 30 s plank) |
+| Who can stake | wallets holding a Seeker Genesis Token; one commitment per Seeker per day per pool |
+| Fee | 5% of forfeited stakes only (nothing when you show up) |
+| Sponsor bonus | up to 10 SKR per day from the sponsor reserve, to the people who finish |
+| Streak bonus | +5% weight per consecutive day, up to +50% |
+
+**A day, end to end** (UTC; CEST is UTC+2):
+
+| UTC | What happens |
+| --- | --- |
+| 00:00 | The day starts. Commit any time before 18:00 (one transaction: stake, plus claiming yesterday's payout if there is one). |
+| until 24:00 | Do the workout. The phone counts reps and streams pose points; the server checks them and marks the day complete onchain (`attest_completion`). |
+| 24:00 → 01:00 | Grace hour: late verifications can still land. |
+| 01:00 → 02:00 | Review window: results are frozen; the multisig can void the day if something went wrong. |
+| from 02:00 | The crank (every 10 minutes) finalizes the day and marks no-shows missed. Finishers claim their stake plus their share in the app. |
 
 ## The app: five tabs
 
@@ -57,19 +74,49 @@ The same Next server answers both hosts behind nginx:
 
 ## Crews (group commitments)
 
-A crew is its own onchain pool `["pool", mint, crew_id]` (anchor/SPEC.md §2.7). Anyone creates
-one with `create_crew` (about 0.005 SOL rent, no special powers for the creator), optionally
-with a fixed exercise and goal. Friends join by link (`https://fitr.day/c/<id>`, which opens
-`/crew/<id>` in the app), stake their own SKR on the same day, and the no-shows fund the members
-who showed up. If nobody in a crew completes a day, its stakes roll over to the crew's next day
-someone completes. The crew page shows today's members, a crew streak and a leaderboard read from
-the chain. A wallet can hold the global stake and crew stakes on the same day; each workout
-verifies one of them (`/workout/<kind>?crew=<id>`). Code: `src/lib/solana/vault/crews.ts`,
-`src/components/crews/`.
+A crew is a group of friends committing together. Each crew is **its own onchain pool**
+`["pool", SKR mint, crew_id]` (anchor/SPEC.md §2.7), so a crew's stakes, forfeits and bonuses never
+mix with anyone else's. Code: `src/lib/solana/vault/crews.ts`, `src/components/crews/`.
 
-The global pool stays in charge: its pause stops every crew, every new day records the global
-attestor, and the server crank sends the permissionless `sync_crew` to crews whose copied
-authority / attestor went stale.
+**Create.** Commit tab → **Crew** → *Start a crew*: a name (stored onchain), and optionally a fixed
+challenge (one exercise and goal everyone must use, e.g. "20 squats"). The app picks a random
+crew id and sends `create_crew` (about 0.005 SOL rent, paid once by the creator). The creator gets
+**no special powers onchain**: the crew copies the global pool's rules and authority (the Squads
+multisig), so nobody, the creator included, can move members' stakes.
+
+**Invite.** The crew page has an invite link `https://fitr.day/c/<crewId>` and a share button.
+- In a browser it opens a public invite page (crew name, challenge, member count, link preview for
+  chats) with *Download Fitr* and *Open in Fitr*.
+- On a phone with Fitr installed, Android's verified App Links open the crew straight in the app
+  (`/crew/<crewId>`). Anyone can also paste the link or the crew number into *Join a crew*.
+
+**Stake and settle.** Members stake their own SKR (same 1 to 10,000 SKR bounds, Seeker-only) on the
+same day, on the crew's fixed challenge if it has one. Members who miss fund the members who showed
+up, pro rata. If **nobody** in a crew completes a day, its stakes (after the 5% fee) **roll over**
+to the crew's next day that someone completes, instead of going anywhere else. A wallet can hold the
+global stake and crew stakes on the same day; each workout verifies one of them
+(`/workout/<kind>?crew=<id>`).
+
+**Crew page.** Today's challenge and members (verified / committed / missed), a crew streak (days
+on which everyone who committed was verified), a leaderboard (verified days, streak, bonus earned)
+and the rollover waiting for the next completer, all read from the chain.
+
+**Sponsoring a crew.** Works like the global pool (see Sponsored days), but each crew has its own
+tap, closed by default; the multisig opens it per crew.
+
+**Deleting a crew (app-side).** The creator can tap **Delete crew** at the bottom of the crew page.
+Their wallet **signs a plain message** (no transaction, no SOL) that `POST /api/crews/closed`
+checks: a valid ed25519 signature, less than 10 minutes old, from the wallet that is the crew's
+onchain `creator`. The server then records the crew in `closed-crews.json` (in `FITR_DATA_DIR`), and:
+- the crew disappears from everyone's *Your crews*;
+- its page shows "This crew was deleted", with no invite, stake form or sponsoring;
+- its invite link `fitr.day/c/<id>` says the crew was deleted;
+- **anyone who already staked can still claim**. Nothing onchain changes: the pool and its funds
+  stay exactly as they were, so a deletion can never strand money.
+
+**The global pool stays in charge.** Its pause stops every crew, every new crew day records the
+global attestor, and the crank sends the permissionless `sync_crew` to crews whose copied authority
+or attestor went stale.
 
 ## Share cards, Blinks and the public dashboard
 
@@ -97,8 +144,9 @@ goal. It is a bonus funded by a sponsor's deposit, never yield.
 **How it works (all enforced onchain, `anchor/SPEC.md` §2.7 and §5)**
 
 1. **The tap.** Each pool (the global pool or any crew) has a `daily_sponsor_amount`: the most its
-   reserve may pay out per day. It is **0 on mainnet today**, so sponsoring is closed. Only the
-   pool's authority can change it (for the global pool, the Squads multisig, 2-of-3). It can never
+   reserve may pay out per day. On mainnet the global pool's tap is **10 SKR per day** (opened
+   by a 2-of-3 Squads vote on 2026-10-05); every crew's tap starts at 0. Only the pool's authority
+   can change it (for the global pool, the Squads multisig, 2-of-3). It can never
    be more than `max_stake` (10,000 SKR), so one day can never drain more than that.
 2. **Funding.** Anyone can deposit SKR into a pool's reserve with `fund_reserve`: in the app (Commit
    tab → **Sponsor a day** card, or **Sponsor <crew>** on a crew's page, signed with Seed Vault), through
@@ -158,7 +206,10 @@ Speech API; it is on by default and can be switched off on the You tab.
 - **Client** (`src/lib/solana/vault/{read,status,instructions,errors}.ts`, `src/components/stake/`):
   reads the pool and the user's recent days, derives each day's status, and builds one
   wallet-signed transaction per day (finalize? + claim/close? + register_device? + commit). It
-  simulates through `/api/rpc` first, sizes compute and the priority fee, then MWA signs and sends.
+  simulates through `/api/rpc` first at the 1.4M compute-unit maximum, then signs with the measured
+  units × 1.2 and a Helius priority fee, so a stale estimate can never block a stake; MWA signs and
+  sends. Errors show a friendly sentence plus a collapsible *Technical details* line (failing step
+  and raw reason).
 - **Verification** (`src/lib/attest/`, `/api/attest/{start,chunk,finish}`): a staked workout
   streams pose landmarks (never video) to the server. The server replays them through the same rep
   engine, checks the live challenges, then sends `attest_completion` with the attestor key
@@ -169,6 +220,40 @@ Speech API; it is on by default and can be switched off on the You tab.
   (`ops/fitr-crank.{service,timer}`).
 - `/api/rpc` is an allow-listed Helius proxy (the API key stays on the server); `/api/seeker`
   checks Seeker Genesis Token ownership.
+
+## Server API
+
+| Route | Host | What it does |
+| --- | --- | --- |
+| `POST /api/rpc` | app | Allow-listed Helius JSON-RPC proxy (the API key stays on the server) |
+| `GET /api/seeker?owner=` | app | Does this wallet hold a genuine Seeker Genesis Token (and which) |
+| `POST /api/attest/{start,chunk,finish}` | app | Verification session: streamed pose points, live challenges, then `attest_completion` |
+| `POST /api/crank` | local only | Finalize / close missed / sweep / sync crews; `Authorization: Bearer $CRON_SECRET` |
+| `GET / POST /api/crews/closed` | app | List of deleted crews; delete a crew with the creator's signed message |
+| `GET / POST /api/actions/commit` | public | "Commit with me" Blink |
+| `GET / POST /api/actions/sponsor` | public | "Sponsor a day" Blink |
+| `GET /actions.json` | public | Solana Actions mapping |
+
+"app" routes are same-origin only and, on the public host fitr.day, `/api/attest`, `/api/rpc`,
+`/api/seeker` and `/api/crank` return 404 (nginx). The crank is called by the systemd timer on
+`127.0.0.1:3077`.
+
+## Operating the vault
+
+Every admin change is a Squads proposal. `scripts/solana/vault-admin.ts` prints the transaction
+(base58, plus the raw instruction for Squads' manual form); import it in Squads (Developers → TX
+Builder → Import), approve with two members, execute. It never holds a multisig key.
+
+```bash
+export SQUADS_VAULT=62idAiYpT9tTdCdcH86wFzWJCAcmkNGUsAXc5q1rYqu9
+npx tsx scripts/solana/vault-admin.ts status          # read the global pool (read-only)
+npx tsx scripts/solana/vault-admin.ts pause-tx        # incident: stop new stakes and verifications
+npx tsx scripts/solana/vault-admin.ts unpause-tx
+npx tsx scripts/solana/vault-admin.ts sponsor-tx 10   # daily sponsor amount in SKR (0 closes the tap)
+```
+
+Voiding a day, rotating the attestor, fee withdrawal and program upgrades follow
+[`anchor/MAINNET_RUNBOOK.md`](./anchor/MAINNET_RUNBOOK.md) §10.
 
 ## Security
 
@@ -196,6 +281,8 @@ it. "Cheat-resistant" is the claim, not "cheat-proof"; the limits are listed at 
 - **One Seeker, one stake.** Staking checks a real Seeker Genesis Token (Token-2022 group member of
   the official SGT group, owned by the user) and a per-device lock, so one phone commits once per
   day per pool. A drawer of wallets does not multiply stakes.
+- **Deleting a crew needs the creator's signature** and never touches funds: it hides the crew in
+  the app only (see Crews).
 - **Only plain SKR.** The pool accepts classic SPL Token mints, or Token-2022 mints with an
   allow-list of inert extensions, so a future transfer-hook or pausable extension cannot sneak in.
 
@@ -231,7 +318,7 @@ it. "Cheat-resistant" is the claim, not "cheat-proof"; the limits are listed at 
 - **Two internal security review rounds** (core vault, then crews). Every finding was fixed or
   explicitly accepted, and each attack is kept as an inverted regression test that must now fail
   (`anchor/programs/fitr-vault/tests/regression*.rs`; table in `anchor/SPEC.md` §11).
-- **App and server:** about 1,470 Vitest tests (rep engines, vault client, attestor, API routes,
+- **App and server:** about 1,480 Vitest tests (rep engines, vault client, attestor, API routes,
   components). `ops/deploy-vps.sh` refuses to deploy unless typecheck, lint and every test pass.
 
 **Server and hosting**
@@ -253,6 +340,8 @@ it. "Cheat-resistant" is the claim, not "cheat-proof"; the limits are listed at 
 - A determined cheater with a convincing body double or a very good deepfake could still pass;
   live challenges make that expensive, not impossible.
 - Crew ids are first-come; the app picks random ids and shows the creator before you join.
+- "Delete crew" is enforced by Fitr's server, not onchain: the crew's pool still exists (so stakes
+  stay claimable), and a client talking to the chain directly could still stake in it.
 
 ## Environment
 
@@ -266,6 +355,7 @@ Copy `.env.example` to `.env.local` for development, or to `/etc/fitr/fitr.env` 
 | `HELIUS_API_KEY` | server | RPC proxy, priority fees, attestor sends |
 | `ATTESTOR_KEYPAIR` | server | JSON 64-byte secret key. Must be the pool's `attestor`, and it pays crank fees, so it needs some SOL |
 | `CRON_SECRET` | server | Bearer secret for `/api/crank` |
+| `FITR_DATA_DIR` | server | Folder for small app data that must survive deploys (`closed-crews.json`); `/opt/fitr/data` on the VPS, set by `ops/fitr.service.d/data.conf`. Unset in development: kept in memory |
 
 Without `HELIUS_API_KEY` or `ATTESTOR_KEYPAIR`, verification and the crank answer
 `503 not_configured`; workouts still work unstaked. `NEXT_PUBLIC_*` values are inlined at build
@@ -302,7 +392,12 @@ ops/deploy-vps.sh                      # FITR_HOST=root@<ip> to override the hos
 FITR_REINSTALL=1 ops/deploy-vps.sh     # also npm ci on the server (after dependency changes)
 ```
 
-Server setup (systemd, Caddy/nginx, crank timer): `ops/` and [`docs/deploy.md`](./docs/deploy.md).
+**As deployed:** nginx (TLS by certbot) in front of `next start` on `127.0.0.1:3077`, systemd unit
+`fitr.service` running as user `fitr` from `/opt/fitr/app` (capped at 1.5 GB RAM and 150% CPU on a
+shared server), env file `/etc/fitr/fitr.env` (mode 640), data folder `/opt/fitr/data`
+(`ops/fitr.service.d/data.conf`), crank `fitr-crank.timer` every 10 minutes
+(`ops/fitr-crank.{service,timer}`), APK at `/var/www/fitr/download/fitr.apk`, nginx routing and the
+Android-only gate from `ops/nginx-lockdown.py`. More in [`docs/deploy.md`](./docs/deploy.md).
 The vault program is deployed separately by following `anchor/MAINNET_RUNBOOK.md`.
 
 ## Layout
@@ -317,6 +412,8 @@ The vault program is deployed separately by following `anchor/MAINNET_RUNBOOK.md
   is the exercise catalogue.
 - `src/lib/solana/`: config, MWA, RPC, vault client, and server-only code (`server/`).
 - `src/lib/attest/`: the verification service. `src/lib/storage/`: local history, awards, prefs.
+  `src/lib/crews/`: app-side crew deletion (signed message format, server store).
+- `scripts/solana/vault-admin.ts`: mainnet admin (pool setup, Squads transactions); `codegen-vault.mjs`.
 - `anchor/`: vault program. `android/fitr-shell`: the Android web-shell APK. `ops/`: VPS (Caddy, systemd).
 
 Requires a Node host (not `output: "export"`): the API routes, the service worker, the pose

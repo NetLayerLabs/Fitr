@@ -3,6 +3,19 @@
 Fitr has two version numbers: the **Android app** (the APK shell: icon, native bridge, permissions)
 and the **web app** it loads from app.fitr.day (all screens and features, updated without a new APK).
 
+## Web 0.4.0 · Android 1.1.0 (build 3)
+- **Live on Solana mainnet:** vault program deployed from a reproducible Docker build; program and
+  pool owned by a Squads 2-of-3 multisig; 1-hour review window; staking open with real SKR.
+- **Sponsored days on:** up to 10 SKR per day from the sponsor reserve to the people who finish;
+  sponsor from the app (Commit tab) or the Blink.
+- **Delete crew:** the creator removes a crew from the app with a signed message (no transaction);
+  its invite link closes, existing stakes stay claimable.
+- **Clearer phone placement:** a map from above, the phone's own view and numbered set-up steps.
+- **Streak calendar** month by month from October 2026.
+- **Landing page:** live hero (looping rep set, parallax, light sweep), section effects, new product tag.
+- Fixes: compute budgets for the deployed program (stakes and server verification), crank on the
+  local port, technical details under transaction errors; "onchain" spelling everywhere.
+
 ## Web 0.3.0 · Android 1.1.0 (build 3)
 - **Crews:** group commitments with their own onchain pools, invite links, crew streaks and leaderboards.
 - **AI voice coach:** spoken rep counts, milestones, form cues and live-challenge prompts (native Android TTS).

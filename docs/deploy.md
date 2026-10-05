@@ -1,5 +1,15 @@
 # Deploying Fitr to the VPS (https://fitr.day)
 
+> **As deployed (October 2026).** The live server differs from the original Caddy plan below:
+> nginx (TLS by certbot) proxies to `next start` on `127.0.0.1:3077`; `fitr.service` runs as user
+> `fitr` from `/opt/fitr/app` with `/etc/fitr/fitr.env` and the drop-in
+> `ops/fitr.service.d/data.conf` (`FITR_DATA_DIR=/opt/fitr/data`); releases go out only through
+> `ops/deploy-vps.sh` (checks, staged swap, health check, rollback); nginx routing and the
+> Android-only gate come from `ops/nginx-lockdown.py`; the crank timer posts to
+> `http://127.0.0.1:3077/api/crank` (nginx returns 404 for `/api/crank` publicly). The README's
+> "Deploy" section is the short version.
+
+
 Production is one long-running `next start` on the founder's VPS behind Caddy (automatic HTTPS).
 Files: `ops/setup-vps.sh`, `ops/Caddyfile`, `ops/fitr.service`, `ops/fitr-crank.service`,
 `ops/fitr-crank.timer`, `ops/deploy.sh`.
