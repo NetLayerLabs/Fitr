@@ -19,10 +19,17 @@
  *   form             short cues ("Go lower.") - same issue at most every 6 s, any at most every 3 s.
  *   rejected rep     "Didn't count. Go lower." (throttled).
  *   live challenge   interrupts: "Raise your right hand!", repeated once if still open, "Good." on pass.
+ *
+ * Language: every phrase comes from the "voice" namespace through `options.t` (English when
+ * omitted). WorkoutScreen passes speechTranslator("voice", speechLocale()), so the words match the
+ * language the text-to-speech voice can actually speak (English when it has no voice for the app's).
  */
 import { detectChallenge, type ChallengeType } from "@/lib/attest/challenges";
 import type { GoalUnit } from "@/lib/exercises";
 import type { EngineEvent, EngineState, FormIssue, PoseFrame } from "@/lib/pose/types";
+import { activeLocale, makeTranslator, type Locale, type Namespace, type Translator } from "@/lib/i18n";
+import { en, type Messages } from "@/lib/i18n/messages";
+import { activeTranslator } from "./activeT";
 
 export interface CoachLine {
   text: string;
@@ -30,36 +37,64 @@ export interface CoachLine {
   interrupt: boolean;
 }
 
+type VoiceKey = keyof Messages["voice"] & string;
+
+/** The voice namespace in English: the default when no translator is passed (tests, fallbacks). */
+const EN_VOICE: Translator<"voice"> = makeTranslator("en", en, "voice");
+
 /** Spoken short form of every FormIssue: a trainer's cue, not the on-screen sentence. */
-export const SPOKEN_ISSUE: Record<FormIssue, string> = {
-  body_not_visible: "Step back so I can see you.",
-  unstable_tracking: "Steady the phone.",
-  go_lower: "Go lower.",
-  extend_fully: "Lock out.",
-  hips_sagging: "Hips up.",
-  hips_piked: "Straighten your body.",
-  body_not_horizontal: "Get into position.",
-  body_on_floor: "Up on your toes.",
-  chest_up: "Chest up.",
-  too_fast: "Slow down.",
-  face_camera: "Face the camera.",
-  turn_side_on: "Turn side-on.",
-  keep_back_on_wall: "Back flat on the wall.",
-  keep_hips_high: "Hips high.",
-  chin_over_bar: "Chin over the bar.",
-  go_higher: "Go higher.",
-  arms_overhead: "Hands overhead.",
-  jump_higher: "Jump higher.",
+const ISSUE_KEY: Record<FormIssue, VoiceKey> = {
+  body_not_visible: "issueBodyNotVisible",
+  unstable_tracking: "issueUnstableTracking",
+  go_lower: "issueGoLower",
+  extend_fully: "issueExtendFully",
+  hips_sagging: "issueHipsSagging",
+  hips_piked: "issueHipsPiked",
+  body_not_horizontal: "issueBodyNotHorizontal",
+  body_on_floor: "issueBodyOnFloor",
+  chest_up: "issueChestUp",
+  too_fast: "issueTooFast",
+  face_camera: "issueFaceCamera",
+  turn_side_on: "issueTurnSideOn",
+  keep_back_on_wall: "issueKeepBackOnWall",
+  keep_hips_high: "issueKeepHipsHigh",
+  chin_over_bar: "issueChinOverBar",
+  go_higher: "issueGoHigher",
+  arms_overhead: "issueArmsOverhead",
+  jump_higher: "issueJumpHigher",
 };
 
-export const SPOKEN_CHALLENGE: Record<ChallengeType, string> = {
-  raise_right_hand: "Raise your right hand!",
-  raise_left_hand: "Raise your left hand!",
-  raise_hand: "Raise a hand!",
-  hold_still_top: "Stand tall and hold still!",
+const CHALLENGE_KEY: Record<ChallengeType, VoiceKey> = {
+  raise_right_hand: "challengeRaiseRightHand",
+  raise_left_hand: "challengeRaiseLeftHand",
+  raise_hand: "challengeRaiseHand",
+  hold_still_top: "challengeHoldStillTop",
 };
 
-export const TILTED_CUE = "Stand your phone upright.";
+/** A form issue's spoken cue in the coach's language ("Go lower."). */
+export function spokenIssue(issue: FormIssue | "tilted", t: Translator<"voice"> = EN_VOICE): string {
+  return t(issue === "tilted" ? "phoneTilted" : ISSUE_KEY[issue]);
+}
+
+/** English spoken cues (reference; the coach speaks spokenIssue() in its own language). */
+export const SPOKEN_ISSUE: Record<FormIssue, string> = Object.fromEntries(
+  (Object.keys(ISSUE_KEY) as FormIssue[]).map((k) => [k, spokenIssue(k)]),
+) as Record<FormIssue, string>;
+
+export const SPOKEN_CHALLENGE: Record<ChallengeType, string> = Object.fromEntries(
+  (Object.keys(CHALLENGE_KEY) as ChallengeType[]).map((k) => [k, EN_VOICE(CHALLENGE_KEY[k])]),
+) as Record<ChallengeType, string>;
+
+export const TILTED_CUE = spokenIssue("tilted");
+
+/**
+ * A translator for `ns` in `locale`, usable outside render (the coach runs on camera frames).
+ * The active app language reads the loaded messages; anything else (the English fallback when
+ * the device has no voice for the app language) uses the bundled English.
+ */
+export function speechTranslator<N extends Namespace>(ns: N, locale: Locale): Translator<N> {
+  return locale !== "en" && locale === activeLocale() ? activeTranslator(ns) : makeTranslator("en", en, ns);
+}
 
 export interface CoachTiming {
   /** A form issue must stay on top this long before it is spoken. */
@@ -102,12 +137,14 @@ export const DEFAULT_COACH_TIMING: Readonly<CoachTiming> = Object.freeze({
 });
 
 export interface VoiceCoachOptions {
-  /** Display name, e.g. "Push-ups" or "Plank". */
+  /** Exercise name in the coach's language, ideally its mid-sentence form ("push-ups", "plank"). */
   exerciseName: string;
   unit: GoalUnit;
   /** Goal in `unit` (reps or seconds). 0 disables milestones. */
   goal: number;
   timing?: Partial<CoachTiming>;
+  /** Phrases in the language the coach speaks (see speechTranslator); English when omitted. */
+  t?: Translator<"voice">;
 }
 
 export interface CoachFrame {
@@ -126,31 +163,36 @@ export interface CoachChallenge {
   deadline?: number;
 }
 
+/** The exercise name as it sits inside a spoken phrase (lower case, except German nouns). */
+function nameInPhrase(name: string, locale: Locale): string {
+  return locale === "de" ? name : name.toLocaleLowerCase(locale);
+}
+
 /** "20 push-ups", "1 rep", "1 minute plank", "45 second wall sit". */
-export function spokenGoal(unit: GoalUnit, goal: number, exerciseName: string): string {
-  const name = exerciseName.toLowerCase();
+export function spokenGoal(unit: GoalUnit, goal: number, exerciseName: string, t: Translator<"voice"> = EN_VOICE): string {
+  const name = nameInPhrase(exerciseName, t.locale);
   if (unit === "seconds") {
     const s = Math.round(goal);
-    if (s >= 60 && s % 60 === 0) return `${s / 60} minute ${name}`;
-    return `${s} second ${name}`;
+    if (s >= 60 && s % 60 === 0) return t("goalMinutes", { count: s / 60, name });
+    return t("goalSeconds", { count: s, name });
   }
-  return goal === 1 ? "1 rep" : `${goal} ${name}`;
+  return t.plural("goalReps", goal, { name });
 }
 
 /** "10 seconds", "1 minute", "1 minute 10". */
-export function spokenSeconds(s: number): string {
-  if (s < 60) return `${s} seconds`;
+export function spokenSeconds(s: number, t: Translator<"voice"> = EN_VOICE): string {
+  if (s < 60) return t("seconds", { count: s });
   const m = Math.floor(s / 60);
   const rest = s % 60;
-  const minutes = m === 1 ? "1 minute" : `${m} minutes`;
-  return rest === 0 ? minutes : `${minutes} ${rest}`;
+  const minutes = t.plural("minutes", m);
+  return rest === 0 ? minutes : t("minutesAndSeconds", { minutes, seconds: rest });
 }
 
 /** Spoken form of an on-screen challenge prompt ("Raise your RIGHT hand above your head"). */
-export function spokenChallenge(challenge: CoachChallenge): string {
-  if (challenge.type) return SPOKEN_CHALLENGE[challenge.type];
+export function spokenChallenge(challenge: CoachChallenge, t: Translator<"voice"> = EN_VOICE): string {
+  if (challenge.type && challenge.type in CHALLENGE_KEY) return t(CHALLENGE_KEY[challenge.type]);
   const text = challenge.prompt.trim().toLowerCase();
-  if (!text) return "Live check!";
+  if (!text) return t("challengeGeneric");
   return `${text[0].toUpperCase()}${text.slice(1).replace(/[.!]+$/, "")}!`;
 }
 
@@ -169,10 +211,10 @@ const PRIORITY: Record<Slot, number> = {
 /** Rep milestones, strongest first; a stronger one is never replaced by a weaker one. */
 type Milestone = "goal" | "last" | "five_left" | "halfway";
 const MILESTONE_RANK: Record<Milestone, number> = { goal: 4, last: 3, five_left: 2, halfway: 1 };
-const MILESTONE_TEXT: Record<Exclude<Milestone, "goal">, string> = {
-  last: "Last one.",
-  five_left: "5 left.",
-  halfway: "Halfway.",
+const MILESTONE_KEY: Record<Exclude<Milestone, "goal">, VoiceKey> = {
+  last: "lastOne",
+  five_left: "fiveLeft",
+  halfway: "halfway",
 };
 
 interface Pending {
@@ -180,6 +222,8 @@ interface Pending {
   atMs: number;
   /** Form issue key, for "still current?" checks at speak time. */
   issue?: FormIssue | "tilted";
+  /** The goal line of a hold: worth saying late. */
+  goal?: boolean;
 }
 
 export class VoiceCoach {
@@ -188,6 +232,7 @@ export class VoiceCoach {
   private readonly goal: number;
   private readonly name: string;
   private readonly fast: boolean;
+  private readonly tx: Translator<"voice">;
 
   private stopped = false;
   private busyUntil = Number.NEGATIVE_INFINITY;
@@ -227,6 +272,7 @@ export class VoiceCoach {
     this.unit = options.unit;
     this.goal = Math.max(0, options.goal);
     this.name = options.exerciseName;
+    this.tx = options.t ?? EN_VOICE;
     this.fast = this.unit === "reps" && this.goal > this.t.fastGoal;
   }
 
@@ -244,8 +290,11 @@ export class VoiceCoach {
   /** The user tapped Start. */
   start(nowMs: number): CoachLine[] {
     if (this.stopped) return [];
-    const goal = this.goal > 0 ? ` ${spokenGoal(this.unit, this.goal, this.name)}.` : "";
-    return this.emit(`Let's go.${goal}`, "countdown", nowMs, false);
+    const text =
+      this.goal > 0
+        ? this.tx("letsGoGoal", { goal: spokenGoal(this.unit, this.goal, this.name, this.tx) })
+        : this.tx("letsGo");
+    return this.emit(text, "countdown", nowMs, false);
   }
 
   /** The ready countdown shows `value` (3, 2, 1), or ended / was skipped (null). */
@@ -255,7 +304,7 @@ export class VoiceCoach {
     const was = this.lastCountdown;
     this.lastCountdown = value;
     if (value !== null) this.put("countdown", { text: String(value), atMs: nowMs });
-    else if (was !== null) this.put("countdown", { text: "Go.", atMs: nowMs });
+    else if (was !== null) this.put("countdown", { text: this.tx("go"), atMs: nowMs });
     return this.flush(nowMs);
   }
 
@@ -282,7 +331,7 @@ export class VoiceCoach {
     }
     const issue = this.stableIssue;
     if (issue !== null && !inChallenge && !this.pending.has("issue") && this.issueAllowed(issue, nowMs)) {
-      this.put("issue", { text: issue === "tilted" ? TILTED_CUE : SPOKEN_ISSUE[issue], atMs: nowMs, issue });
+      this.put("issue", { text: spokenIssue(issue, this.tx), atMs: nowMs, issue });
     }
 
     return this.flush(nowMs);
@@ -301,7 +350,7 @@ export class VoiceCoach {
       return this.flush(nowMs);
     }
     this.challengeId = challenge.id;
-    this.challengeText = spokenChallenge(challenge);
+    this.challengeText = spokenChallenge(challenge, this.tx);
     this.challengeShownMs = nowMs;
     this.challengeDeadline = challenge.deadline ?? null;
     this.challengeRepeated = false;
@@ -319,7 +368,7 @@ export class VoiceCoach {
     if (id !== this.challengeId || this.challengePassedFlag) return this.flush(nowMs);
     this.challengePassedFlag = true;
     this.pending.delete("challenge");
-    this.put("good", { text: "Good.", atMs: nowMs });
+    this.put("good", { text: this.tx("challengePassed"), atMs: nowMs });
     return this.flush(nowMs);
   }
 
@@ -361,9 +410,13 @@ export class VoiceCoach {
   }
 
   private countText(): string {
-    if (this.milestone === "goal") return `Goal! ${spokenGoal(this.unit, this.goal, this.name)}.`;
+    if (this.milestone === "goal") return this.goalText(this.goal);
     const n = String(this.countN);
-    return this.milestone ? `${n}. ${MILESTONE_TEXT[this.milestone]}` : n;
+    return this.milestone ? this.tx("repWithMilestone", { count: n, milestone: this.tx(MILESTONE_KEY[this.milestone]) }) : n;
+  }
+
+  private goalText(goal: number): string {
+    return this.tx("goalReached", { goal: spokenGoal(this.unit, goal, this.name, this.tx) });
   }
 
   private onRejected(reason: FormIssue, nowMs: number): void {
@@ -373,7 +426,7 @@ export class VoiceCoach {
     this.lastAnyIssueMs = nowMs;
     this.lastIssueSaid.set(reason, nowMs);
     this.pending.delete("issue");
-    this.put("rejection", { text: `Didn't count. ${SPOKEN_ISSUE[reason]}`, atMs: nowMs });
+    this.put("rejection", { text: this.tx("rejected", { cue: spokenIssue(reason, this.tx) }), atMs: nowMs });
   }
 
   private onHold(holdMs: number, nowMs: number): void {
@@ -382,13 +435,15 @@ export class VoiceCoach {
     this.lastHoldSecond = s;
     const g = Math.round(this.goal);
     let text: string | null = null;
+    let goal = false;
     if (g > 0 && s === g && !this.goalAnnounced) {
       this.goalAnnounced = true;
-      text = `Goal! ${spokenGoal(this.unit, g, this.name)}.`;
+      goal = true;
+      text = this.goalText(g);
     } else if (g >= 10 && s >= g - 5 && s < g) text = String(g - s);
-    else if (g >= 20 && s === Math.floor(g / 2)) text = "Halfway.";
-    else if (s % 10 === 0) text = spokenSeconds(s);
-    if (text) this.put("hold", { text, atMs: nowMs });
+    else if (g >= 20 && s === Math.floor(g / 2)) text = this.tx("halfway");
+    else if (s % 10 === 0) text = spokenSeconds(s, this.tx);
+    if (text) this.put("hold", { text, atMs: nowMs, goal });
   }
 
   private issueAllowed(issue: FormIssue | "tilted", nowMs: number): boolean {
@@ -411,7 +466,7 @@ export class VoiceCoach {
       case "countdown":
       case "hold":
         // The goal line of a hold is worth saying late; a passing second is not.
-        return age > this.t.tickStaleMs && !p.text.startsWith("Goal");
+        return age > this.t.tickStaleMs && !p.goal;
       case "good":
         return age > 4000;
       case "challenge":

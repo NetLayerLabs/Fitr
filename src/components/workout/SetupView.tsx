@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { ArrowLeftIcon, CameraIcon, ExerciseIcon, PlayIcon, ShieldIcon } from "@/components/icons/Icons";
 import { EXERCISES } from "@/lib/exercises";
 import type { ExerciseKind } from "@/lib/pose/types";
+import { exerciseName, exerciseNameInSentence, exerciseSetupTips, exerciseTagline, levelLabel } from "@/lib/i18n/exercise";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { formatGoal } from "./format";
 import ArtPhoto from "@/components/workouts/ArtPhoto";
 import { exerciseArt } from "@/lib/exerciseArt";
@@ -26,17 +28,10 @@ export interface SetupViewProps {
   verified?: boolean;
 }
 
-const FACING_OPTIONS: ReadonlyArray<{ value: CameraFacing; label: string; hint: string }> = [
-  { value: "user", label: "Front", hint: "Watch the counter" },
-  { value: "environment", label: "Back", hint: "Sharper tracking" },
-];
-
-/**
- * Applies to every exercise: the posture checks need image-down to be gravity, and counting
- * pauses while the phone is on its side or upside down (see runtime/orientation.ts).
- */
-const UPRIGHT_TIP =
-  "Stand the phone upright in portrait, not lying flat or on its side. Counting pauses while it is sideways or upside down.";
+const FACING_OPTIONS = [
+  { value: "user", label: "facingFront", hint: "facingFrontHint" },
+  { value: "environment", label: "facingBack", hint: "facingBackHint" },
+] as const satisfies ReadonlyArray<{ value: CameraFacing; label: string; hint: string }>;
 
 /** Pre-workout screen: goal, setup tips, camera choice and the Start button (the user gesture). */
 export default function SetupView({
@@ -49,6 +44,9 @@ export default function SetupView({
   stake,
   verified = false,
 }: SetupViewProps) {
+  const t = useT("workout");
+  const tx = useT("exercises");
+  const name = exerciseName(tx, exercise);
   const info = EXERCISES[exercise];
   const art = exerciseArt(exercise);
   const shownGoal = goal ?? info.defaultGoal;
@@ -56,10 +54,10 @@ export default function SetupView({
   return (
     <div className={styles.page}>
       <header className={styles.pageHeader}>
-        <BackLink fallback="/workouts" className={styles.backLink} label="Back">
+        <BackLink fallback="/workouts" className={styles.backLink} label={t("back")}>
           <ArrowLeftIcon size={24} />
         </BackLink>
-        <p className={styles.pageEyebrow}>Workout</p>
+        <p className={styles.pageEyebrow}>{t("workoutEyebrow")}</p>
       </header>
 
       <div className={styles.hero}>
@@ -67,29 +65,29 @@ export default function SetupView({
           <div className={guide.hero} data-framing={art.framing}>
             {/* Above the fold: the one eager, high-priority image on this screen. */}
             <ArtPhoto art={art} priority className={guide.heroPhoto} sizes="(max-width: 600px) 100vw, 600px" />
-            <h1 className={`${styles.heroTitle} ${guide.heroTitle}`}>{info.name}</h1>
+            <h1 className={`${styles.heroTitle} ${guide.heroTitle}`}>{name}</h1>
           </div>
         ) : (
           <>
             <span className={styles.heroIcon} aria-hidden="true">
               <ExerciseIcon kind={exercise} size={36} />
             </span>
-            <h1 className={styles.heroTitle}>{info.name}</h1>
+            <h1 className={styles.heroTitle}>{name}</h1>
           </>
         )}
-        <p className={styles.heroTagline}>{info.tagline}</p>
+        <p className={styles.heroTagline}>{exerciseTagline(tx, exercise)}</p>
         <dl className={styles.heroStats}>
           <div className={styles.heroStat}>
-            <dt>Goal</dt>
-            <dd>{formatGoal(shownGoal, info.unit)}</dd>
+            <dt>{t("statGoal")}</dt>
+            <dd>{formatGoal(shownGoal, info.unit, t)}</dd>
           </div>
           <div className={styles.heroStat}>
-            <dt>Camera</dt>
-            <dd>{info.camera === "front" ? "Face it" : "Side-on"}</dd>
+            <dt>{t("statCamera")}</dt>
+            <dd>{info.camera === "front" ? t("cameraFaceIt") : t("cameraSideOn")}</dd>
           </div>
           <div className={styles.heroStat}>
-            <dt>Level</dt>
-            <dd>{info.level[0].toUpperCase() + info.level.slice(1)}</dd>
+            <dt>{t("statLevel")}</dt>
+            <dd>{levelLabel(tx, info.level)}</dd>
           </div>
         </dl>
       </div>
@@ -99,16 +97,18 @@ export default function SetupView({
       {onOpenGuide && (
         <button type="button" className={styles.secondaryButton} onClick={onOpenGuide}>
           <PlayIcon size={18} />
-          Watch the form guide
+          {t("watchFormGuide")}
         </button>
       )}
 
       <section className={styles.card} aria-labelledby="setup-tips-heading">
         <h2 id="setup-tips-heading" className={styles.cardTitle}>
-          Set up your phone
+          {t("setupTitle")}
         </h2>
         <ol className={styles.tips}>
-          {[...info.setupTips, UPRIGHT_TIP].map((tip, i) => (
+          {/* The upright tip applies to every exercise: posture checks need image-down to be gravity,
+              and counting pauses while the phone is on its side (see runtime/orientation.ts). */}
+          {[...exerciseSetupTips(tx, exercise), t("uprightTip")].map((tip, i) => (
             <li key={tip} className={styles.tip}>
               <span className={styles.tipIndex} aria-hidden="true">
                 {i + 1}
@@ -122,7 +122,7 @@ export default function SetupView({
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>
           <CameraIcon size={18} />
-          Camera
+          {t("cameraLegend")}
         </legend>
         <div className={styles.chips}>
           {FACING_OPTIONS.map((option) => (
@@ -135,8 +135,8 @@ export default function SetupView({
                 onChange={() => onFacingChange(option.value)}
                 className={styles.chipInput}
               />
-              <span className={styles.chipLabel}>{option.label}</span>
-              <span className={styles.chipHint}>{option.hint}</span>
+              <span className={styles.chipLabel}>{t(option.label)}</span>
+              <span className={styles.chipHint}>{t(option.hint)}</span>
             </label>
           ))}
         </div>
@@ -144,14 +144,12 @@ export default function SetupView({
 
       <p className={styles.privacyNote}>
         <ShieldIcon size={18} />
-        {verified
-          ? "Tracking runs on this device. Video never leaves your phone; only body-point data goes to Fitr's verifier."
-          : "Tracking runs on this device. Video is never uploaded or recorded."}
+        {verified ? t("privacyVerified") : t("privacyLocal")}
       </p>
 
       <div className={styles.stickyActions}>
         <button type="button" className={styles.ctaButton} onClick={onStart}>
-          <span className={styles.ctaLabel}>Start {info.name.toLowerCase()}</span>
+          <span className={styles.ctaLabel}>{t("startExercise", { name: exerciseNameInSentence(tx, exercise) })}</span>
           <span className={styles.ctaCap} aria-hidden="true">
             <PlayIcon size={22} />
           </span>

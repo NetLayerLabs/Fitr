@@ -12,39 +12,44 @@ import {
   TrophyIcon,
 } from "@/components/icons/Icons";
 import { EXERCISES } from "@/lib/exercises";
+import type { Translator } from "@/lib/i18n";
+import { exerciseName, exerciseNameInSentence } from "@/lib/i18n/exercise";
+import { useT } from "@/lib/i18n/I18nProvider";
 import type { EnginePhase, ExerciseKind } from "@/lib/pose/types";
 import FormFeedback from "./FormFeedback";
-import { formatClock, formatGoal } from "./format";
+import { EN_WORKOUT, formatClock, formatGoal } from "./format";
 import type { ConfidenceLevel, HudSnapshot } from "./hudTracker";
 import type { FitMode } from "./overlay";
 import ProgressRing from "./ProgressRing";
 import styles from "./WorkoutScreen.module.css";
 
-const PHASE_LABEL: Record<EnginePhase, string> = {
-  searching: "Finding you",
-  ready: "Ready",
-  up: "Up",
-  down: "Down",
-  holding: "Holding",
-  paused: "Paused",
+type WorkoutKey = Parameters<Translator<"workout">>[0];
+
+const PHASE_KEY: Record<EnginePhase, WorkoutKey> = {
+  searching: "phaseSearching",
+  ready: "phaseReady",
+  up: "phaseUp",
+  down: "phaseDown",
+  holding: "phaseHolding",
+  paused: "phasePaused",
 };
 
-function phaseLabel(phase: EnginePhase, exercise: ExerciseKind): string {
-  const info = EXERCISES[exercise];
-  if (phase === "ready" && info.unit === "seconds") return `Get into ${info.name.toLowerCase()}`;
-  return PHASE_LABEL[phase];
+function phaseLabel(phase: EnginePhase, exercise: ExerciseKind, nameInSentence: string, t: Translator<"workout">): string {
+  if (phase === "ready" && EXERCISES[exercise].unit === "seconds") return t("phaseGetInto", { name: nameInSentence });
+  return t(PHASE_KEY[phase]);
 }
 
-const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {
-  none: "No body",
-  low: "Weak",
-  fair: "Fair",
-  good: "Good",
+const CONFIDENCE_KEY: Record<ConfidenceLevel, WorkoutKey> = {
+  none: "confidenceNone",
+  low: "confidenceLow",
+  fair: "confidenceFair",
+  good: "confidenceGood",
 };
 
 const CONFIDENCE_BARS: Record<ConfidenceLevel, number> = { none: 0, low: 1, fair: 2, good: 3 };
 
 function TrackingIndicator({ level }: { level: ConfidenceLevel }) {
+  const t = useT("workout");
   const lit = CONFIDENCE_BARS[level];
   return (
     <p className={styles.tracking} data-level={level}>
@@ -54,15 +59,18 @@ function TrackingIndicator({ level }: { level: ConfidenceLevel }) {
         ))}
       </span>
       <span>
-        <span className="sr-only">Tracking </span>
-        {CONFIDENCE_LABEL[level]}
+        <span className="sr-only">{t("trackingLabel")} </span>
+        {t(CONFIDENCE_KEY[level])}
       </span>
     </p>
   );
 }
 
-/** Shown instead of form feedback while the phone is on its side / upside down. */
-export const TILTED_COPY = "Your phone isn't upright. Stand it upright in portrait to keep counting.";
+/**
+ * Shown instead of form feedback while the phone is on its side / upside down (English; screens
+ * render t("phoneTilted")).
+ */
+export const TILTED_COPY = EN_WORKOUT("phoneTilted");
 
 export interface HudVerification {
   /** The live check prompt (ChallengePrompt), when one is open. */
@@ -108,6 +116,9 @@ export default function Hud({
   onToggleVoice,
   onEnd,
 }: HudProps) {
+  const t = useT("workout");
+  const tx = useT("exercises");
+  const name = exerciseName(tx, exercise);
   const info = EXERCISES[exercise];
   const target = goal ?? info.defaultGoal;
   const headingRef = useRef<HTMLHeadingElement | null>(null);
@@ -121,17 +132,16 @@ export default function Hud({
   const value = timed ? holdMs / 1000 : hud.reps;
   const fraction = target > 0 ? Math.min(1, value / target) : 0;
   const active = hud.phase === "holding" || hud.phase === "up" || hud.phase === "down";
-  const unitLabel = timed ? "held" : hud.reps === 1 ? "rep" : "reps";
 
   return (
     <div className={styles.hud}>
       <h1 ref={headingRef} tabIndex={-1} className="sr-only">
-        {info.name} workout in progress
+        {t("hudHeading", { name })}
       </h1>
       <div className={styles.hudTop}>
         <p className={styles.phase} data-active={active ? "" : undefined} data-phase={hud.phase}>
           <span className={styles.phaseDot} aria-hidden="true" />
-          {phaseLabel(hud.phase, exercise)}
+          {phaseLabel(hud.phase, exercise, exerciseNameInSentence(tx, exercise), t)}
         </p>
         <div className={styles.hudTopRight}>
           <TrackingIndicator level={hud.confidence} />
@@ -141,7 +151,7 @@ export default function Hud({
               className={styles.iconButton}
               onClick={onToggleVoice}
               aria-pressed={voiceOn}
-              aria-label="Voice coach"
+              aria-label={t("voiceCoach")}
               data-on={voiceOn ? "" : undefined}
             >
               {voiceOn ? <SpeakerIcon size={22} /> : <SpeakerOffIcon size={22} />}
@@ -151,7 +161,7 @@ export default function Hud({
             type="button"
             className={styles.iconButton}
             onClick={onToggleFit}
-            aria-label={fit === "cover" ? "Show the full camera frame" : "Fill the screen"}
+            aria-label={fit === "cover" ? t("fitShowFullFrame") : t("fitFillScreen")}
           >
             {fit === "cover" ? <ShrinkIcon size={22} /> : <ExpandIcon size={22} />}
           </button>
@@ -176,11 +186,11 @@ export default function Hud({
 
       {timed ? (
         <div className={styles.counterBlock}>
-          <ProgressRing fraction={fraction} size={208} stroke={10} label="Goal progress">
+          <ProgressRing fraction={fraction} size={208} stroke={10} label={t("goalProgress")}>
             <p className={styles.ringValue} data-goal={hud.goalReached ? "" : undefined}>
               {formatClock(holdMs)}
             </p>
-            <p className={styles.ringGoal}>goal {formatGoal(target, info.unit)}</p>
+            <p className={styles.ringGoal}>{t("ringGoal", { goal: formatGoal(target, info.unit, t) })}</p>
           </ProgressRing>
         </div>
       ) : (
@@ -189,13 +199,13 @@ export default function Hud({
             {hud.reps}
           </p>
           <p className={styles.counterGoal}>
-            <span className="sr-only">{unitLabel}, goal</span>
-            <span aria-hidden="true">of</span> {formatGoal(target, info.unit)}
+            <span className="sr-only">{t.plural("counterGoalSr", hud.reps)}</span>
+            <span aria-hidden="true">{t("counterOf")}</span> {formatGoal(target, info.unit, t)}
           </p>
           <div
             className={styles.progress}
             role="progressbar"
-            aria-label="Goal progress"
+            aria-label={t("goalProgress")}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(fraction * 100)}
@@ -208,7 +218,7 @@ export default function Hud({
       {hud.celebrating ? (
         <p className={styles.celebrate}>
           <TrophyIcon size={20} />
-          Goal reached! Keep going or end.
+          {t("goalReachedKeepGoing")}
         </p>
       ) : null}
 
@@ -216,20 +226,21 @@ export default function Hud({
         {tilted ? (
           <div className={styles.toast} data-tone="tracking">
             <CameraIcon size={22} />
-            <p>{TILTED_COPY}</p>
+            <p>{t("phoneTilted")}</p>
           </div>
         ) : (
           <FormFeedback issue={hud.issue} rejection={hud.rejection} />
         )}
         <p className={styles.hudMeta}>
-          {!timed ? <span>{hud.rejectedReps} not counted</span> : null}
+          {!timed ? <span>{t("notCountedCount", { count: hud.rejectedReps })}</span> : null}
           <span>
-            {fps > 0 ? Math.round(fps) : "–"} fps{delegate ? ` · ${delegate}` : ""}
+            {t("fps", { fps: fps > 0 ? Math.round(fps) : "–" })}
+            {delegate ? ` · ${delegate}` : ""}
           </span>
         </p>
         <button type="button" className={styles.endButton} onClick={onEnd}>
           <StopIcon size={20} />
-          End workout
+          {t("endWorkout")}
         </button>
       </div>
     </div>

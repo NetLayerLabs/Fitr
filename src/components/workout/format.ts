@@ -1,4 +1,20 @@
 import type { GoalUnit } from "@/lib/exercises";
+import { makeTranslator, type Locale, type Translator } from "@/lib/i18n";
+import { en } from "@/lib/i18n/messages";
+
+/**
+ * The "workout" namespace in English. Helpers below default to it so callers outside this area
+ * (and tests) keep working; render code passes its own `useT("workout")`.
+ */
+export const EN_WORKOUT: Translator<"workout"> = makeTranslator("en", en, "workout");
+
+/**
+ * Any display name inside a sentence: lower case, except German nouns. For exercise names prefer
+ * exerciseNameInSentence (src/lib/i18n/exercise.ts).
+ */
+export function nameInSentence(name: string, locale: Locale): string {
+  return locale === "de" ? name : name.toLocaleLowerCase(locale);
+}
 
 /** "m:ss" (or "h:mm:ss") from milliseconds, flooring to whole seconds. */
 export function formatClock(ms: number): string {
@@ -23,8 +39,8 @@ export function timeOfDayFormat(locales?: string | string[]): Intl.DateTimeForma
 }
 
 /** "1.8 s" style duration with one decimal. */
-export function formatSecondsShort(ms: number): string {
-  return `${(Math.max(0, ms) / 1000).toFixed(1)} s`;
+export function formatSecondsShort(ms: number, t: Translator<"workout"> = EN_WORKOUT): string {
+  return t("secondsShort", { value: (Math.max(0, ms) / 1000).toFixed(1) });
 }
 
 /** A value in an exercise unit, for display: reps as an integer, seconds as m:ss. */
@@ -33,23 +49,19 @@ export function formatValue(value: number, unit: GoalUnit): string {
 }
 
 /** Goal text such as "20 reps" or "60 s". */
-export function formatGoal(goal: number, unit: GoalUnit): string {
-  return unit === "seconds" ? `${goal} s` : `${goal} ${goal === 1 ? "rep" : "reps"}`;
+export function formatGoal(goal: number, unit: GoalUnit, t: Translator<"workout"> = EN_WORKOUT): string {
+  return unit === "seconds" ? t("goalSeconds", { count: goal }) : t.plural("reps", goal);
 }
 
 /** Screen-reader friendly value, e.g. "12 reps" or "1 minute 5 seconds". */
-export function spokenValue(value: number, unit: GoalUnit): string {
-  if (unit === "reps") {
-    const n = Math.floor(value);
-    return `${n} ${n === 1 ? "rep" : "reps"}`;
-  }
+export function spokenValue(value: number, unit: GoalUnit, t: Translator<"workout"> = EN_WORKOUT): string {
+  if (unit === "reps") return t.plural("reps", Math.floor(value));
   const total = Math.floor(value);
   const m = Math.floor(total / 60);
   const s = total % 60;
-  const parts: string[] = [];
-  if (m > 0) parts.push(`${m} ${m === 1 ? "minute" : "minutes"}`);
-  if (s > 0 || m === 0) parts.push(`${s} ${s === 1 ? "second" : "seconds"}`);
-  return parts.join(" ");
+  if (m === 0) return t.plural("seconds", s);
+  const minutes = t.plural("minutes", m);
+  return s > 0 ? t("minutesAndSeconds", { minutes, seconds: t.plural("seconds", s) }) : minutes;
 }
 
 export function mean(values: readonly number[]): number | null {

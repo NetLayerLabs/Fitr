@@ -1,30 +1,43 @@
 import type { FormIssue } from "@/lib/pose/types";
+import { en, type Messages } from "@/lib/i18n/messages";
+
+type WorkoutKey = keyof Messages["workout"] & string;
 
 /**
- * User-facing copy for every engine FormIssue. Typed as an exhaustive Record so adding a new
- * FormIssue to the shared contract fails type-checking until it has copy here.
+ * Message key of the user-facing copy for every engine FormIssue. Typed as an exhaustive Record so
+ * adding a new FormIssue to the shared contract fails type-checking until it has copy.
  * Kept free of React/CSS imports so pure modules (hudTracker) and tests can use it.
  */
-export const FORM_ISSUE_COPY: Record<FormIssue, string> = {
-  body_not_visible: "Step back so your whole body is in frame",
-  unstable_tracking: "Tracking is shaky. Steady the phone and add light",
-  go_lower: "Go lower, bend past 90°",
-  extend_fully: "Extend fully at the top",
-  hips_sagging: "Lift your hips, keep a straight line",
-  hips_piked: "Lower your hips, keep a straight line",
-  body_not_horizontal: "Get down into position",
-  body_on_floor: "Lift off the floor: legs straight, up on your toes",
-  chest_up: "Keep your chest up",
-  too_fast: "Slow down, control each rep",
-  face_camera: "Face the camera square-on",
-  turn_side_on: "Turn side-on to the camera",
-  keep_back_on_wall: "Keep your back flat against the wall",
-  keep_hips_high: "Keep your hips high, like an upside-down V",
-  chin_over_bar: "Pull until your chin clears the bar",
-  go_higher: "Go higher, use the full range",
-  arms_overhead: "Bring your hands together overhead",
-  jump_higher: "Jump, both feet off the floor",
+export const FORM_ISSUE_KEY: Record<FormIssue, WorkoutKey> = {
+  body_not_visible: "issueBodyNotVisible",
+  unstable_tracking: "issueUnstableTracking",
+  go_lower: "issueGoLower",
+  extend_fully: "issueExtendFully",
+  hips_sagging: "issueHipsSagging",
+  hips_piked: "issueHipsPiked",
+  body_not_horizontal: "issueBodyNotHorizontal",
+  body_on_floor: "issueBodyOnFloor",
+  chest_up: "issueChestUp",
+  too_fast: "issueTooFast",
+  face_camera: "issueFaceCamera",
+  turn_side_on: "issueTurnSideOn",
+  keep_back_on_wall: "issueKeepBackOnWall",
+  keep_hips_high: "issueKeepHipsHigh",
+  chin_over_bar: "issueChinOverBar",
+  go_higher: "issueGoHigher",
+  arms_overhead: "issueArmsOverhead",
+  jump_higher: "issueJumpHigher",
 };
+
+/** A form issue's copy in `t`'s language (render) or, by default, in English. */
+export function formIssueCopy(issue: FormIssue, t: (key: WorkoutKey) => string = (k) => en.workout[k]): string {
+  return t(FORM_ISSUE_KEY[issue]);
+}
+
+/** English copy of every FormIssue (reference and tests; screens use formIssueCopy with a translator). */
+export const FORM_ISSUE_COPY: Record<FormIssue, string> = Object.fromEntries(
+  (Object.keys(FORM_ISSUE_KEY) as FormIssue[]).map((k) => [k, formIssueCopy(k)]),
+) as Record<FormIssue, string>;
 
 /** Whether an issue is about tracking (camera/framing) rather than the user's form. */
 export const FORM_ISSUE_KIND: Record<FormIssue, "tracking" | "form"> = {

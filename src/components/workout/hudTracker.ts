@@ -7,7 +7,13 @@
  */
 import type { GoalUnit } from "@/lib/exercises";
 import type { EngineEvent, EnginePhase, EngineState, ExerciseKind, FormIssue } from "@/lib/pose/types";
-import { FORM_ISSUE_COPY } from "./formIssueCopy";
+import { tr } from "@/lib/i18n";
+import type { Messages } from "@/lib/i18n/messages";
+import { activeTranslator } from "./activeT";
+import { formIssueCopy } from "./formIssueCopy";
+
+/** Announcement copy in the app language (update() runs per camera frame, outside render). */
+const say = (key: keyof Messages["workout"] & string) => tr("workout", key);
 
 export type ConfidenceLevel = "none" | "low" | "fair" | "good";
 
@@ -133,10 +139,10 @@ export function createHudTracker(options: HudTrackerOptions): HudTracker {
       for (const event of events) {
         if (event.type === "rep") {
           vibrate = 30;
-          queue(`${event.repIndex} ${event.repIndex === 1 ? "rep" : "reps"}`, PRIORITY.rep);
+          queue(activeTranslator("workout").plural("reps", event.repIndex), PRIORITY.rep);
         } else if (event.type === "rep_rejected") {
           rejection = { reason: event.reason, atMs: nowMs };
-          queue(`Rep not counted. ${FORM_ISSUE_COPY[event.reason]}`, PRIORITY.rejected);
+          queue(tr("workout", "announceRepNotCounted", { issue: formIssueCopy(event.reason, say) }), PRIORITY.rejected);
         }
       }
 
@@ -148,7 +154,7 @@ export function createHudTracker(options: HudTrackerOptions): HudTracker {
       }
       if (issueCandidate !== stableIssue && nowMs - issueCandidateSince >= issueStableMs) {
         stableIssue = issueCandidate;
-        if (stableIssue) queue(FORM_ISSUE_COPY[stableIssue], PRIORITY.issue);
+        if (stableIssue) queue(formIssueCopy(stableIssue, say), PRIORITY.issue);
       }
 
       if (rejection && nowMs - rejection.atMs >= rejectionShowMs) rejection = null;
@@ -158,7 +164,7 @@ export function createHudTracker(options: HudTrackerOptions): HudTracker {
       if (goalReachedAtMs === null && goal > 0 && value >= goal) {
         goalReachedAtMs = nowMs;
         vibrate = [60, 50, 60];
-        queue("Goal reached! Keep going, or tap End when you're done.", PRIORITY.goal);
+        queue(say("announceGoalReached"), PRIORITY.goal);
       }
 
       if (unit === "seconds" && holdAnnounceEverySec > 0) {
@@ -166,7 +172,7 @@ export function createHudTracker(options: HudTrackerOptions): HudTracker {
         const milestone = seconds - (seconds % holdAnnounceEverySec);
         if (milestone > lastHoldMilestone) {
           lastHoldMilestone = milestone;
-          queue(`${milestone} seconds`, PRIORITY.hold);
+          queue(tr("workout", "announceHoldSeconds", { count: milestone }), PRIORITY.hold);
         }
       }
 

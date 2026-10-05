@@ -25,6 +25,8 @@ import type { ChallengeType } from "@/lib/attest/challenges";
 import type { ChunkResponse, DueChallenge, FinishResponse, StartResponse } from "@/lib/attest/protocol";
 import { TraceRecorder } from "@/lib/attest/recorder";
 import type { EncodedChunk } from "@/lib/attest/trace";
+import { makeTranslator, tr, type Translator } from "@/lib/i18n";
+import { en, type Messages } from "@/lib/i18n/messages";
 import { EXERCISE_KINDS, type EngineUpdate, type ExerciseKind, type PoseFrame } from "@/lib/pose/types";
 import { solanaConfig } from "@/lib/solana/config";
 import { getPoolAddresses, getUserDayAddresses, vaultProgramAddress } from "@/lib/solana/vault/addresses";
@@ -159,24 +161,34 @@ export async function loadWorkoutCommitment(
 // Copy
 // ---------------------------------------------------------------------------------------------
 
-/** Plain-language reasons for a failed verification (VerifyReason codes from the server). */
-export const VERIFY_REASON_COPY: Record<string, string> = {
-  no_frames: "No workout data reached the verifier.",
-  below_goal: "The verifier counted fewer than your goal.",
-  session_too_short: "The session was shorter than your goal physically takes.",
-  trace_ahead_of_clock: "The workout data didn't match real time. Keep Fitr open and on screen for the whole workout.",
-  frame_rate_implausible: "The camera frame rate looked wrong. Keep Fitr open and on screen for the whole workout.",
-  teleporting_joints: "Tracking jumped around too much. Use good light and keep your whole body in frame.",
-  bone_length_inconsistent: "Tracking was inconsistent. Keep your whole body in frame and the phone still.",
-  cadence_implausible: "Reps came faster than a person can do them.",
-  low_tracking_confidence: "Tracking was too weak. Use better light and keep your whole body in frame.",
-  challenge_not_issued: "You ended before every live check appeared. Keep going until the live checks are done.",
-  challenge_missed: "A live check was missed. Do exactly what the prompt asks while it is on screen.",
-  duplicate_session: "This workout data was already used for another verification.",
+type WorkoutKey = keyof Messages["workout"] & string;
+
+/** Message keys of the plain-language reasons for a failed verification (server VerifyReason codes). */
+const VERIFY_REASON_KEY: Record<string, WorkoutKey> = {
+  no_frames: "reasonNoFrames",
+  below_goal: "reasonBelowGoal",
+  session_too_short: "reasonSessionTooShort",
+  trace_ahead_of_clock: "reasonTraceAheadOfClock",
+  frame_rate_implausible: "reasonFrameRateImplausible",
+  teleporting_joints: "reasonTeleportingJoints",
+  bone_length_inconsistent: "reasonBoneLengthInconsistent",
+  cadence_implausible: "reasonCadenceImplausible",
+  low_tracking_confidence: "reasonLowTrackingConfidence",
+  challenge_not_issued: "reasonChallengeNotIssued",
+  challenge_missed: "reasonChallengeMissed",
+  duplicate_session: "reasonDuplicateSession",
 };
 
-export function verifyReasonCopy(reason: string): string {
-  return VERIFY_REASON_COPY[reason] ?? "The workout could not be verified.";
+const EN_WORKOUT: Translator<"workout"> = makeTranslator("en", en, "workout");
+
+/** English reasons, by code (reference; screens use verifyReasonCopy with their translator). */
+export const VERIFY_REASON_COPY: Record<string, string> = Object.fromEntries(
+  Object.entries(VERIFY_REASON_KEY).map(([code, key]) => [code, EN_WORKOUT(key)]),
+);
+
+/** A failed verification's reason in `t`'s language (English by default). */
+export function verifyReasonCopy(reason: string, t: Translator<"workout"> = EN_WORKOUT): string {
+  return t(Object.hasOwn(VERIFY_REASON_KEY, reason) ? VERIFY_REASON_KEY[reason] : "reasonUnknown");
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -424,7 +436,7 @@ export class VerifiedSessionController {
       this.set({ status: outcome.kind === "verified" ? "verified" : outcome.kind === "failed" ? "failed" : "error", outcome });
     } catch (e) {
       if (gen !== this.generation) return;
-      const message = e instanceof HttpError ? e.message : "Couldn't reach the verifier. Check your connection and try again.";
+      const message = e instanceof HttpError ? e.message : tr("workout", "verifierUnreachableFinish");
       const retryable = !(e instanceof HttpError && e.status === 404);
       this.set({ status: "error", outcome: { kind: "error", message, retryable } });
     }
@@ -510,7 +522,7 @@ export class VerifiedSessionController {
           this.clearTimer();
           this.set({ status: "error", error: e.message, challenge: null, outcome: { kind: "error", message: e.message, retryable: false } });
         } else {
-          this.set({ error: "Connection to the verifier is unstable. Keep going; data will be sent when it's back." });
+          this.set({ error: tr("workout", "verifierUnstable") });
         }
         return;
       }
@@ -566,7 +578,7 @@ export class VerifiedSessionController {
       }
       if (res.ok) return json as T;
       const err = json as { error?: unknown; code?: unknown } | null;
-      const message = typeof err?.error === "string" ? err.error : `Verifier error (${res.status})`;
+      const message = typeof err?.error === "string" ? err.error : tr("workout", "verifierError", { status: res.status });
       const httpErr = new HttpError(message, res.status, typeof err?.code === "string" ? err.code : null);
       // Only overload / upstream trouble is worth retrying.
       if (res.status !== 429 && res.status !== 503 && res.status < 500) throw httpErr;
@@ -579,11 +591,11 @@ export class VerifiedSessionController {
 
 function startErrorCopy(e: unknown): string {
   if (e instanceof HttpError) {
-    if (e.code === "not_configured") return "Verification isn't available right now. This workout won't count toward your stake.";
-    if (e.code === "rate_limited") return "Too many attempts. Wait a minute, then try again.";
+    if (e.code === "not_configured") return tr("workout", "verifierNotConfigured");
+    if (e.code === "rate_limited") return tr("workout", "verifierRateLimited");
     return e.message;
   }
-  return "Couldn't reach the verifier. Check your connection, then try again.";
+  return tr("workout", "verifierUnreachable");
 }
 
 function mapFinish(res: FinishResponse, explorer: (sig: string) => string): VerifyOutcome {
@@ -596,11 +608,12 @@ function mapFinish(res: FinishResponse, explorer: (sig: string) => string): Veri
     return { kind: "verified", count: res.count, goalTarget: res.goalTarget, signature: null, explorerUrl: null };
   }
   if (on?.status === "not_configured") {
-    return { kind: "error", message: "Your workout passed, but onchain verification isn't available right now.", retryable: false };
+    return { kind: "error", message: tr("workout", "onchainUnavailable"), retryable: false };
   }
   return {
     kind: "error",
-    message: on?.status === "error" ? `Your workout passed, but recording it onchain failed: ${on.message}` : "Verification failed.",
+    message:
+      on?.status === "error" ? tr("workout", "onchainFailed", { message: on.message }) : tr("workout", "verificationFailed"),
     retryable: true,
   };
 }

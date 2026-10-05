@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { tr } from "@/lib/i18n";
 
 export type CameraStatus = "idle" | "requesting" | "ready" | "denied" | "unavailable" | "insecure" | "error";
 
@@ -72,19 +73,22 @@ export function classifyCameraError(err: unknown): { status: CameraFailure; mess
     case "SecurityError":
       return {
         status: "denied",
-        message: "Camera access was blocked. Allow the camera for this site in your browser settings, then try again.",
+        message: tr("workout", "cameraErrorBlocked"),
       };
     case "NotFoundError":
     case "DevicesNotFoundError":
     case "OverconstrainedError":
     case "ConstraintNotSatisfiedError":
-      return { status: "unavailable", message: "No usable camera was found on this device." };
+      return { status: "unavailable", message: tr("workout", "cameraErrorNotFound") };
     case "NotReadableError":
     case "TrackStartError":
-      return { status: "error", message: "The camera is busy. Close other apps using it and try again." };
+      return { status: "error", message: tr("workout", "cameraErrorBusy") };
     default: {
-      const detail = err instanceof Error && err.message ? `: ${err.message}` : "";
-      return { status: "error", message: `Could not start the camera${detail}` };
+      const detail = err instanceof Error && err.message ? err.message : "";
+      return {
+        status: "error",
+        message: detail ? tr("workout", "cameraErrorStartDetail", { detail }) : tr("workout", "cameraErrorStart"),
+      };
     }
   }
 }
@@ -95,11 +99,11 @@ function delay(ms: number): Promise<void> {
 
 async function openCameraStream(facingMode: CameraFacingMode, isCancelled: () => boolean): Promise<MediaStream> {
   if (window.isSecureContext === false) {
-    throw new CameraError("insecure", "The camera only works over HTTPS. Open Fitr from a secure (https://) address.");
+    throw new CameraError("insecure", tr("workout", "cameraErrorInsecure"));
   }
   const mediaDevices = typeof navigator !== "undefined" ? navigator.mediaDevices : undefined;
   if (!mediaDevices || typeof mediaDevices.getUserMedia !== "function") {
-    throw new CameraError("unavailable", "This browser cannot access a camera.");
+    throw new CameraError("unavailable", tr("workout", "cameraErrorUnsupported"));
   }
   try {
     return await mediaDevices.getUserMedia({ video: { ...IDEAL_VIDEO, facingMode }, audio: false });
@@ -210,7 +214,7 @@ export function useCamera(opts: UseCameraOptions): UseCameraResult {
     function onTrackEnded() {
       if (cancelled) return;
       teardown();
-      setSession({ key, status: "error", error: "The camera stopped. Try again.", dimensions: null });
+      setSession({ key, status: "error", error: tr("workout", "cameraErrorStopped"), dimensions: null });
     }
 
     const previousRun = previousRunRef.current;
@@ -227,7 +231,7 @@ export function useCamera(opts: UseCameraOptions): UseCameraResult {
         stream = opened;
 
         const el = videoRef.current;
-        if (!el) throw new CameraError("error", "Camera preview is not mounted.");
+        if (!el) throw new CameraError("error", tr("workout", "cameraErrorNotMounted"));
         video = el;
         el.muted = true;
         el.playsInline = true;

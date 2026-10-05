@@ -1,3 +1,4 @@
+import { useT } from "@/lib/i18n/I18nProvider";
 import styles from "./WorkoutScreen.module.css";
 
 export interface ReadyCountdownProps {
@@ -15,6 +16,7 @@ export interface ReadyCountdownProps {
  * stay reachable for keyboard and screen-reader users; the count is announced politely.
  */
 export default function ReadyCountdown({ value, total, detail, onSkip }: ReadyCountdownProps) {
+  const t = useT("workout");
   const fraction = total > 0 ? value / total : 0;
   const size = 232;
   const stroke = 10;
@@ -22,7 +24,7 @@ export default function ReadyCountdown({ value, total, detail, onSkip }: ReadyCo
   const c = 2 * Math.PI * r;
   return (
     <div className={styles.countdown} data-testid="ready-countdown">
-      <p className={styles.countdownEyebrow}>Ready to go</p>
+      <p className={styles.countdownEyebrow}>{t("readyToGo")}</p>
       <div className={styles.countdownRing} aria-hidden="true">
         <svg viewBox={`0 0 ${size} ${size}`} className={styles.ringSvg}>
           <circle className={styles.countdownTrack} cx={size / 2} cy={size / 2} r={r} strokeWidth={stroke} />
@@ -43,10 +45,10 @@ export default function ReadyCountdown({ value, total, detail, onSkip }: ReadyCo
       </div>
       {detail ? <p className={styles.countdownDetail}>{detail}</p> : null}
       <p className="sr-only" aria-live="polite">
-        Starting in {value}
+        {t("startingIn", { value })}
       </p>
       <button type="button" className={styles.countdownSkip} onClick={onSkip}>
-        Skip countdown
+        {t("skipCountdown")}
       </button>
     </div>
   );

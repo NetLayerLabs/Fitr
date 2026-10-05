@@ -1,6 +1,7 @@
 import { AlertIcon, CameraIcon } from "@/components/icons/Icons";
 import type { FormIssue } from "@/lib/pose/types";
-import { FORM_ISSUE_COPY, FORM_ISSUE_KIND } from "./formIssueCopy";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { FORM_ISSUE_COPY, FORM_ISSUE_KIND, formIssueCopy } from "./formIssueCopy";
 import styles from "./WorkoutScreen.module.css";
 
 export { FORM_ISSUE_COPY, FORM_ISSUE_KIND };
@@ -17,12 +18,13 @@ export interface FormFeedbackProps {
  * single polite live region so screen readers are not flooded.
  */
 export default function FormFeedback({ issue, rejection }: FormFeedbackProps) {
+  const t = useT("workout");
   if (rejection) {
     return (
       <div className={styles.toast} data-tone="rejected">
         <AlertIcon size={22} />
         <p>
-          <strong>Rep not counted.</strong> {FORM_ISSUE_COPY[rejection]}
+          <strong>{t("repNotCounted")}</strong> {formIssueCopy(rejection, t)}
         </p>
       </div>
     );
@@ -32,7 +34,7 @@ export default function FormFeedback({ issue, rejection }: FormFeedbackProps) {
     return (
       <div className={styles.toast} data-tone={tracking ? "tracking" : "form"}>
         {tracking ? <CameraIcon size={22} /> : <AlertIcon size={22} />}
-        <p>{FORM_ISSUE_COPY[issue]}</p>
+        <p>{formIssueCopy(issue, t)}</p>
       </div>
     );
   }

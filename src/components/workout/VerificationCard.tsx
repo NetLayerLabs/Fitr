@@ -2,6 +2,7 @@ import ShareVerifiedButton from "@/components/public/ShareVerifiedButton";
 import { AlertIcon, CheckIcon, RefreshIcon, ShieldIcon } from "@/components/icons/Icons";
 import type { GoalUnit } from "@/lib/exercises";
 import { verifyReasonCopy, type VerifiedStatus, type VerifyOutcome } from "@/hooks/useVerifiedSession";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { formatGoal, formatValue } from "./format";
 import styles from "./WorkoutScreen.module.css";
 
@@ -21,13 +22,14 @@ export interface VerificationCardProps {
 
 /** Result of the staked verification on the finished screen. Renders nothing for unstaked workouts. */
 export default function VerificationCard({ status, outcome, error, unit, onRetry, shareDayIndex = null, shareCrewId = null }: VerificationCardProps) {
+  const t = useT("workout");
   if (status === "starting" || status === "recording" || status === "finishing") {
     return (
-      <section className={styles.verifyCard} data-tone="pending" role="status" aria-label="Verification">
+      <section className={styles.verifyCard} data-tone="pending" role="status" aria-label={t("verification")}>
         <span className={styles.spinnerSmall} aria-hidden="true" />
         <div>
-          <p className={styles.verifyTitle}>Verifying…</p>
-          <p className={styles.verifyText}>Fitr&apos;s server is re-checking your workout and recording it on Solana.</p>
+          <p className={styles.verifyTitle}>{t("verifying")}</p>
+          <p className={styles.verifyText}>{t("verifyingText")}</p>
         </div>
       </section>
     );
@@ -35,22 +37,21 @@ export default function VerificationCard({ status, outcome, error, unit, onRetry
 
   if (outcome?.kind === "verified") {
     return (
-      <section className={styles.verifyCard} data-tone="ok" aria-label="Verification">
+      <section className={styles.verifyCard} data-tone="ok" aria-label={t("verification")}>
         <span className={styles.verifyIcon} aria-hidden="true">
           <CheckIcon size={22} />
         </span>
         <div>
-          <p className={styles.verifyTitle}>Verified onchain ✓</p>
+          <p className={styles.verifyTitle}>{t("verifiedOnchain")}</p>
           <p className={styles.verifyText}>
-            {formatValue(outcome.count, unit)} of {formatGoal(outcome.goalTarget, unit)} confirmed by the verifier. Your stake is
-            claimable once the day settles.
+            {t("verifiedText", { count: formatValue(outcome.count, unit), goal: formatGoal(outcome.goalTarget, unit, t) })}
           </p>
           {outcome.explorerUrl ? (
             <a className={styles.verifyLink} href={outcome.explorerUrl} target="_blank" rel="noopener noreferrer">
-              View transaction
+              {t("viewTransaction")}
             </a>
           ) : null}
-          <ShareVerifiedButton dayIndex={shareDayIndex} crewId={shareCrewId || null} label={formatGoal(outcome.count, unit)} />
+          <ShareVerifiedButton dayIndex={shareDayIndex} crewId={shareCrewId || null} label={formatGoal(outcome.count, unit, t)} />
         </div>
       </section>
     );
@@ -59,18 +60,17 @@ export default function VerificationCard({ status, outcome, error, unit, onRetry
   if (outcome?.kind === "failed") {
     const reasons = outcome.reasons.length > 0 ? outcome.reasons : ["unknown"];
     return (
-      <section className={styles.verifyCard} data-tone="fail" role="alert" aria-label="Verification">
+      <section className={styles.verifyCard} data-tone="fail" role="alert" aria-label={t("verification")}>
         <span className={styles.verifyIcon} aria-hidden="true">
           <AlertIcon size={22} />
         </span>
         <div>
-          <p className={styles.verifyTitle}>Not verified</p>
+          <p className={styles.verifyTitle}>{t("notVerified")}</p>
           <p className={styles.verifyText}>
-            The verifier counted {formatValue(outcome.count, unit)} of {formatGoal(outcome.goalTarget, unit)}. Your stake is still
-            open: you can try again before today&apos;s deadline.
+            {t("notVerifiedText", { count: formatValue(outcome.count, unit), goal: formatGoal(outcome.goalTarget, unit, t) })}
           </p>
           <ul className={styles.verifyReasons}>
-            {[...new Set(reasons.map(verifyReasonCopy))].map((copy) => (
+            {[...new Set(reasons.map((r) => verifyReasonCopy(r, t)))].map((copy) => (
               <li key={copy}>{copy}</li>
             ))}
           </ul>
@@ -83,17 +83,17 @@ export default function VerificationCard({ status, outcome, error, unit, onRetry
   if (status === "error" && message) {
     const retryable = outcome?.kind === "error" && outcome.retryable && onRetry;
     return (
-      <section className={styles.verifyCard} data-tone="fail" role="alert" aria-label="Verification">
+      <section className={styles.verifyCard} data-tone="fail" role="alert" aria-label={t("verification")}>
         <span className={styles.verifyIcon} aria-hidden="true">
           <ShieldIcon size={22} />
         </span>
         <div>
-          <p className={styles.verifyTitle}>Not verified yet</p>
+          <p className={styles.verifyTitle}>{t("notVerifiedYet")}</p>
           <p className={styles.verifyText}>{message}</p>
           {retryable ? (
             <button type="button" className={styles.verifyRetry} onClick={onRetry}>
               <RefreshIcon size={18} />
-              Retry verification
+              {t("retryVerification")}
             </button>
           ) : null}
         </div>

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import WorkoutScreen from "@/components/workout/WorkoutScreen";
-import { EXERCISES } from "@/lib/exercises";
+import { exerciseName, exerciseTagline } from "@/lib/i18n/exercise";
+import { getT } from "@/lib/i18n/server";
 import { EXERCISE_KINDS, isExerciseKind } from "@/lib/pose/types";
 
 /*
@@ -16,11 +17,13 @@ export function generateStaticParams(): Array<{ exercise: string }> {
 
 export async function generateMetadata(props: PageProps<"/workout/[exercise]">): Promise<Metadata> {
   const { exercise } = await props.params;
-  if (!isExerciseKind(exercise)) return { title: "Workout not found" };
-  const info = EXERCISES[exercise];
+  const t = await getT("workout");
+  if (!isExerciseKind(exercise)) return { title: t("metaNotFound") };
+  const tx = await getT("exercises");
+  const name = exerciseName(tx, exercise);
   return {
-    title: info.name,
-    description: `${info.name} with live on-device rep verification. ${info.tagline}.`,
+    title: name,
+    description: t("metaDescription", { name, tagline: exerciseTagline(tx, exercise) }),
   };
 }
 

@@ -4,6 +4,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AlertIcon, CheckIcon, PlayIcon, RefreshIcon, TrashIcon, TrophyIcon } from "@/components/icons/Icons";
 import { EXERCISES } from "@/lib/exercises";
 import type { ExerciseKind, SessionSummary } from "@/lib/pose/types";
+import type { Translator } from "@/lib/i18n";
+import { exerciseName } from "@/lib/i18n/exercise";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { formatClock, formatGoal, formatSecondsShort, formatValue, mean } from "./format";
 import styles from "./WorkoutScreen.module.css";
 
@@ -47,29 +50,31 @@ export function hasWork(summary: SessionSummary): boolean {
   return summary.reps > 0 || summary.holdMs >= 1000;
 }
 
-/** What to fix when every rep attempt was seen but rejected (rep exercises only). */
-const REJECTED_GUIDANCE: Record<ExerciseKind, string | null> = {
-  pushup:
-    "Lower until your elbows bend past 90°, lock your arms out at the top, and keep your body straight from shoulders to heels, with your knees off the floor.",
-  squat: "Sit back until your knees bend past 90°, stand fully upright between reps, and keep each rep controlled.",
-  plank: null,
-  lunge: "Drop until your front knee bends to 90° and your back knee nears the floor, then stand fully upright.",
-  situp: "Start with your shoulder blades on the floor and sit all the way up until your chest is over your hips.",
-  leg_raise: "Keep your legs straight, raise them until they point at the ceiling, and lower them almost to the floor.",
-  glute_bridge: "Drive your hips up until knees, hips and shoulders form a straight line, then lower all the way down.",
-  wall_sit: null,
-  pike_pushup: "Keep your hips high, lower your head toward the floor until your elbows bend past 90°, then press to straight arms.",
-  jump_squat: "Squat until your knees pass 90°, then jump so both feet leave the floor, staying side-on to the camera.",
-  pullup: "Start each rep from a dead hang with straight arms and pull until your chin clears the bar, facing the camera.",
-  dip: "Lower until your elbows bend past 90°, then press up until your arms lock out at the top.",
-  burpee: "Do the full sequence every rep: squat, plank, a full push-up, then jump with your hands overhead.",
-  mountain_climber: "Hold a straight-arm plank and drive each knee well toward your chest, keeping your hips level.",
-  jumping_jack: "Face the camera, bring your hands together overhead and jump your feet wide, then back together.",
-  high_knees: "Face the camera and drive each knee up to hip height.",
+type WorkoutKey = Parameters<Translator<"workout">>[0];
+
+/** What to fix when every rep attempt was seen but rejected (rep exercises only; holds have none). */
+const HAS_REJECTED_HELP: Record<ExerciseKind, boolean> = {
+  pushup: true,
+  squat: true,
+  plank: false,
+  lunge: true,
+  situp: true,
+  leg_raise: true,
+  glute_bridge: true,
+  wall_sit: false,
+  pike_pushup: true,
+  jump_squat: true,
+  pullup: true,
+  dip: true,
+  burpee: true,
+  mountain_climber: true,
+  jumping_jack: true,
+  high_knees: true,
 };
 
-const GENERIC_REJECTED_GUIDANCE = "Use the full range of motion on every rep and keep each rep controlled.";
-
+function rejectedHelp(exercise: ExerciseKind, t: Translator<"workout">): string {
+  return HAS_REJECTED_HELP[exercise] ? t(`${exercise}_rejectedHelp` as WorkoutKey) : t("genericRejectedHelp");
+}
 /** Post-workout summary with save / discard / go-again actions. */
 export default function FinishedView({
   exercise,
@@ -83,6 +88,8 @@ export default function FinishedView({
   onGoHome,
   verification,
 }: FinishedViewProps) {
+  const t = useT("workout");
+  const name = exerciseName(useT("exercises"), exercise);
   const info = EXERCISES[exercise];
   const { summary, goal, goalMet } = result;
   const timed = info.unit === "seconds";
@@ -120,24 +127,26 @@ export default function FinishedView({
   return (
     <div className={styles.page} data-variant="finished">
       <header className={styles.moment} data-tone={worked ? "lime" : "dark"}>
-        <p className={styles.momentEyebrow}>{info.name}</p>
+        <p className={styles.momentEyebrow}>{name}</p>
         <h1 ref={headingRef} tabIndex={-1} className={styles.momentTitle}>
-          {worked ? "Workout complete" : "Nothing counted"}
+          {worked ? t("workoutComplete") : t("nothingCounted")}
         </h1>
-        <section className={styles.momentResult} data-goal={goalMet ? "" : undefined} aria-label="Result">
+        <section className={styles.momentResult} data-goal={goalMet ? "" : undefined} aria-label={t("result")}>
           <p className={styles.momentValue}>{timed ? formatClock(summary.holdMs) : summary.reps}</p>
           <p className={styles.momentUnit}>
-            {timed ? "held with good form" : `${summary.reps === 1 ? "rep" : "reps"} verified`}
+            {timed ? t("heldWithGoodForm") : t.plural("repsVerified", summary.reps)}
           </p>
           {goalMet ? (
             <p className={styles.goalBadge} data-met="">
               <TrophyIcon size={18} />
-              Goal met · {formatGoal(goal, info.unit)}
+              {t("goalMet", { goal: formatGoal(goal, info.unit, t) })}
             </p>
           ) : (
             <p className={styles.goalBadge}>
-              Goal {formatGoal(goal, info.unit)} ·{" "}
-              {timed ? `${formatValue(remaining, "seconds")} to go` : `${remaining} to go`}
+              {t("goalToGo", {
+                goal: formatGoal(goal, info.unit, t),
+                left: timed ? formatValue(remaining, "seconds") : remaining,
+              })}
             </p>
           )}
         </section>
@@ -149,39 +158,37 @@ export default function FinishedView({
         <dl className={styles.statsGrid}>
           {!timed ? (
             <div className={styles.statTile}>
-              <dt>Not counted</dt>
+              <dt>{t("statNotCounted")}</dt>
               <dd>{summary.rejectedReps}</dd>
             </div>
           ) : null}
           {!timed ? (
             <div className={styles.statTile}>
-              <dt>Avg rep</dt>
-              <dd>{avgRepMs === null ? "–" : formatSecondsShort(avgRepMs)}</dd>
+              <dt>{t("statAvgRep")}</dt>
+              <dd>{avgRepMs === null ? "–" : formatSecondsShort(avgRepMs, t)}</dd>
             </div>
           ) : null}
           <div className={styles.statTile}>
-            <dt>Active time</dt>
+            <dt>{t("statActiveTime")}</dt>
             <dd>{formatClock(summary.activeMs)}</dd>
           </div>
           <div className={styles.statTile}>
-            <dt>Tracking</dt>
+            <dt>{t("statTracking")}</dt>
             <dd>{Math.round(summary.avgTrackingConfidence * 100)}%</dd>
           </div>
         </dl>
       ) : rejectedOnly ? (
         <div className={styles.card}>
           <p className={styles.cardText}>
-            <strong>
-              {summary.rejectedReps} {summary.rejectedReps === 1 ? "rep" : "reps"} seen, none met the standard.
-            </strong>{" "}
-            {REJECTED_GUIDANCE[exercise] ?? GENERIC_REJECTED_GUIDANCE}
+            <strong>{t.plural("rejectedSeen", summary.rejectedReps)}</strong> {rejectedHelp(exercise, t)}
           </p>
         </div>
       ) : (
         <div className={styles.card}>
           <p className={styles.cardText}>
-            No {timed ? "valid hold time" : "valid reps"} were recorded. Check that your whole body is in
-            frame and {info.camera === "front" ? "facing" : "side-on to"} the camera, then try again.
+            {timed
+              ? t(info.camera === "front" ? "noHoldFacing" : "noHoldSideOn")
+              : t(info.camera === "front" ? "noRepsFacing" : "noRepsSideOn")}
           </p>
         </div>
       )}
@@ -189,14 +196,13 @@ export default function FinishedView({
       {saveState === "memory-only" ? (
         <p className={styles.inlineWarning} role="alert">
           <AlertIcon size={20} />
-          Saved for this visit only. This browser&apos;s storage is full or blocked, so the workout will
-          be gone when you close Fitr.
+          {t("savedThisVisitOnly")}
         </p>
       ) : null}
       {saveState === "failed" ? (
         <p className={styles.inlineWarning} role="alert">
           <AlertIcon size={20} />
-          This workout couldn&apos;t be saved.
+          {t("saveFailed")}
         </p>
       ) : null}
 
@@ -205,37 +211,37 @@ export default function FinishedView({
           <>
             <button type="button" className={styles.primaryButton} onClick={onGoHome}>
               <CheckIcon size={22} />
-              Done
+              {t("done")}
             </button>
             <button type="button" className={styles.secondaryButton} onClick={onRetry}>
               <RefreshIcon size={20} />
-              Go again
+              {t("goAgain")}
             </button>
           </>
         ) : worked ? (
           <>
             <button type="button" className={styles.primaryButton} onClick={onSaveAndFinish}>
               <CheckIcon size={22} />
-              Save &amp; finish
+              {t("saveAndFinish")}
             </button>
             <button type="button" className={styles.secondaryButton} onClick={onSaveAndGoAgain}>
               <RefreshIcon size={20} />
-              Save &amp; go again
+              {t("saveAndGoAgain")}
             </button>
             {confirmDiscard ? (
-              <div className={styles.confirmRow} role="group" aria-label="Discard this workout? It hasn't been saved.">
+              <div className={styles.confirmRow} role="group" aria-label={t("discardQuestion")}>
                 <button type="button" className={styles.dangerButton} onClick={onDiscard}>
                   <TrashIcon size={20} />
-                  Yes, discard
+                  {t("yesDiscard")}
                 </button>
                 <button ref={keepRef} type="button" className={styles.ghostButton} onClick={() => setConfirmDiscard(false)}>
-                  Keep it
+                  {t("keepIt")}
                 </button>
               </div>
             ) : (
               <button ref={discardRef} type="button" className={styles.ghostButton} onClick={() => setConfirmDiscard(true)}>
                 <TrashIcon size={20} />
-                Discard
+                {t("discard")}
               </button>
             )}
           </>
@@ -243,10 +249,10 @@ export default function FinishedView({
           <>
             <button type="button" className={styles.primaryButton} onClick={onRetry}>
               <PlayIcon size={22} />
-              Try again
+              {t("tryAgain")}
             </button>
             <button type="button" className={styles.secondaryButton} onClick={onGoHome}>
-              Back home
+              {t("backHome")}
             </button>
           </>
         )}

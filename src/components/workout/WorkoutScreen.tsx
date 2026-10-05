@@ -16,13 +16,15 @@ import { EXERCISES } from "@/lib/exercises";
 import { createRepEngine } from "@/lib/pose/engine";
 import { gateFrameByOrientation } from "@/lib/pose/runtime/orientation";
 import type { ExerciseKind, PoseFrame, RepEngine, SessionSummary } from "@/lib/pose/types";
-import { speak, stopSpeaking } from "@/lib/native/bridge";
+import { exerciseName, exerciseNameInSentence } from "@/lib/i18n/exercise";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { speak, speechLocale, stopSpeaking } from "@/lib/native/bridge";
 import { createSessionId, saveSession } from "@/lib/storage/history";
 import ChallengePrompt from "./ChallengePrompt";
 import FormGuide from "./FormGuide";
 import FinishedView, { hasWork, type FinishedResult, type SaveState } from "./FinishedView";
 import { formatGoal } from "./format";
-import Hud, { TILTED_COPY, type HudVerification } from "./Hud";
+import Hud, { type HudVerification } from "./Hud";
 import { createHudTracker, INITIAL_HUD, type HudSnapshot, type HudTracker } from "./hudTracker";
 import { computeMapping, drawSkeleton, type FitMode } from "./overlay";
 import ReadyCountdown from "./ReadyCountdown";
@@ -31,7 +33,8 @@ import StakeBanner from "./StakeBanner";
 import StatusPanel from "./StatusPanel";
 import VerificationCard from "./VerificationCard";
 import { useWakeLock } from "./useWakeLock";
-import { ChallengeWatcher, VoiceCoach, type CoachLine } from "./voiceCoach";
+import { rich } from "./rich";
+import { ChallengeWatcher, speechTranslator, VoiceCoach, type CoachLine } from "./voiceCoach";
 import { markVerificationFailed } from "@/lib/storage/verifyFailures";
 import styles from "./WorkoutScreen.module.css";
 
@@ -121,6 +124,8 @@ export interface WorkoutScreenProps {
  */
 export default function WorkoutScreen({ exercise, verification }: WorkoutScreenProps) {
   const info = EXERCISES[exercise];
+  const t = useT("workout");
+  const name = exerciseName(useT("exercises"), exercise);
   const router = useRouter();
 
   // Staked workouts: today's commitment for this exercise turns on server verification.
@@ -334,7 +339,14 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
     engineRef.current = createRepEngine(exercise);
     trackerRef.current = createHudTracker({ exercise, unit: info.unit, goal });
     stopCoach();
-    coachRef.current = new VoiceCoach({ exerciseName: info.name, unit: info.unit, goal });
+    // The coach speaks the language the voice can (the app language, else English).
+    const voiceLocale = speechLocale();
+    coachRef.current = new VoiceCoach({
+      exerciseName: exerciseNameInSentence(speechTranslator("exercises", voiceLocale), exercise),
+      unit: info.unit,
+      goal,
+      t: speechTranslator("voice", voiceLocale),
+    });
     watcherRef.current = new ChallengeWatcher();
     // Spoken inside the Start tap: browsers only allow speech after a user gesture.
     say(coachRef.current.start(Date.now()));
@@ -546,21 +558,21 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
   let panel: ReactNode = null;
   const backButton = hasProgress ? (
     <button type="button" className={styles.secondaryButton} onClick={endSession}>
-      End &amp; review
+      {t("endAndReview")}
     </button>
   ) : (
     <button type="button" className={styles.secondaryButton} onClick={() => cancelToSetup()}>
-      Back
+      {t("back")}
     </button>
   );
   const retryButton = (
     <button type="button" className={styles.primaryButton} onClick={retryCamera}>
-      Try again
+      {t("tryAgain")}
     </button>
   );
   const retryPoseButton = (
     <button type="button" className={styles.primaryButton} onClick={pose.retry}>
-      Try again
+      {t("tryAgain")}
     </button>
   );
 
@@ -568,8 +580,8 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
     case "idle":
     case "requesting":
       panel = (
-        <StatusPanel tone="loading" title="Starting camera" actions={backButton}>
-          <p>If your browser asks, allow camera access. Video stays on this device.</p>
+        <StatusPanel tone="loading" title={t("startingCamera")} actions={backButton}>
+          <p>{t("startingCameraText")}</p>
         </StatusPanel>
       );
       break;
@@ -578,7 +590,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
         <StatusPanel
           tone="error"
           icon={<CameraIcon size={28} />}
-          title="Camera access is blocked"
+          title={t("cameraBlockedTitle")}
           actions={
             <>
               {retryButton}
@@ -586,32 +598,15 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
             </>
           }
         >
-          {standalone ? (
-            <p>
-              Fitr needs the camera to count your reps. Allow it for Fitr in your browser&apos;s site settings
-              (Android: Chrome › Settings › Site settings › Camera; iPhone: Settings › Safari › Camera), then
-              come back and tap Try again. Nothing is recorded or uploaded.
-            </p>
-          ) : (
-            <p>
-              Fitr needs the camera to count your reps. Tap the icon next to the address bar, set Camera to
-              Allow, then tap Try again. Nothing is recorded or uploaded.
-            </p>
-          )}
+          <p>{standalone ? t("cameraBlockedStandalone") : t("cameraBlockedBrowser")}</p>
         </StatusPanel>
       );
       break;
     case "insecure":
       panel = (
-        <StatusPanel tone="error" icon={<ShieldIcon size={28} />} title="Camera needs a secure page" actions={backButton}>
-          <p>
-            Browsers only allow the camera on HTTPS pages or on <code>localhost</code>. Open Fitr from its
-            https:// address.
-          </p>
-          <p>
-            Testing on a phone over Wi-Fi? A plain <code>http://192.168…</code> address will not work; use an
-            HTTPS tunnel or a deployed build.
-          </p>
+        <StatusPanel tone="error" icon={<ShieldIcon size={28} />} title={t("cameraInsecureTitle")} actions={backButton}>
+          <p>{rich(t("cameraInsecureText"), { localhost: <code>localhost</code> })}</p>
+          <p>{rich(t("cameraInsecureWifi"), { address: <code>http://192.168…</code> })}</p>
         </StatusPanel>
       );
       break;
@@ -620,7 +615,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
         <StatusPanel
           tone="error"
           icon={<CameraIcon size={28} />}
-          title="No camera available"
+          title={t("noCameraTitle")}
           actions={
             <>
               {retryButton}
@@ -628,8 +623,8 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
             </>
           }
         >
-          <p>{cameraError ?? "This device or browser does not expose a camera."}</p>
-          <p>Fitr verifies reps with the camera. Try another browser or device, or connect a camera.</p>
+          <p>{cameraError ?? t("noCameraText")}</p>
+          <p>{t("noCameraHint")}</p>
         </StatusPanel>
       );
       break;
@@ -638,7 +633,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
         <StatusPanel
           tone="error"
           icon={<AlertIcon size={28} />}
-          title="Camera problem"
+          title={t("cameraProblemTitle")}
           actions={
             <>
               {retryButton}
@@ -646,7 +641,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
             </>
           }
         >
-          <p>{cameraError ?? "The camera could not be started. Close other apps or tabs that might be using it, then try again."}</p>
+          <p>{cameraError ?? t("cameraProblemText")}</p>
         </StatusPanel>
       );
       break;
@@ -657,7 +652,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
           <StatusPanel
             tone="error"
             icon={<AlertIcon size={28} />}
-            title={stopped ? "Pose tracking stopped" : "Pose tracking could not start"}
+            title={stopped ? t("poseStoppedTitle") : t("poseCouldNotStartTitle")}
             actions={
               <>
                 {retryPoseButton}
@@ -665,19 +660,15 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
               </>
             }
           >
-            <p>{pose.error ?? "The on-device AI model failed to load."}</p>
-            {stopped ? (
-              <p>The on-device AI model stopped responding. Try again to restart it; if it keeps happening, close and reopen Fitr.</p>
-            ) : (
-              <p>The first load needs a connection to download the model (a few MB); after that it works offline. Check your connection, then try again.</p>
-            )}
+            <p>{pose.error ?? t("poseLoadFailed")}</p>
+            <p>{stopped ? t("poseStoppedText") : t("poseFirstLoadText")}</p>
           </StatusPanel>
         );
       } else if (pose.status !== "running") {
         panel = (
           <StatusPanel
             tone="loading"
-            title="Loading pose model"
+            title={t("loadingPoseTitle")}
             actions={
               pose.slow ? (
                 <>
@@ -689,8 +680,8 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
               )
             }
           >
-            <p>Preparing on-device AI tracking. The first load downloads a few MB; after that it works offline.</p>
-            {pose.slow ? <p>This is taking longer than usual. Check your connection, or try again.</p> : null}
+            <p>{t("loadingPoseText")}</p>
+            {pose.slow ? <p>{t("loadingPoseSlow")}</p> : null}
           </StatusPanel>
         );
       }
@@ -700,18 +691,22 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
   let hudVerification: HudVerification | null = null;
   if (stakedRun) {
     const s = verified.status;
-    const pendingNote = verified.challengesPending > 0 && !verified.challenge ? " · live check coming, keep going" : "";
+    const pending = verified.challengesPending > 0 && !verified.challenge;
+    const goalText = formatGoal(goal, info.unit, t);
     hudVerification =
       s === "error"
         ? {
-            note: `Not verified: ${verified.error ?? "verification stopped"}`,
+            note: t("notVerifiedNote", { reason: verified.error ?? t("verificationStopped") }),
             tone: "warn",
-            action: verified.outcome === null ? { label: "Retry", onClick: verified.begin } : undefined,
+            action: verified.outcome === null ? { label: t("retry"), onClick: verified.begin } : undefined,
           }
         : verified.error
           ? { note: verified.error, tone: "warn" }
           : {
-              note: s === "starting" ? "Connecting to the verifier…" : `Verified run · goal ${formatGoal(goal, info.unit)}${pendingNote}`,
+              note:
+                s === "starting"
+                  ? t("connectingVerifier")
+                  : t(pending ? "verifiedRunNotePending" : "verifiedRunNote", { goal: goalText }),
               tone: "ok",
             };
     if (verified.challenge) hudVerification.challenge = <ChallengePrompt challenge={verified.challenge} />;
@@ -728,7 +723,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
           playsInline
           autoPlay
           disablePictureInPicture
-          aria-label={`Camera preview for ${info.name}`}
+          aria-label={t("cameraPreview", { name })}
         />
         <canvas ref={canvasRef} className={styles.overlay} aria-hidden="true" />
       </div>
@@ -748,7 +743,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
           onToggleVoice={() => {
             const next = !prefs.voiceCoach;
             setPreference("voiceCoach", next);
-            if (next) speak("Voice coach on", true);
+            if (next) speak(speechTranslator("voice", speechLocale())("voiceCoachOn"), true);
             else stopSpeaking();
           }}
           onEnd={endSession}
@@ -759,13 +754,13 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
         <ReadyCountdown
           value={countdown}
           total={COUNTDOWN_SECS}
-          detail={`Goal ${formatGoal(goal, info.unit)}`}
+          detail={t("countdownGoal", { goal: formatGoal(goal, info.unit, t) })}
           onSkip={() => setCountdown(null)}
         />
       ) : null}
 
       <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {tilted ? TILTED_COPY : announcement}
+        {tilted ? t("phoneTilted") : announcement}
       </p>
     </div>
   );

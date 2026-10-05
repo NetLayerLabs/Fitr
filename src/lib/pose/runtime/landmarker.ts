@@ -5,6 +5,7 @@
  * top level, so importing this file from a Server Component or during SSR is harmless.
  */
 import type { PoseLandmarker } from "@mediapipe/tasks-vision";
+import { tr } from "@/lib/i18n";
 import type { PoseFrame } from "@/lib/pose/types";
 import { DEFAULT_POSE_MODEL, poseAssetSources, type PoseAssetSource, type PoseModelVariant } from "./assets";
 import { MonotonicClock, toPoseFrame } from "./convert";
@@ -189,7 +190,7 @@ export async function loadPoseDetector(opts: LoadPoseDetectorOptions = {}): Prom
       }
     }
   }
-  throw new Error(`Could not start pose tracking (${failures.join("; ")})`);
+  throw new Error(tr("workout", "poseStartFailed", { detail: failures.join("; ") }));
 }
 
 /**

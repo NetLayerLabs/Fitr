@@ -10,12 +10,17 @@
  *   version(): string                                  e.g. "1.1.0+3"
  *   speak(text: string, flush: boolean): void          Android TextToSpeech; flush=true interrupts
  *   stopSpeaking(): void
+ *   setSpeechLanguage(tag: string): boolean            OPTIONAL (1.2.0+): BCP 47 tag, e.g. "zh-CN";
+ *                                                      true when the device has a voice for it,
+ *                                                      false = the TTS stays on English
  *   notificationPermission(): string                   "granted" | "denied" | "default"
  *   requestNotificationPermission(): void              POST_NOTIFICATIONS on Android 13+
  *   scheduleReminders(json: string): void              json = ReminderPlan (replaces any previous plan)
  *   cancelReminders(): void
  *   updateWidget(json: string): void                   json = WidgetState (home-screen widget)
  */
+
+import { activeLocale, speechLang, type Locale } from "@/lib/i18n";
 
 export interface ReminderPlan {
   /** When the commitment must be done (epoch ms, the onchain attest deadline or commit window). */
@@ -50,6 +55,8 @@ interface FitrNativeApi {
   version(): string;
   speak(text: string, flush: boolean): void;
   stopSpeaking(): void;
+  /** 1.2.0+ only (older APKs lack it). True when the device has a voice for `tag`. */
+  setSpeechLanguage?(tag: string): boolean;
   notificationPermission(): string;
   requestNotificationPermission(): void;
   scheduleReminders(json: string): void;
@@ -81,13 +88,41 @@ export function nativeVersion(): string | null {
   }
 }
 
+let nativeSpeech: { tag: string; ok: boolean } | null = null;
+
 /**
- * Speak a short phrase. Native TTS in the Android app; Web Speech API in browsers that have it;
- * otherwise silent. `interrupt` cuts off whatever is being said (use for time-critical prompts
+ * The language spoken phrases should be in: the app language when the voice can speak it, else
+ * English (so an English voice never reads, say, Chinese text). Inside the app this also switches
+ * the native TTS to that language when the APK supports it (older APKs: English only). Callers
+ * build the phrase in this language and then call speak().
+ */
+export function speechLocale(): Locale {
+  const locale = activeLocale();
+  const native = api();
+  if (!native) return locale;
+  if (typeof native.setSpeechLanguage !== "function") return "en";
+  const tag = speechLang(locale);
+  if (nativeSpeech?.tag !== tag) {
+    let ok = false;
+    try {
+      ok = native.setSpeechLanguage(tag) === true;
+    } catch {
+      ok = false;
+    }
+    // A language the device cannot speak leaves the native side on English.
+    nativeSpeech = { tag, ok };
+  }
+  return nativeSpeech.ok ? locale : "en";
+}
+
+/**
+ * Speak a short phrase (built in the language speechLocale() returns). Native TTS in the Android
+ * app; Web Speech API in browsers that have it; otherwise silent. `interrupt` cuts off whatever is being said (use for time-critical prompts
  * like a live challenge).
  */
 export function speak(text: string, interrupt = false): void {
   const native = api();
+  const lang = speechLang(speechLocale());
   if (native) {
     try {
       native.speak(text, interrupt);
@@ -101,6 +136,7 @@ export function speak(text: string, interrupt = false): void {
     if (interrupt) window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 1.05;
+    u.lang = lang;
     window.speechSynthesis.speak(u);
   } catch {
     /* ignore */
