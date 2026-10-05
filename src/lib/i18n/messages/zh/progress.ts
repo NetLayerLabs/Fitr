@@ -1,5 +1,102 @@
 import type { NsMessages } from "../types";
 
-const progress: Partial<NsMessages<"progress">> = {};
+const progress: Partial<NsMessages<"progress">> = {
+  // Page
+  metaTitle: "进度",
+  metaDescription: "你的连续打卡、个人纪录、奖章和训练历史，均保存在本设备上。",
+  pageTitle: "进度",
+  pageEyebrow: "保存在本设备",
+
+  // Dashboard sections
+  loadingProgress: "正在加载你的进度…",
+  streakCalendarHeading: "打卡日历",
+  personalRecordsHeading: "个人纪录",
+  awardsHeading: "奖章",
+  historyHeading: "历史记录",
+
+  // Stats
+  statsLabel: "你的数据",
+  currentStreak: "当前连续",
+  bestStreak: "最长连续",
+  thisWeek: "本周",
+  totalReps: "总次数",
+  dayUnit_one: "天",
+  dayUnit_other: "天",
+  workoutUnit_one: "次训练",
+  workoutUnit_other: "次训练",
+  hintTodayDone: "今日目标已完成，明天见。",
+  hintKeepGoing: "完成今日目标，保持连续。",
+  hintStart: "完成一次每日目标，开启连续打卡。",
+
+  // Streak calendar
+  previousMonth: "上个月",
+  nextMonth: "下个月",
+  calendarDay: "{date}：{status}",
+  calendarDayToday: "{date}（今天）：{status}",
+  dayStatusUpcoming: "未到",
+  dayStatusGoalMet: "已达标",
+  dayStatusActive: "有训练，未达标",
+  dayStatusNotDoneYet: "尚未完成",
+  dayStatusNoGoal: "无目标",
+  calendarLegend_one: "{month}共有 {count} 天达标",
+  calendarLegend_other: "{month}共有 {count} 天达标",
+
+  // Personal records
+  recordsEmpty: "每个动作的单组最佳成绩会显示在这里。{link}，创下你的第一个纪录。",
+  recordsEmptyLink: "选择训练",
+  unitHeld: "保持",
+  repUnit_one: "次",
+  repUnit_other: "次",
+
+  // Awards
+  awardsEarnedCount: "已获得 {earned}/{total}",
+  awardEarnedSuffix: "（已获得）",
+  awardLockedSuffix: "（未解锁）",
+  awardEarnedOn: "获得于 {date}",
+  awardEarned: "已获得",
+  awardProgressLabel: "{title}进度",
+  awardFirstWorkoutTitle: "初次训练",
+  awardFirstWorkoutDescription: "完成你的第一次训练。",
+  awardFirstGoalTitle: "目标达人",
+  awardFirstGoalDescription: "首次完成每日目标。",
+  awardStreak3Title: "连续 3 天",
+  awardStreak3Description: "连续 3 天完成目标。",
+  awardStreak7Title: "连续 7 天",
+  awardStreak7Description: "连续 7 天完成目标。",
+  awardStreak30Title: "连续 30 天",
+  awardStreak30Description: "连续 30 天完成目标。",
+  awardReps100Title: "100 次",
+  awardReps100Description: "累计完成 100 次有效动作。",
+  awardReps1000Title: "1,000 次",
+  awardReps1000Description: "累计完成 1,000 次有效动作。",
+  awardPlankMinuteTitle: "平板一分钟",
+  awardPlankMinuteDescription: "一口气坚持平板支撑满一分钟。",
+  awardVariety5Title: "花样训练",
+  awardVariety5Description: "尝试 5 种不同的动作。",
+  awardVerifiedDayTitle: "链上认证",
+  awardVerifiedDayDescription: "完成一个经链上验证的质押日。",
+
+  // History
+  loadingHistory: "正在加载历史记录…",
+  emptyTitle: "还没有训练记录",
+  emptyText: "完成任意训练后会显示在这里。所有数据都只保存在本设备上。",
+  startWorkout: "开始训练",
+  workoutsLabel: "训练",
+  dayToday: "今天",
+  dayYesterday: "昨天",
+  goalDay: "目标日",
+  noVerifiedReps: "没有有效次数",
+  holdTotal: "{exercise} {time}",
+  sessionAt: "{time}",
+  notCounted: "{count} 次未计入",
+  goalMet: "已达标",
+  confirmDeleteOne: "要从本设备删除这次训练吗？",
+  confirmDeleteAll: "要从本设备删除全部 {count} 次训练吗？",
+  confirmResetNote: "这也会重置你的连续打卡，且无法撤销。",
+  deleteOne: "删除",
+  deleteAll: "全部删除",
+  cancel: "取消",
+  clearHistory: "清除历史记录",
+};
 
 export default progress;
