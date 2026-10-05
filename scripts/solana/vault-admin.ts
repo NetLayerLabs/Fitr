@@ -6,6 +6,7 @@
  *   npx tsx scripts/solana/vault-admin.ts propose   [--send]   §7.1: propose_authority(SQUADS_VAULT)
  *   npx tsx scripts/solana/vault-admin.ts accept-tx            §7.2: base58 tx for Squads "import"
  *   npx tsx scripts/solana/vault-admin.ts unpause-tx / pause-tx  §7.5 / §10.1: Squads tx to (un)pause
+ *   npx tsx scripts/solana/vault-admin.ts sponsor-tx <SKR>     §10.6b: Squads tx to set the daily sponsor amount
  *
  * Without --send every step only simulates. Env: HELIUS_API_KEY (from .env.local), DEPLOYER_KEYPAIR
  * (path, default ~/.fitr/keys/fitr-deployer.json), ATTESTOR, SQUADS_VAULT.
@@ -215,8 +216,8 @@ async function squadsTx(build: (vault: TransactionSigner, pool: Address) => Inst
 /** §7.2: the Squads vault accepts the pool authority. */
 const acceptTx = () => squadsTx((vault, pool) => getAcceptAuthorityInstruction({ newAuthority: vault, pool }));
 
-/** §7.5: the Squads vault sets update_config{ paused: Some(paused) }. */
-const pausedTx = (paused: boolean) =>
+/** A Squads update_config on the global pool that changes only the given fields. */
+const configTx = (change: { paused?: boolean; dailySponsorAmount?: bigint }) =>
   squadsTx((vault, pool) =>
     getUpdateConfigInstruction({
       authority: vault,
@@ -230,12 +231,24 @@ const pausedTx = (paused: boolean) =>
       commitCutoffSecs: NONE,
       attestGraceSecs: NONE,
       goalLimits: NONE,
-      dailySponsorAmount: NONE,
-      paused,
+      dailySponsorAmount: change.dailySponsorAmount ?? NONE,
+      paused: change.paused ?? NONE,
       requireSgt: NONE,
       finalizeDelaySecs: NONE,
     }),
   );
+
+/** §7.5 / §10.1: pause or unpause. */
+const pausedTx = (paused: boolean) => configTx({ paused });
+
+/** §10.6b: open the sponsor tap at `skr` SKR per day (0 closes it; at most max_stake, 10,000). */
+function sponsorTx(skr: string | undefined) {
+  if (skr === undefined || !/^\d+(\.\d{1,6})?$/.test(skr)) throw new Error("usage: sponsor-tx <SKR per day, e.g. 50 or 0>");
+  const [whole, frac = ""] = skr.split(".");
+  const amount = BigInt(whole) * 1_000_000n + BigInt(frac.padEnd(6, "0"));
+  if (amount > PARAMS.maxStake) throw new Error("daily sponsor amount must be at most max_stake (10,000 SKR)");
+  return configTx({ dailySponsorAmount: amount });
+}
 
 const [cmd, flag] = process.argv.slice(2);
 const send = flag === "--send";
@@ -246,9 +259,10 @@ const steps: Record<string, () => Promise<unknown>> = {
   "accept-tx": acceptTx,
   "unpause-tx": () => pausedTx(false),
   "pause-tx": () => pausedTx(true),
+  "sponsor-tx": () => sponsorTx(flag),
 };
 if (!steps[cmd]) {
-  console.error("usage: vault-admin.ts status | init [--send] | propose [--send] | accept-tx | unpause-tx | pause-tx");
+  console.error("usage: vault-admin.ts status | init [--send] | propose [--send] | accept-tx | unpause-tx | pause-tx | sponsor-tx <SKR>");
   process.exit(1);
 }
 steps[cmd]().catch((e) => {

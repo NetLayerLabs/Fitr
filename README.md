@@ -88,6 +88,48 @@ and `src/components/public/`:
 
 `pool=` is always a pool address (omitted = the global pool); in-app links use `?crew=<id>`.
 
+## Sponsored days
+
+A sponsor (a brand, a gym, a community, or the people behind Fitr) can add an **extra bonus for
+showing up**: SKR on top of what the no-shows forfeit, paid only to the people who complete their
+goal. It is a bonus funded by a sponsor's deposit, never yield.
+
+**How it works (all enforced onchain, `anchor/SPEC.md` §2.7 and §5)**
+
+1. **The tap.** Each pool (the global pool or any crew) has a `daily_sponsor_amount`: the most its
+   reserve may pay out per day. It is **0 on mainnet today**, so sponsoring is closed. Only the
+   pool's authority can change it (for the global pool, the Squads multisig, 2-of-3). It can never
+   be more than `max_stake` (10,000 SKR), so one day can never drain more than that.
+2. **Funding.** Anyone can deposit SKR into a pool's reserve with `fund_reserve`: in the app, through
+   the **"Sponsor a day" Blink** (`https://fitr.day/api/actions/sponsor?pool=<pool>`, also linked
+   from `https://fitr.day/pool`), or from any wallet. While the tap is 0 the deposit is refused
+   (`SponsorTapClosed`) and no tokens move, so money can never sit in a reserve nothing draws from.
+3. **Paying out.** Each day records the tap's value when it is created. At finalize, a day with at
+   least one completer draws `min(daily_sponsor_amount, reserve)` from the reserve and adds it to the
+   forfeits being shared. Everyone who completed gets their own stake back plus a share
+   proportional to their stake (and streak weight). A day nobody completes draws nothing.
+4. **Where else the reserve comes from.** In the global pool, a day with **no completers** has
+   nobody to pay, so its forfeits (after the 5% fee) go into the reserve too, as does rounding dust.
+   They come back out to future people who show up, through the same tap. In a crew, such forfeits
+   roll over to the crew's next day with a completer instead.
+5. **Nobody can take it.** The reserve only ever leaves through the sponsor tap to people who
+   completed. There is no withdraw instruction for it: not for the admin, not for Fitr.
+
+**Example.** The tap is 50 SKR. Ten people stake 100 SKR each and seven show up. Forfeits are
+300 SKR, Fitr's fee is 15 SKR, the sponsor adds 50 SKR, so the seven share 335 SKR: each gets their
+100 SKR back plus about 47.8 SKR.
+
+**Turning it on or off.** Build the Squads transaction, import it in Squads (Developers → TX Builder
+→ Import), and approve 2-of-3:
+
+```bash
+SQUADS_VAULT=62idAiYpT9tTdCdcH86wFzWJCAcmkNGUsAXc5q1rYqu9 npx tsx scripts/solana/vault-admin.ts sponsor-tx 50   # 50 SKR per day
+SQUADS_VAULT=62idAiYpT9tTdCdcH86wFzWJCAcmkNGUsAXc5q1rYqu9 npx tsx scripts/solana/vault-admin.ts sponsor-tx 0    # close the tap
+```
+
+A new value applies to days created afterwards; days already running keep the value they started
+with. The pool dashboard (`/pool`) shows the reserve, the current tap and each day's sponsored amount.
+
 ## Android app and the native bridge
 
 `android/fitr-shell` is a Kotlin Solana Mobile web shell that loads `https://app.fitr.day` (see its
