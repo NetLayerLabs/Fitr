@@ -29,7 +29,7 @@ never hold mainnet keys.
    ```
    solana-keygen new -o ~/fitr-keys/deployer.json
    ```
-   Fund it with **3.6 SOL** (§3). It is a hot key used once, for about one minute. Afterwards, empty
+   Fund it with **3.2 SOL** (§3). It is a hot key used once, for about one minute. Afterwards, empty
    it back to your wallet.
 4. **Generate the attestor key on the VPS** (never on a laptop, never in the repo). Put it in
    `ATTESTOR_KEYPAIR` in the server env and give its **public key** to step 6. Fund it with about
@@ -81,21 +81,23 @@ ls -l target/deploy/fitr_vault.so                                # record the si
 
 ## 3. Cost (exact formula; mainnet rent = 5,080 lamports per byte incl. 128-byte header)
 
-The `anchor build` binary is **653,688 bytes** (16-exercise build with crews). Re-run the formula with the verifiable build's size.
+The `anchor build` binary is **595,704 bytes** (16-exercise build with crews and sponsored days, `opt-level = "z"` in `anchor/Cargo.toml`: same code, smaller binary; it was 671,192 bytes at the default opt-level, which would cost 3.41 SOL). Re-run the formula with the verifiable build's size.
 
 | Item | Formula | Lamports | SOL |
 |---|---|---|---|
-| ProgramData account at 1× size (CLI default `--max-len`) | (128 + 45 + 653,688) × 5,080 | 3,321,613,880 | **3.3216** |
+| ProgramData account at 1× size (CLI default `--max-len`) | (128 + 45 + 595,704) × 5,080 | 3,027,055,160 | **3.0271** |
 | Program account | (128 + 36) × 5,080 | 833,120 | 0.0008 |
-| Temporary buffer | (128 + 37 + 653,688) × 5,080 | 3,321,573,240 | 3.3216, drained back to the payer inside the deploy instruction |
-| Write transactions | about 650 txs × 5,000 lamports + priority fee | about 3,250,000 plus priority | 0.003 to 0.05 |
+| Temporary buffer | (128 + 37 + 595,704) × 5,080 | 3,027,014,520 | 3.0270, drained back to the payer inside the deploy instruction |
+| Write transactions | about 600 txs × 5,000 lamports + priority fee | about 3,250,000 plus priority | 0.003 to 0.05 |
 | `initialize_pool` (Pool 554 B + vault 165 B rent) | (682 + 293) × 5,080 | 4,953,000 | 0.0050 |
-| **Fund the deployer with** | | | **3.6 SOL**, net spend about 3.33 SOL (keep the margin for priority fees) |
+| **Fund the deployer with** | | | **3.2 SOL**, net spend about 3.04 SOL (keep the margin for priority fees) |
 
 - If the deploy aborts midway, the buffer keeps its SOL. Resume with `--buffer <BUFFER_KEYPAIR>`,
   or recover with `solana program close <BUFFER_ADDRESS>`.
 - Later upgrades auto-extend ProgramData if the binary grows. The cost is 5,080 lamports per extra
   byte, and each upgrade needs a temporary buffer of the new size (refunded when the upgrade lands).
+- The ProgramData rent is a deposit, not a fee: `solana program close` returns it to the authority if the
+  program is ever retired.
 - Optional on-chain IDL (`anchor idl init`): about 0.1 SOL.
 
 ## 4. Deploy
