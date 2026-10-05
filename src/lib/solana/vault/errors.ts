@@ -188,3 +188,33 @@ export function friendlyTxError(err: unknown, tokenLabel = "SKR"): string {
   if (/AccountNotInitialized|3012/.test(msg)) return "Something changed onchain. Refresh and try again.";
   return "Something went wrong. Refresh and try again.";
 }
+
+/**
+ * A short technical summary of a thrown error (name, message, cause chain, simulation error and the
+ * last program logs), shown under the friendly sentence so a failure can be diagnosed from a
+ * screenshot. Never includes keys: errors only carry public data.
+ */
+export function describeTxError(err: unknown): string {
+  const parts: string[] = [];
+  let cur: unknown = err;
+  for (let depth = 0; cur != null && depth < 5; depth++) {
+    if (typeof cur === "object") {
+      const o = cur as { name?: unknown; message?: unknown; err?: unknown; logs?: unknown; context?: unknown; cause?: unknown };
+      const head = [typeof o.name === "string" ? o.name : "", typeof o.message === "string" ? o.message : ""].filter(Boolean).join(": ");
+      if (head) parts.push(head);
+      if (o.err !== undefined) parts.push(`err=${JSON.stringify(o.err, (_, v) => (typeof v === "bigint" ? String(v) : v))}`);
+      const logs = Array.isArray(o.logs) ? (o.logs as unknown[]).filter((l): l is string => typeof l === "string") : [];
+      const tail = logs.filter((l) => /log:|failed|error|insufficient/i.test(l)).slice(-4);
+      if (tail.length) parts.push(tail.join(" | "));
+      if (o.context && typeof o.context === "object") {
+        const ctx = JSON.stringify(o.context, (_, v) => (typeof v === "bigint" ? String(v) : v));
+        if (ctx && ctx !== "{}") parts.push(`context=${ctx.slice(0, 200)}`);
+      }
+      cur = o.cause;
+    } else {
+      parts.push(String(cur));
+      break;
+    }
+  }
+  return parts.join(" · ").slice(0, 700) || "unknown error";
+}

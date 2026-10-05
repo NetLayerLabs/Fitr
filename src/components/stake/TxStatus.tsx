@@ -45,10 +45,13 @@ export function ExplorerLink({ signature }: { signature: string }) {
 export function TxError({
   message,
   signature,
+  detail,
   onDismiss,
 }: {
   message: string;
   signature: string | null;
+  /** Raw technical reason, behind a disclosure (helps support from a screenshot). */
+  detail?: string | null;
   onDismiss: () => void;
 }) {
   return (
@@ -57,6 +60,12 @@ export function TxError({
       <div className={styles.txErrorBody}>
         <p>{message}</p>
         {signature ? <ExplorerLink signature={signature} /> : null}
+        {detail ? (
+          <details className={styles.txErrorDetail}>
+            <summary>Technical details</summary>
+            <code>{detail}</code>
+          </details>
+        ) : null}
       </div>
       <Button variant="ghost" onClick={onDismiss}>
         OK

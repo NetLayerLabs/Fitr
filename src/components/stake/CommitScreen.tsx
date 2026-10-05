@@ -479,7 +479,7 @@ export function PoolCommitFlow({
       <PoolSummary dayState={todayEntry?.dayState ?? null} decimals={SKR_DECIMALS} label={solanaConfig.tokenLabel} yourStatus={yourStatus} />
 
       {tx.state.phase === "error" && tx.state.error ? (
-        <TxError message={tx.state.error} signature={tx.state.signature} onDismiss={tx.reset} />
+        <TxError message={tx.state.error} signature={tx.state.signature} detail={tx.state.detail} onDismiss={tx.reset} />
       ) : null}
       {busy ? <TxProgress phase={tx.state.phase} /> : null}
 

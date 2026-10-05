@@ -7,7 +7,7 @@ import { notifyBalancesChanged, useSendingSigner } from "@/components/wallet/hoo
 import { notifyVaultChanged } from "@/hooks/useVault";
 import { solanaConfig } from "@/lib/solana/config";
 import { getBrowserRpc } from "@/lib/solana/rpc";
-import { extractCustomErrorCode, friendlyTxError } from "@/lib/solana/vault/errors";
+import { describeTxError, extractCustomErrorCode, friendlyTxError } from "@/lib/solana/vault/errors";
 import type { Exercise } from "@/lib/solana/vault/generated";
 import {
   buildDailyLoopIxs,
@@ -42,11 +42,13 @@ export interface VaultTxState {
   did: { committed: boolean; settled: TxPlan["settle"] } | null;
   signature: Signature | null;
   error: string | null;
+  /** Technical summary of the failure (step + raw reason), for a "Technical details" disclosure. */
+  detail: string | null;
   /** The wallet returned a signature but confirmation timed out: it may still land. */
   unconfirmed: boolean;
 }
 
-const IDLE: VaultTxState = { phase: "idle", did: null, signature: null, error: null, unconfirmed: false };
+const IDLE: VaultTxState = { phase: "idle", did: null, signature: null, error: null, detail: null, unconfirmed: false };
 
 export function isBusy(phase: VaultTxPhase): boolean {
   return phase === "preparing" || phase === "simulating" || phase === "signing" || phase === "confirming";
@@ -67,6 +69,7 @@ export function useVaultTx(account: UiWalletAccount) {
       const mint: Address | null = solanaConfig.skrMint;
       if (running.current || !mint) return;
       running.current = true;
+      let lastStep: VaultTxPhase = "preparing";
       setState({ ...IDLE, phase: "preparing" });
       const rpc = getBrowserRpc();
 
@@ -91,7 +94,10 @@ export function useVaultTx(account: UiWalletAccount) {
           signer,
           ixs,
           unitLimit,
-          onStep: (phase) => setState((s) => ({ ...s, phase })),
+          onStep: (phase) => {
+            lastStep = phase;
+            setState((s) => ({ ...s, phase }));
+          },
           onSigned: (signature) => setState((s) => ({ ...s, signature })),
         });
         return { res, plan };
@@ -111,6 +117,7 @@ export function useVaultTx(account: UiWalletAccount) {
           did: { committed: outcome.plan.commit && req.commit !== null, settled: outcome.plan.settle },
           signature: outcome.res.signature,
           error: null,
+          detail: null,
           unconfirmed: false,
         });
       } catch (err) {
@@ -120,6 +127,7 @@ export function useVaultTx(account: UiWalletAccount) {
           phase: "error",
           signature: err instanceof ConfirmationError ? err.signature : s.signature,
           unconfirmed: timeout,
+          detail: `step=${lastStep} · ${describeTxError(err)}`,
           error: timeout
             ? "Your wallet sent it, but the network has not confirmed it yet. Check the explorer, then refresh."
             : err instanceof ConfirmationError
