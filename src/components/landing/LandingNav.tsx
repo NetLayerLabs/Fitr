@@ -43,7 +43,7 @@ export default function LandingNav({ onHome = true }: LandingNavProps) {
           <DownloadIcon size={16} strokeWidth={2.25} />
           Download
         </a>
-        <MobileMenu links={ANCHORS.map((a) => ({ href: `${base}${a.hash}`, label: a.label }))} apkHref={LANDING_LINKS.apk} />
+        <MobileMenu links={ANCHORS.map((a) => ({ href: `${base}${a.hash}`, label: a.label }))} />
       </div>
     </header>
   );

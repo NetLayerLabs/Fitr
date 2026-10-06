@@ -223,17 +223,6 @@
   background: var(--border-subtle);
 }
 
-.menuDownload {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 52px;
-  border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-weight: var(--weight-bold);
-}
 
 @media (prefers-reduced-motion: no-preference) {
   .menuPanel[data-open] {
