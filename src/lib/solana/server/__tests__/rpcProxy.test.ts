@@ -18,7 +18,7 @@ const rpc = (method: string, params?: unknown, id: unknown = 1) =>
 describe("validateRpcRequest", () => {
   test("accepts every allowlisted read method", () => {
     for (const m of RPC_METHOD_ALLOWLIST) {
-      if (m === "getProgramAccounts") continue;
+      if (m === "getProgramAccounts" || m === "getSignaturesForAddress") continue; // checked below with their params
       const v = validateRpcRequest(rpc(m, []));
       expect(v.ok, m).toBe(true);
     }
@@ -29,13 +29,25 @@ describe("validateRpcRequest", () => {
     expect(v).toEqual({ ok: true, request: { jsonrpc: "2.0", id: "x", method: "getBalance", params: ["abc"] } });
   });
 
-  test.each(["sendTransaction", "requestAirdrop", "getBlock", "getSignaturesForAddress", "getTransaction"])(
+  test.each(["sendTransaction", "requestAirdrop", "getBlock"])(
     "403 forbidden_method for %s",
     (m) => {
       const v = validateRpcRequest(rpc(m, []));
       expect(v).toMatchObject({ ok: false, status: 403, body: { code: "forbidden_method" } });
     },
   );
+
+  test("getSignaturesForAddress only with a small limit; getTransaction is allowed", () => {
+    expect(validateRpcRequest(rpc("getSignaturesForAddress", ["addr", { limit: 10 }]))).toMatchObject({ ok: true });
+    for (const cfg of [undefined, {}, { limit: 0 }, { limit: 21 }, { limit: 1000 }]) {
+      expect(validateRpcRequest(rpc("getSignaturesForAddress", cfg === undefined ? ["addr"] : ["addr", cfg]))).toMatchObject({
+        ok: false,
+        status: 403,
+        body: { code: "forbidden_method" },
+      });
+    }
+    expect(validateRpcRequest(rpc("getTransaction", ["sig", { encoding: "json" }]))).toMatchObject({ ok: true });
+  });
 
   test("400 for a batch", () => {
     const v = validateRpcRequest(JSON.stringify([JSON.parse(rpc("getSlot"))]));

@@ -77,7 +77,7 @@ function OutcomeBadge({ outcome }: { outcome: StakeOutcome }) {
   );
 }
 
-function SessionRow({ session, fmt }: { session: WorkoutSession; fmt: Formatters }) {
+function SessionRow({ session, fmt, dayMissed = false }: { session: WorkoutSession; fmt: Formatters; dayMissed?: boolean }) {
   const t = useT("progress");
   const tx = useT("exercises");
   const info = EXERCISES[session.exercise];
@@ -101,7 +101,7 @@ function SessionRow({ session, fmt }: { session: WorkoutSession; fmt: Formatters
           {!timed && summary.rejectedReps > 0 ? (
             <span className={styles.nowrap}> · {t("notCounted", { count: summary.rejectedReps })}</span>
           ) : null}
-          {failedVerificationEndTimes().has(session.endedAt) ? (
+          {failedVerificationEndTimes().has(session.endedAt) || (dayMissed && session.goalMet) ? (
             <span className={styles.rowRejected}> · {t("notVerified")}</span>
           ) : session.goalMet ? (
             <span className={styles.rowGoal}>
@@ -239,7 +239,7 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2, o
               <p className={styles.dayTotals}>{dayTotalsText(t, tx, group) || t("noVerifiedReps")}</p>
               <ul className={styles.rows} role="list">
                 {group.sessions.map((session) => (
-                  <SessionRow key={session.id} session={session} fmt={fmt} />
+                  <SessionRow key={session.id} session={session} fmt={fmt} dayMissed={outcomes?.get(group.day)?.kind === "missed"} />
                 ))}
               </ul>
             </section>

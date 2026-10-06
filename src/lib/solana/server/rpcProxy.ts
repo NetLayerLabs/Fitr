@@ -21,9 +21,15 @@ export const RPC_METHOD_ALLOWLIST: ReadonlySet<string> = new Set([
   "simulateTransaction",
   "getPriorityFeeEstimate",
   "getSlot",
+  // Read-only history lookups: Progress backfills past stakes (a closed Commitment keeps its
+  // signatures) and reads the stake amount from the original commit transaction.
+  "getSignaturesForAddress",
+  "getTransaction",
 ]);
 
 export const MAX_RPC_BODY_BYTES = 65_536;
+/** Largest `limit` the proxy forwards for getSignaturesForAddress. */
+export const MAX_SIGNATURES_LIMIT = 20;
 
 export interface JsonRpcRequest {
   jsonrpc: "2.0";
@@ -124,6 +130,14 @@ export function validateRpcRequest(rawBody: string, opts: ValidateRpcOptions = {
   if (method === "getProgramAccounts") {
     const why = checkProgramAccounts(params, opts.vaultProgramId);
     if (why) return fail(403, "forbidden_method", why);
+  }
+  if (method === "getSignaturesForAddress") {
+    // Small, single-address history reads only (stake backfill), never a bulk indexer.
+    const cfg = Array.isArray(params) ? params[1] : undefined;
+    const limit = isPlainObject(cfg) ? cfg.limit : undefined;
+    if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1 || limit > MAX_SIGNATURES_LIMIT) {
+      return fail(403, "forbidden_method", `getSignaturesForAddress needs a limit between 1 and ${MAX_SIGNATURES_LIMIT}`);
+    }
   }
   const request: JsonRpcRequest = { jsonrpc: "2.0", id, method };
   if (params !== undefined) request.params = params as JsonRpcRequest["params"];
