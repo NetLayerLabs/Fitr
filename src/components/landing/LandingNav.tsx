@@ -1,5 +1,4 @@
 import { Wordmark } from "@/components/brand/Brand";
-import { DownloadIcon } from "./LandingIcons";
 import { LANDING_LINKS } from "./links";
 import MobileMenu from "./MobileMenu";
 import section from "./section.module.css";
@@ -21,7 +20,7 @@ export interface LandingNavProps {
   onHome?: boolean;
 }
 
-/** Sticky top bar: wordmark, then section anchors + "Download" pill (desktop) or a ☰ menu (phones). */
+/** Sticky top bar: wordmark on the left; section anchors on the right (desktop) or a ☰ menu (phones). */
 export default function LandingNav({ onHome = true }: LandingNavProps) {
   const base = onHome ? "" : LANDING_LINKS.home;
   return (
@@ -39,10 +38,6 @@ export default function LandingNav({ onHome = true }: LandingNavProps) {
             ))}
           </ul>
         </nav>
-        <a href={LANDING_LINKS.apk} className={styles.open} aria-label="Download the Android app">
-          <DownloadIcon size={16} strokeWidth={2.25} />
-          Download
-        </a>
         <MobileMenu links={ANCHORS.map((a) => ({ href: `${base}${a.hash}`, label: a.label }))} />
       </div>
     </header>

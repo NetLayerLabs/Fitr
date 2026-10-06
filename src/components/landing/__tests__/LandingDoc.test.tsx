@@ -23,9 +23,8 @@ describe("public info pages", () => {
     const h1s = screen.getAllByRole("heading", { level: 1 });
     expect(h1s).toHaveLength(1);
     expect(h1s[0].textContent).toBe(title);
-    expect(screen.getByRole("link", { name: "Download the Android app" }).getAttribute("href")).toBe(
-      "https://fitr.day/download/fitr.apk",
-    );
+    // The download lives in the footer (the header has no Download button).
+    expect(screen.getByRole("link", { name: "Android APK" }).getAttribute("href")).toBe("https://fitr.day/download/fitr.apk");
   });
 
   it.each(PAGES)("%s never links into app.fitr.day; site links are absolute fitr.day", (_slug, Page) => {

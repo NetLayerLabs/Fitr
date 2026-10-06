@@ -38,11 +38,13 @@
 
 .anchors {
   display: none;
+  margin-left: auto;
 }
 
 .anchors ul {
   display: flex;
   gap: var(--space-1);
+  margin-right: calc(-1 * var(--space-3));
 }
 
 .anchors a {
@@ -238,10 +240,6 @@
 }
 
 @media (min-width: 900px) {
-  .open {
-    display: inline-flex;
-  }
-
   .menu {
     display: none;
   }
