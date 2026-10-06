@@ -97,6 +97,14 @@ const progress: Partial<NsMessages<"progress">> = {
   deleteAll: "Borrar todo",
   cancel: "Cancelar",
   clearHistory: "Borrar historial",
+  outcomeOpen: "Depositado: {amount}",
+  outcomeVerified: "Verificado onchain",
+  outcomeClaimable: "Para reclamar",
+  outcomeMissed: "Fallado · {amount} perdido",
+  outcomeMissedNoAmount: "Fallado",
+  outcomeRefunded: "Depósito devuelto",
+  notVerified: "No verificado",
+  onchainRecord: "Depósitos onchain: {verified} verificados · {missed} fallados",
 };
 
 export default progress;

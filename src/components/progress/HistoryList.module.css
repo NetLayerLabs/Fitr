@@ -292,3 +292,19 @@
 .nowrap {
   white-space: nowrap;
 }
+
+/* Staked days: a missed stake in red, an open one muted. */
+.dayBadge[data-tone="danger"] {
+  background: var(--danger-dim);
+  color: var(--danger);
+}
+
+.dayBadge[data-tone="muted"] {
+  background: var(--surface-strong);
+  color: var(--text-muted);
+}
+
+.rowRejected {
+  color: var(--danger);
+  white-space: nowrap;
+}

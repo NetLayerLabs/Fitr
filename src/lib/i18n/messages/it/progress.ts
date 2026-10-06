@@ -97,6 +97,14 @@ const progress: Partial<NsMessages<"progress">> = {
   deleteAll: "Elimina tutto",
   cancel: "Annulla",
   clearHistory: "Cancella storico",
+  outcomeOpen: "In gioco: {amount}",
+  outcomeVerified: "Verificato onchain",
+  outcomeClaimable: "Da riscuotere",
+  outcomeMissed: "Mancato · {amount} perso",
+  outcomeMissedNoAmount: "Mancato",
+  outcomeRefunded: "Posta rimborsata",
+  notVerified: "Non verificato",
+  onchainRecord: "Poste onchain: {verified} verificate · {missed} mancate",
 };
 
 export default progress;

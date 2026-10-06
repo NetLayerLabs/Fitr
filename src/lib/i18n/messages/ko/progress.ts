@@ -97,6 +97,14 @@ const progress: Partial<NsMessages<"progress">> = {
   deleteAll: "모두 삭제",
   cancel: "취소",
   clearHistory: "기록 지우기",
+  outcomeOpen: "{amount} 스테이킹 중",
+  outcomeVerified: "온체인 검증됨",
+  outcomeClaimable: "수령 가능",
+  outcomeMissed: "미달성 · {amount} 몰수",
+  outcomeMissedNoAmount: "미달성",
+  outcomeRefunded: "스테이크 환불됨",
+  notVerified: "검증 안 됨",
+  onchainRecord: "온체인 스테이크: 검증 {verified} · 미달성 {missed}",
 };
 
 export default progress;

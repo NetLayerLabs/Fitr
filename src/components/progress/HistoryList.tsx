@@ -9,6 +9,10 @@ import { useHydrated, useNow, useSessions } from "@/hooks/useSessions";
 import { EXERCISES, EXERCISE_LIST } from "@/lib/exercises";
 import { splitAround, SPLIT_MARK } from "@/components/home/today";
 import type { Translator } from "@/lib/i18n";
+import { SkrText } from "@/components/brand/SkrAmount";
+import { formatSkr } from "@/lib/solana/format";
+import { failedVerificationEndTimes } from "@/lib/storage/verifyFailures";
+import type { StakeOutcome } from "./stakeOutcomes";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { exerciseGoal, exerciseName } from "@/lib/i18n/exercise";
 import { clearSessions, type WorkoutSession } from "@/lib/storage/history";
@@ -48,6 +52,31 @@ function dayTotalsText(t: Translator<"progress">, tx: Translator<"exercises">, g
   return parts.join(" · ");
 }
 
+/** A staked day's result: verified / claimable / missed (with the forfeited amount) / open. */
+function OutcomeBadge({ outcome }: { outcome: StakeOutcome }) {
+  const t = useT("progress");
+  const amount = outcome.amount > 0n ? formatSkr(outcome.amount, { maxFractionDigits: 2 }) : "";
+  const text =
+    outcome.kind === "verified"
+      ? t("outcomeVerified")
+      : outcome.kind === "claimable"
+        ? t("outcomeClaimable")
+        : outcome.kind === "refunded"
+          ? t("outcomeRefunded")
+          : outcome.kind === "missed"
+            ? amount
+              ? t("outcomeMissed", { amount })
+              : t("outcomeMissedNoAmount")
+            : t("outcomeOpen", { amount });
+  const good = outcome.kind === "verified" || outcome.kind === "claimable";
+  return (
+    <p className={styles.dayBadge} data-tone={outcome.kind === "missed" ? "danger" : good ? undefined : "muted"}>
+      {good ? <CheckIcon size={14} /> : null}
+      <SkrText text={text} />
+    </p>
+  );
+}
+
 function SessionRow({ session, fmt }: { session: WorkoutSession; fmt: Formatters }) {
   const t = useT("progress");
   const tx = useT("exercises");
@@ -72,7 +101,9 @@ function SessionRow({ session, fmt }: { session: WorkoutSession; fmt: Formatters
           {!timed && summary.rejectedReps > 0 ? (
             <span className={styles.nowrap}> · {t("notCounted", { count: summary.rejectedReps })}</span>
           ) : null}
-          {session.goalMet ? (
+          {failedVerificationEndTimes().has(session.endedAt) ? (
+            <span className={styles.rowRejected}> · {t("notVerified")}</span>
+          ) : session.goalMet ? (
             <span className={styles.rowGoal}>
               {" "}
               · <CheckIcon size={14} /> {t("goalMet")}
@@ -96,10 +127,12 @@ export interface HistoryListProps {
   showSummary?: boolean;
   /** Heading level for each day (default 2; 3 when the list sits under a section heading). */
   dayHeadingLevel?: 2 | 3;
+  /** Per local day: what happened to that day's stake (Progress tab, from the vault). */
+  outcomes?: ReadonlyMap<number, StakeOutcome>;
 }
 
 /** Local workout history grouped by day, with streak stats and a guarded "Clear history". */
-export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }: HistoryListProps = {}) {
+export default function HistoryList({ showSummary = true, dayHeadingLevel = 2, outcomes }: HistoryListProps = {}) {
   const DayHeading = dayHeadingLevel === 3 ? "h3" : "h2";
   const t = useT("progress");
   const tx = useT("exercises");
@@ -194,7 +227,9 @@ export default function HistoryList({ showSummary = true, dayHeadingLevel = 2 }:
                 <DayHeading id={headingId} className={styles.dayTitle}>
                   {dayLabel(t, fmt, group, today, now)}
                 </DayHeading>
-                {group.goalMet ? (
+                {outcomes?.get(group.day) ? (
+                  <OutcomeBadge outcome={outcomes.get(group.day)!} />
+                ) : group.goalMet ? (
                   <p className={styles.dayBadge}>
                     <CheckIcon size={14} />
                     {t("goalDay")}

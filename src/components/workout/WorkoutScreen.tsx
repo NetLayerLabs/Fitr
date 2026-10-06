@@ -485,7 +485,9 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
     if (!result) return false;
     let next: SaveState;
     try {
-      next = saveSession({ ...result, exercise }) ? "saved" : "memory-only";
+      // The verifier has the last word on a staked workout: a rejected one did not meet the goal.
+      const rejected = verified.outcome?.kind === "failed";
+      next = saveSession({ ...result, exercise, goalMet: rejected ? false : result.goalMet }) ? "saved" : "memory-only";
     } catch {
       next = "failed";
     }

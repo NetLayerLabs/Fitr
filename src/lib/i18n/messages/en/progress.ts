@@ -96,6 +96,14 @@ const progress = {
   deleteAll: "Delete all",
   cancel: "Cancel",
   clearHistory: "Clear history",
+  outcomeOpen: "Staked {amount}",
+  outcomeVerified: "Verified onchain",
+  outcomeClaimable: "Claimable",
+  outcomeMissed: "Missed · {amount} forfeited",
+  outcomeMissedNoAmount: "Missed",
+  outcomeRefunded: "Stake refunded",
+  notVerified: "Not verified",
+  onchainRecord: "Stakes onchain: {verified} verified · {missed} missed",
 } as const;
 
 export default progress;

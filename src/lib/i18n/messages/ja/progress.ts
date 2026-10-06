@@ -97,6 +97,14 @@ const progress: Partial<NsMessages<"progress">> = {
   deleteAll: "すべて削除",
   cancel: "キャンセル",
   clearHistory: "履歴を消去",
+  outcomeOpen: "{amount} をステーク中",
+  outcomeVerified: "オンチェーンで検証済み",
+  outcomeClaimable: "受け取り可能",
+  outcomeMissed: "未達成 · {amount} 没収",
+  outcomeMissedNoAmount: "未達成",
+  outcomeRefunded: "ステークを返金済み",
+  notVerified: "未検証",
+  onchainRecord: "オンチェーンのステーク：検証済み {verified} · 未達成 {missed}",
 };
 
 export default progress;

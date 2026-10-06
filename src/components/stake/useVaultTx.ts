@@ -15,6 +15,7 @@ import {
   estimateComputeUnits,
   type SgtAccounts,
 } from "@/lib/solana/vault/instructions";
+import { recordStake } from "@/lib/storage/stakes";
 import { fallbackPlan, type TxPlan } from "./plan";
 import { ConfirmationError, SimulationFailedError, sendVaultTx, type TxStep } from "./txflow";
 
@@ -112,6 +113,14 @@ export function useVaultTx(account: UiWalletAccount) {
           const smaller = err instanceof SimulationFailedError ? fallbackPlan(req.plan, extractCustomErrorCode(err)) : null;
           if (!smaller) throw err;
           outcome = await attempt(smaller);
+        }
+        if (outcome.plan.commit && req.commit) {
+          recordStake({
+            day: req.commit.dayIndex,
+            crewId: (req.crewId ?? 0n).toString(),
+            amount: req.commit.amount.toString(),
+            owner: signer.address,
+          });
         }
         setState({
           phase: "done",

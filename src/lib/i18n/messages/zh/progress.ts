@@ -97,6 +97,14 @@ const progress: Partial<NsMessages<"progress">> = {
   deleteAll: "全部删除",
   cancel: "取消",
   clearHistory: "清除历史记录",
+  outcomeOpen: "已质押 {amount}",
+  outcomeVerified: "已链上验证",
+  outcomeClaimable: "可领取",
+  outcomeMissed: "未完成 · {amount} 已没收",
+  outcomeMissedNoAmount: "未完成",
+  outcomeRefunded: "质押已退还",
+  notVerified: "未通过验证",
+  onchainRecord: "链上质押：{verified} 次已验证 · {missed} 次未完成",
 };
 
 export default progress;
