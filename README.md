@@ -11,7 +11,8 @@ Video never leaves the phone.
 
 Product spec: [`FITR_PROJECT_SPEC.md`](./FITR_PROJECT_SPEC.md) · Vault program:
 [`anchor/SPEC.md`](./anchor/SPEC.md), [`anchor/MAINNET_RUNBOOK.md`](./anchor/MAINNET_RUNBOOK.md) ·
-Hosting: [`docs/deploy.md`](./docs/deploy.md) · Android APK: [`docs/android.md`](./docs/android.md).
+Hosting: [`docs/deploy.md`](./docs/deploy.md) · Android APK: [`docs/android.md`](./docs/android.md) ·
+Vision & business plan: [`docs/VISION.md`](./docs/VISION.md).
 
 <img width="2980" height="1688" alt="image" src="https://github.com/user-attachments/assets/a5440536-3947-4cea-8c5c-5971b7905fa6" />
 
@@ -29,6 +30,26 @@ a plan. They fail because skipping today costs nothing and nobody checks the wor
 
 Fitr is a commitment device, not an investment: if everyone shows up, everyone simply gets their
 own stake back.
+
+## Where Fitr goes next
+
+Fitr is built for the Seeker, not ported to it: one Seeker = one stake (Seeker Genesis Token),
+every stake signed in Seed Vault, and real, recurring utility for **SKR** (locked daily, recycled
+to the people who show up, topped up by sponsors). It is a habit people open every day, and a reason
+to own a Seeker.
+
+| Revenue stream | How |
+| --- | --- |
+| **Gym partnerships** | Gyms pay monthly to run Fitr challenges: crew leaderboards, AI-verified home workouts, a view of who is slipping. First pilot: gyms in Nigeria. |
+| **Sponsored challenges** | Brands or gyms fund the bonus for finishers (the live sponsor feature), with no user money at stake. |
+| **Fitr Pro** | Subscription: programs, advanced stats, more crews; free tier keeps rep counting and streaks. |
+| **Corporate wellness** | Employers sponsor staff challenges. |
+| **Money commitments** | The 5% fee on forfeited stakes, live in SKR today; fiat only after legal review. |
+
+Roadmap: dApp Store listing and Seeker crew seasons → a 30-day gym pilot in Nigeria → phone sign-in,
+Play Store, subscriptions and stablecoin stakes → corporate wellness, iOS and independent
+attestors. Full plan, metrics, risks and what Solana Mobile support would unlock:
+[`docs/VISION.md`](./docs/VISION.md).
 
 ## Live on Solana mainnet
 
