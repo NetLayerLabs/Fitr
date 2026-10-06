@@ -459,3 +459,10 @@
   font-weight: var(--weight-semibold);
   appearance: none;
 }
+
+/* "Built by NetLayer Labs", centred under the app version. */
+.builtBy {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-3);
+}

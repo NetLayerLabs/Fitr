@@ -141,6 +141,7 @@ const you: Partial<NsMessages<"you">> = {
   nativeReminderTitle: "还剩 {left} 打卡",
   nativeReminderBodyStake: "今天完成训练，否则你的 {stake} 质押将归按时完成的人。",
   nativeReminderBody: "在截止前完成今天的训练。",
+  builtBy: "出品方",
 };
 
 export default you;

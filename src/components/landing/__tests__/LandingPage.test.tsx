@@ -21,9 +21,9 @@ describe("LandingPage", () => {
     const downloads = screen.getAllByRole("link", { name: "Download for Android" });
     expect(downloads.length).toBeGreaterThanOrEqual(2);
     for (const a of downloads) expect(a.getAttribute("href")).toBe("https://fitr.day/download/fitr.apk");
-    const navPill = screen.getByRole("link", { name: "Download the Android app" });
-    expect(navPill.getAttribute("href")).toBe("https://fitr.day/download/fitr.apk");
-    expect(navPill.textContent).toBe("Download");
+    // The header has no Download button; the hero, the install band and the footer carry it.
+    expect(screen.queryByRole("link", { name: "Download the Android app" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Android APK" }).getAttribute("href")).toBe("https://fitr.day/download/fitr.apk");
     expect(screen.queryByRole("link", { name: /open (in browser|app)/i })).toBeNull();
     expect(screen.getAllByText("Seeker & Android 9+ · APK").length).toBeGreaterThanOrEqual(2);
   });
@@ -33,13 +33,14 @@ describe("LandingPage", () => {
     const hrefs = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href") ?? "");
     expect(hrefs.length).toBeGreaterThan(0);
     for (const href of hrefs) {
-      expect(href.startsWith("#") || href.startsWith("https://fitr.day/")).toBe(true);
+      expect(href.startsWith("#") || href.startsWith("https://fitr.day/"), href).toBe(true);
     }
     expect(container.innerHTML).not.toContain("https://app.fitr.day");
     expect(hrefs).toContain(LANDING_LINKS.privacy);
     expect(hrefs).toContain(LANDING_LINKS.verification);
     expect(hrefs).toContain(LANDING_LINKS.credits);
     expect(hrefs).toContain("https://fitr.day/pool");
+    expect(container.textContent).toContain("NetLayer Labs");
     // Every in-page anchor resolves to an element on the page.
     for (const href of hrefs.filter((h) => h.startsWith("#"))) {
       expect(container.querySelector(href), href).not.toBeNull();

@@ -1,4 +1,5 @@
 import { Wordmark } from "@/components/brand/Brand";
+import BuiltBy from "@/components/brand/BuiltBy";
 import { LANDING_LINKS } from "./links";
 import section from "./section.module.css";
 import styles from "./LandingFooter.module.css";
@@ -20,6 +21,7 @@ export default function LandingFooter() {
           <div>
             <Wordmark height={30} />
             <p className={styles.tag}>Put your word on the line.</p>
+            <BuiltBy className={styles.builtBy} />
           </div>
         </div>
         <nav aria-label="Footer">

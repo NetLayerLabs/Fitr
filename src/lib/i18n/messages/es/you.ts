@@ -141,6 +141,7 @@ const you: Partial<NsMessages<"you">> = {
   nativeReminderTitle: "Quedan {left} para entrenar",
   nativeReminderBodyStake: "Termina hoy o tu depósito de {stake} irá para quienes cumplieron.",
   nativeReminderBody: "Termina el entrenamiento de hoy antes del plazo.",
+  builtBy: "Creado por",
 };
 
 export default you;

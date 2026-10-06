@@ -141,6 +141,7 @@ const you: Partial<NsMessages<"you">> = {
   nativeReminderTitle: "운동 마감까지 {left} 남음",
   nativeReminderBodyStake: "오늘 완료하지 않으면 {stake} 스테이크가 운동한 사람들에게 가요.",
   nativeReminderBody: "마감 전에 오늘의 운동을 완료하세요.",
+  builtBy: "제작",
 };
 
 export default you;

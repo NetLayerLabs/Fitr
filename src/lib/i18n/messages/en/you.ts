@@ -140,6 +140,7 @@ const you = {
   nativeReminderTitle: "{left} left to clock in",
   nativeReminderBodyStake: "Finish today or your {stake} stake goes to the people who showed up.",
   nativeReminderBody: "Finish today's workout before the deadline.",
+  builtBy: "Built by",
 } as const;
 
 export default you;

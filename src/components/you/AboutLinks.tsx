@@ -7,6 +7,7 @@ import { ArrowUpRightIcon } from "@/components/landing/LandingIcons";
 import { LANDING_LINKS } from "@/components/landing/links";
 import { useT } from "@/lib/i18n/I18nProvider";
 import AppVersion from "./AppVersion";
+import BuiltBy from "@/components/brand/BuiltBy";
 import styles from "./You.module.css";
 
 const LINKS = [
@@ -51,6 +52,9 @@ export default function AboutLinks({ version }: { version: string }) {
         ))}
       </ul>
       <AppVersion webVersion={version} />
+      <div className={styles.builtBy}>
+        <BuiltBy label={t("builtBy")} />
+      </div>
     </>
   );
 }

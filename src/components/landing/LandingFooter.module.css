@@ -87,3 +87,7 @@
     text-align: right;
   }
 }
+
+.builtBy {
+  margin-top: var(--space-5);
+}
