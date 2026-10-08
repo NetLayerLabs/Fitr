@@ -36,6 +36,22 @@ If the user taps "Don't allow" (or "don't ask again"), `getUserMedia` rejects wi
 `NotAllowedError` and the web app shows its existing camera-blocked message. To recover, the user
 enables Camera in Android Settings > Apps > Fitr > Permissions.
 
+## Permissions (for the dApp Store submission)
+
+Fitr asks only for what its core purpose needs. From `aapt2 dump permissions` on the 1.2.0 APK:
+
+| Permission | Why | When it is asked |
+| --- | --- | --- |
+| `INTERNET` | The app loads https://app.fitr.day and talks to Solana | Install (normal permission) |
+| `CAMERA` | On-device AI counts reps from the camera; video never leaves the phone. `android.hardware.camera*` are declared `required="false"`, so devices without a camera can still install | When the first workout starts |
+| `POST_NOTIFICATIONS` | Optional daily workout reminders before the stake deadline | Only when the user turns reminders on |
+| `RECEIVE_BOOT_COMPLETED` | Re-schedules those reminders after a restart (otherwise they stop silently) | Install (normal permission) |
+| `day.fitr.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | Added by AndroidX core; signature-level and internal to the app, never shown to users | n/a |
+
+Not requested: microphone (the camera opens with `audio: false`), location, contacts, storage,
+phone, exact alarms. Check before every release with
+`aapt2 dump permissions app/build/outputs/apk/release/app-release.apk`.
+
 ## Toolchain (macOS, no sudo)
 
 ```bash

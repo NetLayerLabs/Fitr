@@ -242,6 +242,9 @@ README; `docs/android.md`). On top of MWA, camera and file chooser it adds a nat
 - `src/components/native/NativeSync.tsx` (mounted in the root layout) keeps the widget and reminders
   in step with today's commitment; it does nothing in a browser.
 - App shortcuts (long-press the icon) and verified App Links for `app.fitr.day` and `fitr.day/c/*`.
+- Minimal permissions: internet, camera (rep counting; video never leaves the phone), and
+  notifications + boot (optional reminders). No microphone, location, contacts or storage. Each
+  one is justified in [`docs/android.md`](./docs/android.md#permissions-for-the-dapp-store-submission).
 
 The voice coach (`src/components/workout/voiceCoach.ts`) also works in a browser through the Web
 Speech API; it is on by default and can be switched off on the You tab.
