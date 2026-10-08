@@ -2,6 +2,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { EXERCISE_LIST } from "@/lib/exercises";
+import { NETLAYER_URL } from "@/components/brand/BuiltBy";
 import LandingPage from "../LandingPage";
 import { LANDING_LINKS } from "../links";
 
@@ -28,19 +29,19 @@ describe("LandingPage", () => {
     expect(screen.getAllByText("Seeker & Android 9+ · APK").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("only links to in-page anchors or absolute fitr.day URLs, never app.fitr.day", () => {
+  it("only links to in-page anchors, absolute fitr.day URLs or the studio site, never app.fitr.day", () => {
     const { container } = render(<LandingPage />);
     const hrefs = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href") ?? "");
     expect(hrefs.length).toBeGreaterThan(0);
     for (const href of hrefs) {
-      expect(href.startsWith("#") || href.startsWith("https://fitr.day/"), href).toBe(true);
+      expect(href.startsWith("#") || href.startsWith("https://fitr.day/") || href === NETLAYER_URL, href).toBe(true);
     }
     expect(container.innerHTML).not.toContain("https://app.fitr.day");
     expect(hrefs).toContain(LANDING_LINKS.privacy);
     expect(hrefs).toContain(LANDING_LINKS.verification);
     expect(hrefs).toContain(LANDING_LINKS.credits);
     expect(hrefs).toContain("https://fitr.day/pool");
-    expect(container.textContent).toContain("NetLayer Labs");
+    expect(hrefs).toContain(NETLAYER_URL);
     // Every in-page anchor resolves to an element on the page.
     for (const href of hrefs.filter((h) => h.startsWith("#"))) {
       expect(container.querySelector(href), href).not.toBeNull();
