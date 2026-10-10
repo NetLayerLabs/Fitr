@@ -1,6 +1,7 @@
 {
   "name": "fitr",
   "version": "0.5.0",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",

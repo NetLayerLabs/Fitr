@@ -12,6 +12,7 @@ let on-device AI count every rep, and settle the day onchain.
 [![Seeker](https://img.shields.io/badge/Built%20for-Solana%20Seeker-C6F432)](https://solanamobile.com)
 [![Tests](https://img.shields.io/badge/tests-1%2C500%2B%20app%20%2B%2079%20program-C6F432)](#testing)
 [![Languages](https://img.shields.io/badge/languages-9-C6F432)](#features)
+[![License: MIT](https://img.shields.io/badge/license-MIT-C6F432)](./LICENSE)
 
 [Website](https://fitr.day) · [Download the APK](https://fitr.day/download/fitr.apk) · [Live pool](https://fitr.day/pool) · [Architecture](./docs/ARCHITECTURE.md) · [Security](./docs/SECURITY.md) · [Vision](./docs/VISION.md)
 
@@ -219,3 +220,10 @@ Fitr is cheat-resistant, not cheat-proof: the limits are documented openly in
 [docs/SECURITY.md](./docs/SECURITY.md#known-limits-stated-not-hidden).
 
 <br clear="left" />
+
+## License
+
+The source code is released under the [MIT License](./LICENSE), © 2026 NetLayer Labs. The Fitr
+and NetLayer Labs names and logos, the athlete photography and third-party assets (pose models,
+fonts, demo clips) are not covered by it; third-party assets keep their own licenses, listed in
+the app under You → Credits & licenses.
