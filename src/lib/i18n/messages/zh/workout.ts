@@ -259,6 +259,7 @@ const workout: Partial<NsMessages<"workout">> = {
   // Page metadata.
   metaNotFound: "找不到该训练",
   metaDescription: "{name}，设备端实时验证每一次动作。{tagline}。",
+  checkingStake: "正在检查你的质押…",
 };
 
 export default workout;

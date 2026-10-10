@@ -1,5 +1,6 @@
 "use client";
 
+import { timeOfDayFormat } from "@/components/workout/format";
 import type { ReactNode } from "react";
 import { CheckIcon } from "@/components/icons/Icons";
 import Button from "@/components/ui/Button";
@@ -111,13 +112,18 @@ export default function TodayHero() {
 
     case "committed": {
       const deadline = commitment?.deadlineMs;
+      // Committed after today's cutoff: the stake is for tomorrow's day, so a workout now is
+      // practice. Say when it starts counting instead of offering a Start that would not count.
+      const forTomorrow = commitment?.forDay === "tomorrow";
+      const countsFrom =
+        forTomorrow && typeof deadline === "number" ? timeOfDayFormat(t.locale).format(deadline - 86_400_000) : null;
       const showTime = typeof deadline === "number" && now !== 0;
       const [goalBefore, goalAfter] = info ? goalParts(tx, info.kind, target) : ["", ""];
       const [stakeBefore, stakeAfter] = splitAround(t("atStake", { amount: SPLIT_MARK }));
       return (
         <Shell
           state={state}
-          eyebrow={`${t("heroGoalEyebrow")}${crewTag}`}
+          eyebrow={`${t(forTomorrow ? "heroGoalTomorrowEyebrow" : "heroGoalEyebrow")}${crewTag}`}
           title={
             info ? (
               <>
@@ -141,7 +147,7 @@ export default function TodayHero() {
           action={
             info ? (
               <Cta href={workoutHrefFor(info.kind, crewId)} play>
-                {t("start")}
+                {t(forTomorrow ? "practiceNow" : "start")}
               </Cta>
             ) : (
               <Cta href={poolHref}>{t("viewCommitment")}</Cta>
@@ -149,7 +155,9 @@ export default function TodayHero() {
           }
         >
           <ul className={styles.meta} role="list">
-            {showTime ? (
+            {countsFrom ? (
+              <li>{t("countsFrom", { time: countsFrom })}</li>
+            ) : showTime ? (
               <li>
                 <span aria-hidden="true">{formatTimeLeft(t, deadline, now)}</span>
                 <span className="sr-only">{spokenTimeLeft(t, deadline, now)}</span>

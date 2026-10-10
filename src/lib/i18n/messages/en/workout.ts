@@ -258,6 +258,7 @@ const workout = {
   // Page metadata.
   metaNotFound: "Workout not found",
   metaDescription: "{name} with live on-device rep verification. {tagline}.",
+  checkingStake: "Checking your stake…",
 } as const;
 
 export default workout;

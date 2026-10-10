@@ -259,6 +259,7 @@ const workout: Partial<NsMessages<"workout">> = {
   // Page metadata.
   metaNotFound: "ワークアウトが見つかりません",
   metaDescription: "端末上でリアルタイムにレップを検証する{name}。{tagline}。",
+  checkingStake: "ステークを確認中…",
 };
 
 export default workout;

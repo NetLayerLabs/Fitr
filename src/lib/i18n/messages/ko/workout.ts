@@ -259,6 +259,7 @@ const workout: Partial<NsMessages<"workout">> = {
   // Page metadata.
   metaNotFound: "운동을 찾을 수 없어요",
   metaDescription: "기기에서 실시간으로 횟수를 검증하는 {name}. {tagline}.",
+  checkingStake: "스테이크 확인 중…",
 };
 
 export default workout;

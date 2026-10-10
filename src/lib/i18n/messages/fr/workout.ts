@@ -259,6 +259,7 @@ const workout: Partial<NsMessages<"workout">> = {
   // Page metadata.
   metaNotFound: "Séance introuvable",
   metaDescription: "{name} avec vérification des répétitions en direct sur l’appareil. {tagline}.",
+  checkingStake: "Vérification de ta mise…",
 };
 
 export default workout;

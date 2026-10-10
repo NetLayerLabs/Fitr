@@ -95,6 +95,9 @@ const today: Partial<NsMessages<"today">> = {
   defaultGoalHit: "Objectif par défaut atteint",
   quickStartHeading: "Démarrage rapide",
   allWorkouts: "Toutes les séances",
+  heroGoalTomorrowEyebrow: "Objectif de demain",
+  practiceNow: "S'entraîner maintenant",
+  countsFrom: "Compte à partir de {time}",
 };
 
 export default today;

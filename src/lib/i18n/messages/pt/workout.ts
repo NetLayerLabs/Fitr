@@ -259,6 +259,7 @@ const workout: Partial<NsMessages<"workout">> = {
   // Page metadata.
   metaNotFound: "Treino não encontrado",
   metaDescription: "{name} com verificação de reps ao vivo no aparelho. {tagline}.",
+  checkingStake: "Verificando seu stake…",
 };
 
 export default workout;

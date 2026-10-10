@@ -508,6 +508,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
         facing={facing}
         onFacingChange={setFacing}
         onStart={startSession}
+        checking={verified.status === "checking"}
         onOpenGuide={() => setGuideChoice("open")}
         goal={goal}
         verified={verified.status === "ready" || verified.status === "error"}

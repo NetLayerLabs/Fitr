@@ -94,6 +94,9 @@ const today = {
   defaultGoalHit: "Default goal hit",
   quickStartHeading: "Quick start",
   allWorkouts: "All workouts",
+  heroGoalTomorrowEyebrow: "Tomorrow's goal",
+  practiceNow: "Practice now",
+  countsFrom: "Counts from {time}",
 } as const;
 
 export default today;

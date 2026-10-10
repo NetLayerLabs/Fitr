@@ -18,6 +18,8 @@ export interface SetupViewProps {
   facing: CameraFacing;
   onFacingChange: (facing: CameraFacing) => void;
   onStart: () => void;
+  /** Still looking up today's stake: Start waits, so a verified run never starts with the wrong goal. */
+  checking?: boolean;
   /** Re-opens the form guide (also reachable after "don't show again"). */
   onOpenGuide?: () => void;
   /** Goal to show: the staked goal when there is one, else the exercise default. */
@@ -39,6 +41,7 @@ export default function SetupView({
   facing,
   onFacingChange,
   onStart,
+  checking = false,
   onOpenGuide,
   goal,
   stake,
@@ -148,8 +151,10 @@ export default function SetupView({
       </p>
 
       <div className={styles.stickyActions}>
-        <button type="button" className={styles.ctaButton} onClick={onStart}>
-          <span className={styles.ctaLabel}>{t("startExercise", { name: exerciseNameInSentence(tx, exercise) })}</span>
+        <button type="button" className={styles.ctaButton} onClick={onStart} disabled={checking} aria-busy={checking || undefined}>
+          <span className={styles.ctaLabel}>
+            {checking ? t("checkingStake") : t("startExercise", { name: exerciseNameInSentence(tx, exercise) })}
+          </span>
           <span className={styles.ctaCap} aria-hidden="true">
             <PlayIcon size={22} />
           </span>

@@ -31,4 +31,14 @@ describe("TodayHero with a crew commitment", () => {
     expect(screen.getByText("Your goal")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Start/ }).getAttribute("href")).toBe("/workout/pushup");
   });
+
+  it("a stake for tomorrow says when it counts and offers practice, not Start", () => {
+    const tomorrowEnd = Date.UTC(2026, 9, 12, 0, 0);
+    commitment = { state: "committed", exercise: "squat", goalTarget: 15, amountLabel: "5 SKR", forDay: "tomorrow", deadlineMs: tomorrowEnd };
+    render(<TodayHero />);
+    expect(screen.getByText("Tomorrow's goal")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Practice now/ }).getAttribute("href")).toBe("/workout/squat");
+    expect(screen.queryByRole("link", { name: /^Start/ })).toBeNull();
+    expect(screen.getByText(/^Counts from /)).toBeTruthy();
+  });
 });
