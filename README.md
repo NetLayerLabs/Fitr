@@ -16,6 +16,10 @@ let on-device AI count every rep, and settle the day onchain.
 
 [Website](https://fitr.day) · [Download the APK](https://fitr.day/download/fitr.apk) · [Live pool](https://fitr.day/pool) · [Architecture](./docs/ARCHITECTURE.md) · [Security](./docs/SECURITY.md) · [Vision](./docs/VISION.md)
 
+<!-- Demo video: add the link here once published, e.g. · [Demo video](https://...) -->
+
+<sub>Built for the CLOCK IN Solana Mobile hackathon.</sub>
+
 </div>
 
 <img width="2980" height="1688" alt="Fitr: the app on a Seeker, mid push-up set" src="https://github.com/user-attachments/assets/a5440536-3947-4cea-8c5c-5971b7905fa6" />
@@ -31,6 +35,23 @@ who showed up.
 
 It is a **commitment device, not an investment**: if everyone shows up, everyone simply gets their
 own stake back. Fitr's only fee is 5% of forfeited stakes. Video never leaves the phone.
+
+**Contents:** [Try it](#try-it) · [The problem](#the-problem-and-how-fitr-solves-it) ·
+[Features](#features) · [How it works](#how-it-works) · [Solana Mobile](#built-for-solana-mobile) ·
+[Mainnet](#live-on-solana-mainnet) · [Security](#security-at-a-glance) ·
+[Getting started](#getting-started) · [Roadmap](#roadmap)
+
+## Try it
+
+1. **Install.** On a Seeker, download [the APK](https://fitr.day/download/fitr.apk) and install it.
+2. **Work out.** Open **Workouts**, pick an exercise and do a set. Rep counting needs no wallet
+   and no account.
+3. **Commit.** In **Commit**, connect Seed Vault, choose a goal and stake SKR before 18:00 UTC.
+   Do the workout that day; the app verifies it and records it onchain.
+4. **Claim.** After the day settles (from 02:00 UTC), tap **Claim** for your stake plus your share.
+
+Every stake, verification and payout is public: see the [live pool](https://fitr.day/pool) or the
+program on [Solana Explorer](https://explorer.solana.com/address/9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY).
 
 ## The problem, and how Fitr solves it
 
@@ -91,10 +112,11 @@ flowchart LR
 
 | When | What happens |
 | --- | --- |
-| 00:00 to 18:00 | Commit: choose exercise, goal and stake; one transaction (it also claims yesterday's payout). |
-| until 24:00 | Work out. The phone counts reps; the server verifies and marks the day complete onchain. |
-| 24:00 to 02:00 | A grace hour for late verifications, then a one-hour review window in which the multisig can void a bad day. |
-| from 02:00 | The crank finalizes the day and marks no-shows missed. Finishers tap **Claim**. |
+| 00:00 to 18:00 | **Commit.** Choose exercise, goal and stake in one transaction (it also claims yesterday's payout). Commits after 18:00 count for the next day. |
+| until 24:00 | **Work out.** The phone counts reps; the server verifies the session and marks the day complete onchain. |
+| 00:00 to 01:00 | **Grace hour.** Verifications still in flight can land. |
+| 01:00 to 02:00 | **Review window.** The multisig can void a bad day, refunding everyone. |
+| from 02:00 | **Settle.** The crank finalizes the day and marks no-shows missed. Finishers tap **Claim**. |
 
 Details: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 
@@ -105,7 +127,7 @@ Details: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 | **Seeker Genesis Token** | One Seeker, one stake: the vault verifies a genuine SGT and a per-device lock, so a drawer of wallets cannot multiply stakes. |
 | **Seed Vault + Mobile Wallet Adapter** | Every stake, claim and sponsorship is signed in the phone's secure hardware. |
 | **SKR** | Stakes, forfeits, the sponsor reserve and the fee are all SKR: locked daily, recycled to the people who show up. |
-| **Native Android / dApp Store** | A Kotlin app (camera, TTS coach, reminders, widget, shortcuts, App Links), not a PWA wrapper. |
+| **Native Android / dApp Store** | A Kotlin app built on Solana Mobile's web shell, so Mobile Wallet Adapter works in-app (a TWA cannot), plus native camera, TTS coach, reminders, widget, shortcuts and App Links. |
 | **Solana Actions (Blinks)** | "Commit with me" and "Sponsor a day" work from any wallet or post. |
 
 ## Live on Solana mainnet
@@ -134,6 +156,9 @@ started with. Live numbers: [fitr.day/pool](https://fitr.day/pool).
   (executable hash `648618ba…3037240`).
 - **Tested and reviewed.** 79 program tests including a model-based fuzz (256 scenarios, ~31,000
   transactions, money invariants after every one) and two internal security review rounds.
+- **Honest about limits.** Fitr is cheat-resistant, not cheat-proof: live challenges make faking
+  expensive, not impossible. The known limits are
+  [documented openly](./docs/SECURITY.md#known-limits-stated-not-hidden).
 
 Full model, deployment record and known limits: [docs/SECURITY.md](./docs/SECURITY.md).
 
@@ -232,9 +257,8 @@ Full plan, metrics and risks: [docs/VISION.md](./docs/VISION.md).
 
 <a href="https://www.netlayerlabs.com/"><img src="./public/brand/netlayer-mark@2x.png" alt="NetLayer Labs" width="48" height="48" align="left" /></a>
 
-Built by **[NetLayer Labs](https://www.netlayerlabs.com/)**.
-Fitr is cheat-resistant, not cheat-proof: the limits are documented openly in
-[docs/SECURITY.md](./docs/SECURITY.md#known-limits-stated-not-hidden).
+Built by **[NetLayer Labs](https://www.netlayerlabs.com/)**: the program, the verification server,
+the Android app and the site in this repository.
 
 <br clear="left" />
 
