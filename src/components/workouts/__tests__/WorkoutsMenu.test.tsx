@@ -110,14 +110,19 @@ describe("WorkoutCatalog (/workouts)", () => {
     return onChange;
   }
 
-  it("renders every category as its own section, 16 cards in total", () => {
+  it("renders every category as its own section, 16 cards in total, then the locked Fitr Pro teaser", () => {
     renderCatalog({ category: "all", noEquipment: false });
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(headings).toEqual(["Chest & Arms", "Back", "Legs & Glutes", "Core", "Cardio"]);
+    expect(headings).toEqual(["Chest & Arms", "Back", "Legs & Glutes", "Core", "Cardio", "Fitr ProComing soon"]);
     expect(workoutLinks()).toHaveLength(16);
     expect(screen.getByRole("button", { name: "All, 16 workouts" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "Back, 1 workout" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Core, 4 workouts" })).toBeTruthy();
+  });
+
+  it("leaves the Fitr Pro teaser out of a single category", () => {
+    renderCatalog({ category: "legs", noEquipment: false });
+    expect(screen.queryByRole("heading", { name: /Fitr Pro/ })).toBeNull();
   });
 
   it("shows equipment and front-camera badges", () => {

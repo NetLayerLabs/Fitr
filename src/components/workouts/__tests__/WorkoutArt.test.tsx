@@ -50,10 +50,10 @@ describe("WorkoutCard photo", () => {
     expect(document.querySelector('[data-art="icon"] svg')).not.toBeNull();
   });
 
-  it("loads only the first catalogue photo eagerly", () => {
+  it("loads only the first catalogue photo eagerly (16 workouts + 4 locked Fitr Pro cards)", () => {
     render(<WorkoutCatalog filter={{ category: "all", noEquipment: false }} />);
     const imgs = [...document.querySelectorAll("img")];
-    expect(imgs).toHaveLength(16);
+    expect(imgs).toHaveLength(20);
     expect(imgs.filter((i) => i.getAttribute("loading") === "eager")).toEqual([imgs[0]]);
   });
 });

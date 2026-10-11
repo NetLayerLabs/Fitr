@@ -3,6 +3,7 @@
 import { exercisesByCategory } from "@/lib/exercises";
 import { useT } from "@/lib/i18n/I18nProvider";
 import { categoryDescription } from "@/lib/i18n/exercise";
+import ProWorkouts from "@/components/pro/ProWorkouts";
 import CategoryChips from "./CategoryChips";
 import WorkoutCard from "./WorkoutCard";
 import { categoryCounts, categoryLabel, type CatalogFilter } from "./catalog";
@@ -94,6 +95,9 @@ export default function WorkoutCatalog({ filter, onChange }: WorkoutCatalogProps
           )}
         </section>
       ))}
+
+      {/* Fitr Pro teaser: only on the full catalogue, never inside one category. */}
+      {category === "all" ? <ProWorkouts /> : null}
     </div>
   );
 }
