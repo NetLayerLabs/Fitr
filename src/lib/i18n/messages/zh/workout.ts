@@ -260,6 +260,10 @@ const workout: Partial<NsMessages<"workout">> = {
   metaNotFound: "找不到该训练",
   metaDescription: "{name}，设备端实时验证每一次动作。{tagline}。",
   checkingStake: "正在检查你的质押…",
+  finishAndVerify: "完成并链上验证",
+  goalReachedVerifyHint: "已达成目标。完成即可链上验证，或继续练。",
+  liveCheckBriefTitle: "实时检查：请立即完成",
+  liveCheckBriefBody: "训练中，Fitr 会要求你举起一只手，或站直保持不动。看到或听到后立即完成：你大约有 8 秒。错过检查，本次训练将无法验证。",
 };
 
 export default workout;

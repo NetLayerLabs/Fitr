@@ -260,6 +260,10 @@ const workout: Partial<NsMessages<"workout">> = {
   metaNotFound: "ワークアウトが見つかりません",
   metaDescription: "端末上でリアルタイムにレップを検証する{name}。{tagline}。",
   checkingStake: "ステークを確認中…",
+  finishAndVerify: "終了してオンチェーンで検証",
+  goalReachedVerifyHint: "目標達成。終了してオンチェーンで検証するか、続けましょう。",
+  liveCheckBriefTitle: "ライブチェック：すぐに応えて",
+  liveCheckBriefBody: "セット中、Fitr が「手を上げて」または「まっすぐ立って静止して」と指示します。見たり聞いたりしたらすぐに応えてください（約 8 秒）。チェックを逃すとワークアウトは検証されません。",
 };
 
 export default workout;

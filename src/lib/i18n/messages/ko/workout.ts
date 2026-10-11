@@ -260,6 +260,10 @@ const workout: Partial<NsMessages<"workout">> = {
   metaNotFound: "운동을 찾을 수 없어요",
   metaDescription: "기기에서 실시간으로 횟수를 검증하는 {name}. {tagline}.",
   checkingStake: "스테이크 확인 중…",
+  finishAndVerify: "종료하고 온체인 검증",
+  goalReachedVerifyHint: "목표 달성. 종료하면 온체인 검증, 아니면 계속하세요.",
+  liveCheckBriefTitle: "라이브 체크: 바로 따라 하세요",
+  liveCheckBriefBody: "세트 중에 Fitr가 손을 들거나 똑바로 서서 멈추라고 요청해요. 보거나 들으면 바로 하세요: 약 8초가 있어요. 체크를 놓치면 운동이 검증되지 않아요.",
 };
 
 export default workout;

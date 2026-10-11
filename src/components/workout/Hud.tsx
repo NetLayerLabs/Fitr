@@ -238,10 +238,22 @@ export default function Hud({
             {delegate ? ` · ${delegate}` : ""}
           </span>
         </p>
-        <button type="button" className={styles.endButton} onClick={onEnd}>
-          <StopIcon size={20} />
-          {t("endWorkout")}
-        </button>
+        {verification && hud.goalReached ? (
+          <>
+            <p className={styles.verifyHint} role="status">
+              {t("goalReachedVerifyHint")}
+            </p>
+            <button type="button" className={`${styles.endButton} ${styles.endButtonVerify}`} onClick={onEnd}>
+              <StopIcon size={20} />
+              {t("finishAndVerify")}
+            </button>
+          </>
+        ) : (
+          <button type="button" className={styles.endButton} onClick={onEnd}>
+            <StopIcon size={20} />
+            {t("endWorkout")}
+          </button>
+        )}
       </div>
     </div>
   );

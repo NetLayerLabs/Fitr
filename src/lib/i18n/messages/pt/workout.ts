@@ -260,6 +260,10 @@ const workout: Partial<NsMessages<"workout">> = {
   metaNotFound: "Treino não encontrado",
   metaDescription: "{name} com verificação de reps ao vivo no aparelho. {tagline}.",
   checkingStake: "Verificando seu stake…",
+  finishAndVerify: "Finalizar e verificar onchain",
+  goalReachedVerifyHint: "Meta atingida. Finalize para verificar onchain, ou continue.",
+  liveCheckBriefTitle: "Checagens ao vivo: responda na hora",
+  liveCheckBriefBody: "Durante a série, o Fitr vai pedir para você levantar uma mão, ou ficar em pé e parado. Faça assim que vir ou ouvir: você tem cerca de 8 segundos. Uma checagem perdida significa que o treino não é verificado.",
 };
 
 export default workout;

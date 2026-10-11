@@ -164,6 +164,14 @@ describe("VoiceCoach rep counting", () => {
     expect(said.at(-1)).toBe("Goal! 10 push-ups.");
   });
 
+  it("on a staked run, warns about live checks at the start and says how to get verified at the goal", () => {
+    const coach = pushups(10, { staked: true });
+    expect(texts(coach.start(0))).toEqual(["Let's go. 10 push-ups. Watch for live checks, and do them right away."]);
+    const reps = Array.from({ length: 10 }, (_, i) => 1000 + i * 1500);
+    const said = run(coach, { from: 0, to: 17_000, reps }).map((s) => s.text);
+    expect(said.at(-1)).toBe("Goal! 10 push-ups. Tap Finish to verify onchain, or keep going.");
+  });
+
   it("never lags: a newer count replaces an unsaid one, keeping the stronger milestone", () => {
     const coach = pushups(20, { timing: { msPerWord: 2000 } });
     coach.update(frame({}, [rep(9)]), 0);

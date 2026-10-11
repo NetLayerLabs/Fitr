@@ -1585,3 +1585,70 @@
     white-space: nowrap;
   }
 }
+
+/* ---------- Staked runs: live-check briefing and "finish & verify" ---------- */
+
+.liveCheckBrief {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1.5px solid var(--warning);
+  border-radius: var(--radius-lg);
+  background: var(--warning-dim);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.liveCheckBriefTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--warning);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-heavy);
+}
+
+.liveCheckBriefDot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--warning);
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 0.06);
+}
+
+.liveCheckBrief p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.verifyHint {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  text-align: center;
+}
+
+.endButtonVerify {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .liveCheckBriefDot {
+    animation: briefPulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes briefPulse {
+  50% {
+    opacity: 0.35;
+  }
+}

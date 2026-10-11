@@ -50,6 +50,8 @@ const voice = {
   challengePassed: "Good.",
   // Toggling the coach.
   voiceCoachOn: "Voice coach on",
+  letsGoGoalStaked: "Let's go. {goal}. Watch for live checks, and do them right away.",
+  goalReachedStaked: "Goal! {goal}. Tap Finish to verify onchain, or keep going.",
 } as const;
 
 export default voice;

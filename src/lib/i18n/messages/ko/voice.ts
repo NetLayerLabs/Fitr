@@ -51,6 +51,8 @@ const voice: Partial<NsMessages<"voice">> = {
   challengePassed: "좋아요.",
   // Toggling the coach.
   voiceCoachOn: "음성 코치 켜짐",
+  letsGoGoalStaked: "시작해요. {goal}. 라이브 체크가 나오면 바로 따라 하세요.",
+  goalReachedStaked: "목표 달성! {goal}. 종료를 눌러 온체인 검증을 받거나 계속하세요.",
 };
 
 export default voice;

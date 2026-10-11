@@ -260,6 +260,10 @@ const workout: Partial<NsMessages<"workout">> = {
   metaNotFound: "Workout nicht gefunden",
   metaDescription: "{name} mit Live-Prüfung der Wiederholungen auf dem Gerät. {tagline}.",
   checkingStake: "Einsatz wird geprüft…",
+  finishAndVerify: "Beenden & onchain bestätigen",
+  goalReachedVerifyHint: "Ziel erreicht. Beende für die Onchain-Bestätigung, oder mach weiter.",
+  liveCheckBriefTitle: "Live-Checks: sofort reagieren",
+  liveCheckBriefBody: "Während deines Satzes bittet dich Fitr, eine Hand zu heben oder aufrecht still zu stehen. Mach es, sobald du es siehst oder hörst: Du hast etwa 8 Sekunden. Ein verpasster Check heißt: Das Workout wird nicht bestätigt.",
 };
 
 export default workout;

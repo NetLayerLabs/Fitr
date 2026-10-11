@@ -31,13 +31,13 @@ export const CHALLENGE_SPECS: Record<ChallengeType, ChallengeSpec> = {
   raise_right_hand: {
     type: "raise_right_hand",
     prompt: "Raise your RIGHT hand above your head",
-    windowMs: 6000,
+    windowMs: 8000,
     exercises: FRONT_ON,
   },
   raise_left_hand: {
     type: "raise_left_hand",
     prompt: "Raise your LEFT hand above your head",
-    windowMs: 6000,
+    windowMs: 8000,
     exercises: FRONT_ON,
   },
   // Side-on the far hand is hidden behind the body, so either hand answers. The proof of a live
@@ -45,7 +45,7 @@ export const CHALLENGE_SPECS: Record<ChallengeType, ChallengeSpec> = {
   raise_hand: {
     type: "raise_hand",
     prompt: "Raise one hand above your head",
-    windowMs: 6000,
+    windowMs: 8000,
     exercises: SIDE_ON,
   },
   hold_still_top: {

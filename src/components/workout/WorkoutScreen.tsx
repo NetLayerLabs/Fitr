@@ -330,6 +330,9 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
   }, [countdown]);
 
   function startSession() {
+    // A staked run (today's stake for this exercise): the coach warns about live checks and says
+    // how to get verified once the goal is reached.
+    const staked = verified.status === "ready";
     // iOS only delivers orientation readings after a permission prompt from a user gesture.
     requestDeviceOrientationAccess();
     verified.reset();
@@ -346,6 +349,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
       unit: info.unit,
       goal,
       t: speechTranslator("voice", voiceLocale),
+      staked,
     });
     watcherRef.current = new ChallengeWatcher();
     // Spoken inside the Start tap: browsers only allow speech after a user gesture.
@@ -509,6 +513,7 @@ export default function WorkoutScreen({ exercise, verification }: WorkoutScreenP
         onFacingChange={setFacing}
         onStart={startSession}
         checking={verified.status === "checking"}
+        liveChecks={verified.status === "ready"}
         onOpenGuide={() => setGuideChoice("open")}
         goal={goal}
         verified={verified.status === "ready" || verified.status === "error"}

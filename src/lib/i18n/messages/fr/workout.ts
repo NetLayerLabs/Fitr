@@ -260,6 +260,10 @@ const workout: Partial<NsMessages<"workout">> = {
   metaNotFound: "Séance introuvable",
   metaDescription: "{name} avec vérification des répétitions en direct sur l’appareil. {tagline}.",
   checkingStake: "Vérification de ta mise…",
+  finishAndVerify: "Terminer et valider onchain",
+  goalReachedVerifyHint: "Objectif atteint. Termine pour valider onchain, ou continue.",
+  liveCheckBriefTitle: "Contrôles en direct : réponds tout de suite",
+  liveCheckBriefBody: "Pendant ta série, Fitr te demandera de lever une main, ou de te tenir droit et immobile. Fais-le dès que tu le vois ou l'entends : tu as environ 8 secondes. Un contrôle manqué et la séance n'est pas validée.",
 };
 
 export default workout;

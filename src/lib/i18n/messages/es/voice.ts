@@ -51,6 +51,8 @@ const voice: Partial<NsMessages<"voice">> = {
   challengePassed: "Bien.",
   // Toggling the coach.
   voiceCoachOn: "Entrenador de voz activado",
+  letsGoGoalStaked: "Vamos. {goal}. Atento a los controles en vivo: hazlos de inmediato.",
+  goalReachedStaked: "¡Meta! {goal}. Toca Terminar para verificar onchain, o sigue.",
 };
 
 export default voice;

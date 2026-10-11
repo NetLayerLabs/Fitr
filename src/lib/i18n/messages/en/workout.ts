@@ -259,6 +259,10 @@ const workout = {
   metaNotFound: "Workout not found",
   metaDescription: "{name} with live on-device rep verification. {tagline}.",
   checkingStake: "Checking your stake…",
+  finishAndVerify: "Finish & verify onchain",
+  goalReachedVerifyHint: "Goal reached. Finish to verify onchain, or keep going.",
+  liveCheckBriefTitle: "Live checks: answer right away",
+  liveCheckBriefBody: "During your set, Fitr will ask you to raise a hand, or to stand tall and hold still. Do it as soon as you see or hear it: you have about 8 seconds. A missed check means the workout is not verified.",
 } as const;
 
 export default workout;

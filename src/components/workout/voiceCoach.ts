@@ -145,6 +145,11 @@ export interface VoiceCoachOptions {
   timing?: Partial<CoachTiming>;
   /** Phrases in the language the coach speaks (see speechTranslator); English when omitted. */
   t?: Translator<"voice">;
+  /**
+   * A staked (verified) run: the start line warns about live checks, and the goal line tells the
+   * user to finish so the workout is verified onchain.
+   */
+  staked?: boolean;
 }
 
 export interface CoachFrame {
@@ -233,6 +238,7 @@ export class VoiceCoach {
   private readonly name: string;
   private readonly fast: boolean;
   private readonly tx: Translator<"voice">;
+  private readonly staked: boolean;
 
   private stopped = false;
   private busyUntil = Number.NEGATIVE_INFINITY;
@@ -273,6 +279,7 @@ export class VoiceCoach {
     this.goal = Math.max(0, options.goal);
     this.name = options.exerciseName;
     this.tx = options.t ?? EN_VOICE;
+    this.staked = options.staked ?? false;
     this.fast = this.unit === "reps" && this.goal > this.t.fastGoal;
   }
 
@@ -292,7 +299,7 @@ export class VoiceCoach {
     if (this.stopped) return [];
     const text =
       this.goal > 0
-        ? this.tx("letsGoGoal", { goal: spokenGoal(this.unit, this.goal, this.name, this.tx) })
+        ? this.tx(this.staked ? "letsGoGoalStaked" : "letsGoGoal", { goal: spokenGoal(this.unit, this.goal, this.name, this.tx) })
         : this.tx("letsGo");
     return this.emit(text, "countdown", nowMs, false);
   }
@@ -416,7 +423,7 @@ export class VoiceCoach {
   }
 
   private goalText(goal: number): string {
-    return this.tx("goalReached", { goal: spokenGoal(this.unit, goal, this.name, this.tx) });
+    return this.tx(this.staked ? "goalReachedStaked" : "goalReached", { goal: spokenGoal(this.unit, goal, this.name, this.tx) });
   }
 
   private onRejected(reason: FormIssue, nowMs: number): void {

@@ -51,6 +51,8 @@ const voice: Partial<NsMessages<"voice">> = {
   challengePassed: "很好。",
   // Toggling the coach.
   voiceCoachOn: "语音教练已开启",
+  letsGoGoalStaked: "开始。{goal}。注意实时检查，出现时立即完成。",
+  goalReachedStaked: "达成目标！{goal}。点击完成进行链上验证，或继续练。",
 };
 
 export default voice;

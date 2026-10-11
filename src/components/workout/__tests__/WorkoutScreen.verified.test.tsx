@@ -185,6 +185,9 @@ describe("WorkoutScreen: verified (staked) workouts", () => {
     // Setup: the staked goal (12, not the default 20) and an honest privacy note.
     await waitFor(() => expect(document.body.textContent).toMatch(/Staked · 5 SKR on 12 reps/));
     expect(screen.getByText(/only body-point data goes to Fitr's verifier/)).toBeTruthy();
+    // A staked run is briefed on live checks before it starts.
+    expect(screen.getByRole("heading", { name: "Live checks: answer right away" })).toBeTruthy();
+    expect(screen.getByText(/about 8 seconds/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Start push-ups/ }));
     act(() => h.onFrame?.(frame(1000)));

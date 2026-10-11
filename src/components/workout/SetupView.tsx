@@ -20,6 +20,8 @@ export interface SetupViewProps {
   onStart: () => void;
   /** Still looking up today's stake: Start waits, so a verified run never starts with the wrong goal. */
   checking?: boolean;
+  /** A staked run: brief the user on live checks before they start. */
+  liveChecks?: boolean;
   /** Re-opens the form guide (also reachable after "don't show again"). */
   onOpenGuide?: () => void;
   /** Goal to show: the staked goal when there is one, else the exercise default. */
@@ -42,6 +44,7 @@ export default function SetupView({
   onFacingChange,
   onStart,
   checking = false,
+  liveChecks = false,
   onOpenGuide,
   goal,
   stake,
@@ -144,6 +147,16 @@ export default function SetupView({
           ))}
         </div>
       </fieldset>
+
+      {liveChecks ? (
+        <section className={styles.liveCheckBrief} aria-labelledby="live-check-brief">
+          <h2 id="live-check-brief" className={styles.liveCheckBriefTitle}>
+            <span className={styles.liveCheckBriefDot} aria-hidden="true" />
+            {t("liveCheckBriefTitle")}
+          </h2>
+          <p>{t("liveCheckBriefBody")}</p>
+        </section>
+      ) : null}
 
       <p className={styles.privacyNote}>
         <ShieldIcon size={18} />
