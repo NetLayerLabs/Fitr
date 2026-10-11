@@ -9,6 +9,9 @@ and the **web app** it loads from app.fitr.day (all screens and features, update
 - **Android 1.2.0:** the voice coach speaks the chosen language when the phone has a voice for it.
 - **Fairer verification:** side-on exercises ask "Raise one hand" (either hand), and left/right
   tracking swaps no longer fail honest workouts. "Verifying" no longer sticks after a rejection.
+- **Fitr Pro preview (coming soon):** four locked advanced moves at the end of Workouts and a Pro
+  card in You: programs, advanced stats, more crews, paid monthly in SKR with a crew discount.
+  Nothing to buy yet; no onchain changes.
 
 ## Web 0.4.0 · Android 1.1.0 (build 3)
 - **Live on Solana mainnet:** vault program deployed from a reproducible Docker build; program and

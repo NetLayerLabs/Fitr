@@ -247,7 +247,7 @@ Fitr is a habit people open every day, and a reason to own a Seeker.
 | --- | --- |
 | **Gym partnerships** | Gyms pay monthly to run Fitr challenges for their members |
 | **Sponsored challenges** | Brands or gyms fund the bonus for finishers (live today) |
-| **Fitr Pro** | A subscription for programs, advanced stats and more crews |
+| **Fitr Pro** | Paid monthly in SKR, with a crew discount: programs, advanced stats, more crews and advanced workouts (coming soon) |
 | **Corporate wellness** | Employers sponsor staff challenges |
 | **Forfeit fee** | 5% of forfeited stakes only (live today) |
 

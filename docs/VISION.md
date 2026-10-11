@@ -51,7 +51,7 @@ Fitr is a habit people open every day, which is exactly what a phone ecosystem n
 | --- | --- | --- |
 | **Gym partnerships (B2B)** | Gyms pay Fitr monthly to run challenges for their members: leaderboards (crews), AI-verified home workouts on non-gym days, and a dashboard of who is slipping | First market: gyms in Nigeria. The gym's real problem is members quitting; Fitr shows who is showing up. |
 | **Sponsored challenges** | A brand (sportswear, drinks, a telco) or the gym funds the prize for finishers | Uses the **live** sponsor feature. No user money involved: the lowest regulatory risk. |
-| **Subscription ("Fitr Pro")** | Free: rep counting and streaks. Paid: programs, advanced stats, more crews | Priced locally (for example in Naira) |
+| **Subscription ("Fitr Pro")** | Free: rep counting, streaks and staking. Paid: programs, advanced stats, more crews and advanced workouts (pistol squats, handstand push-ups, …) | Paid monthly in SKR, cheaper when a whole crew joins: steady, non-speculative demand for SKR. Previewed in the app as "coming soon". Local-currency pricing for everyday users later. |
 | **Corporate wellness** | Employers (banks, telcos) sponsor staff challenges | Larger contracts, repeatable |
 | **Money commitments** | The 5% fee on forfeited stakes only (nobody who shows up pays it) | **Live** on mainnet in SKR. Fiat versions only after legal review (see Risks). |
 
