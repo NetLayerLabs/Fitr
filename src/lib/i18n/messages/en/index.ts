@@ -11,6 +11,7 @@ import stake from "./stake";
 import crews from "./crews";
 import you from "./you";
 import wallet from "./wallet";
+import pro from "./pro";
 
 /** English messages: the source of truth for every key. */
-export const en = { common, nav, today, progress, workouts, exercises, guide, workout, voice, stake, crews, you, wallet } as const;
+export const en = { common, nav, today, progress, workouts, exercises, guide, workout, voice, stake, crews, you, wallet, pro } as const;

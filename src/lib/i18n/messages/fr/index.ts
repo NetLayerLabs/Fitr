@@ -12,5 +12,6 @@ import stake from "./stake";
 import crews from "./crews";
 import you from "./you";
 import wallet from "./wallet";
+import pro from "./pro";
 
-export const fr: LocaleMessages = { common, nav, today, progress, workouts, exercises, guide, workout, voice, stake, crews, you, wallet };
+export const fr: LocaleMessages = { common, nav, today, progress, workouts, exercises, guide, workout, voice, stake, crews, you, wallet, pro };
