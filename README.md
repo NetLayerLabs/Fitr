@@ -144,6 +144,11 @@ Pool rules: stakes 1 to 10,000 SKR · Seeker-only · 5% fee on forfeits only · 
 sponsor bonus · streak bonus up to +50% · one-hour review window. Each day keeps the rules it
 started with. Live numbers: [fitr.day/pool](https://fitr.day/pool).
 
+**Verify it yourself.** The program's upgrade authority is the Squads vault, not a person:
+[open the program on Solana Explorer](https://explorer.solana.com/address/9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY)
+(Upgrade Authority: `62idAiYp…Yqu9`), or run
+`solana program show 9eYqN31joVSrEvtXKNYJRNdbP7m4LbdGfFd9n4BmgikY --url mainnet-beta`.
+
 ## Security at a glance
 
 - **No single key controls the money.** The program's upgrade authority and the pool's admin
