@@ -205,11 +205,28 @@ docs/             architecture, security, operations, Android, vision
 
 ## Roadmap
 
-Fitr is a habit people open every day, and a reason to own a Seeker. Next: a Solana dApp Store
-listing and Seeker crew seasons → a 30-day gym pilot in Nigeria → phone sign-in, Play Store,
-subscriptions and stablecoin stakes → corporate wellness, iOS and independent attestors. Revenue:
-gym partnerships, sponsored challenges, a Pro subscription, corporate wellness and the 5% forfeit
-fee. Full plan, metrics and risks: [docs/VISION.md](./docs/VISION.md).
+Fitr is a habit people open every day, and a reason to own a Seeker.
+
+### What's next
+
+| Phase | Focus |
+| --- | --- |
+| **1. Seeker growth** | Solana dApp Store listing and Seeker crew seasons |
+| **2. Gym pilot** | A 30-day pilot with gyms in Nigeria, measuring attendance and retention |
+| **3. Everyday users** | Phone sign-in, Play Store, subscriptions and stablecoin stakes |
+| **4. Scale** | Corporate wellness, iOS and independent attestors |
+
+### Revenue
+
+| Stream | How |
+| --- | --- |
+| **Gym partnerships** | Gyms pay monthly to run Fitr challenges for their members |
+| **Sponsored challenges** | Brands or gyms fund the bonus for finishers (live today) |
+| **Fitr Pro** | A subscription for programs, advanced stats and more crews |
+| **Corporate wellness** | Employers sponsor staff challenges |
+| **Forfeit fee** | 5% of forfeited stakes only (live today) |
+
+Full plan, metrics and risks: [docs/VISION.md](./docs/VISION.md).
 
 ## Team
 
