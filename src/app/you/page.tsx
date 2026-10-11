@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ProCard from "@/components/pro/ProCard";
 import AboutLinks from "@/components/you/AboutLinks";
 import LanguagePicker from "@/components/you/LanguagePicker";
 import ProfileHeader from "@/components/you/ProfileHeader";
@@ -28,6 +29,8 @@ export default async function YouPage() {
           </h2>
           <WalletPanel />
         </section>
+
+        <ProCard />
 
         <section className={styles.section} aria-labelledby="you-settings-heading">
           <h2 id="you-settings-heading" className={styles.sectionTitle}>
