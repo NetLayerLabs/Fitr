@@ -14,15 +14,15 @@ let on-device AI count every rep, and settle the day onchain.
 [![Languages](https://img.shields.io/badge/languages-9-C6F432)](#features)
 [![License: MIT](https://img.shields.io/badge/license-MIT-C6F432)](./LICENSE)
 
-[Website](https://fitr.day) · [Download the APK](https://fitr.day/download/fitr.apk) · [Live pool](https://fitr.day/pool) · [Architecture](./docs/ARCHITECTURE.md) · [Security](./docs/SECURITY.md) · [Vision](./docs/VISION.md)
-
-<!-- Demo video: add the link here once published, e.g. · [Demo video](https://...) -->
+[▶ Demo video](https://www.youtube.com/watch?v=v1F4vOIn1PI) · [Website](https://fitr.day) · [Download the APK](https://fitr.day/download/fitr.apk) · [Live pool](https://fitr.day/pool) · [Architecture](./docs/ARCHITECTURE.md) · [Security](./docs/SECURITY.md) · [Vision](./docs/VISION.md)
 
 <sub>Built for the CLOCK IN Solana Mobile hackathon.</sub>
 
 </div>
 
-<img width="2980" height="1688" alt="Fitr: the app on a Seeker, mid push-up set" src="https://github.com/user-attachments/assets/a5440536-3947-4cea-8c5c-5971b7905fa6" />
+<a href="https://www.youtube.com/watch?v=v1F4vOIn1PI"><img src="https://img.youtube.com/vi/v1F4vOIn1PI/maxresdefault.jpg" alt="Watch the Fitr demo (3 minutes): a real stake, workout, live check and claim on a Seeker, on Solana mainnet" width="100%" /></a>
+
+<p align="center"><sub><b><a href="https://www.youtube.com/watch?v=v1F4vOIn1PI">▶ Watch the 3-minute demo</a></b>: a real 5 SKR stake, a 15-squat workout with a random live check, verified onchain, and the claim the next morning, all recorded on a Seeker.</sub></p>
 
 ## What is Fitr?
 
@@ -36,7 +36,7 @@ who showed up.
 It is a **commitment device, not an investment**: if everyone shows up, everyone simply gets their
 own stake back. Fitr's only fee is 5% of forfeited stakes. Video never leaves the phone.
 
-**Contents:** [Try it](#try-it) · [The problem](#the-problem-and-how-fitr-solves-it) ·
+**Contents:** [Demo](https://www.youtube.com/watch?v=v1F4vOIn1PI) · [Try it](#try-it) · [The problem](#the-problem-and-how-fitr-solves-it) ·
 [Features](#features) · [How it works](#how-it-works) · [Solana Mobile](#built-for-solana-mobile) ·
 [Mainnet](#live-on-solana-mainnet) · [Security](#security-at-a-glance) ·
 [Getting started](#getting-started) · [Roadmap](#roadmap)
@@ -219,6 +219,7 @@ android/          the Kotlin Android app (Solana Mobile web shell)
 scripts/          vault admin (Squads transactions) and code generation
 ops/              deploy script, systemd units, nginx routing
 docs/             architecture, security, operations, Android, vision
+video/            the demo film (Remotion): script, narration timing, scenes, capture scripts
 ```
 
 ## Documentation
@@ -232,6 +233,7 @@ docs/             architecture, security, operations, Android, vision
 | [docs/VISION.md](./docs/VISION.md) | Business model, roadmap, why Fitr belongs on Solana Mobile |
 | [anchor/SPEC.md](./anchor/SPEC.md) · [anchor/MAINNET_RUNBOOK.md](./anchor/MAINNET_RUNBOOK.md) | The vault program's specification and its mainnet deployment runbook |
 | [CHANGELOG.md](./CHANGELOG.md) | Release history |
+| [video/README.md](./video/README.md) | How the demo film was made, and what in it is real |
 
 ## Roadmap
 
