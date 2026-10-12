@@ -14,7 +14,7 @@ let on-device AI count every rep, and settle the day onchain.
 [![Languages](https://img.shields.io/badge/languages-9-C6F432)](#features)
 [![License: MIT](https://img.shields.io/badge/license-MIT-C6F432)](./LICENSE)
 
-[▶ Demo video](https://www.youtube.com/watch?v=v1F4vOIn1PI) · [Website](https://fitr.day) · [Download the APK](https://fitr.day/download/fitr.apk) · [Live pool](https://fitr.day/pool) · [Architecture](./docs/ARCHITECTURE.md) · [Security](./docs/SECURITY.md) · [Vision](./docs/VISION.md)
+[▶ Demo video](https://www.youtube.com/watch?v=v1F4vOIn1PI) · [Pitch deck](https://docs.google.com/presentation/d/1lI4H6Bm_Qe2yyxu10g5mdBXhCaKgdBJZof4vt-tPAwY/edit?usp=sharing) · [Launch post](https://x.com/encrypt_wizard/status/2109607973584511123) · [Website](https://fitr.day) · [Download the APK](https://fitr.day/download/fitr.apk) · [Live pool](https://fitr.day/pool) · [Architecture](./docs/ARCHITECTURE.md) · [Security](./docs/SECURITY.md) · [Vision](./docs/VISION.md)
 
 <sub>Built for the CLOCK IN Solana Mobile hackathon.</sub>
 
@@ -234,6 +234,7 @@ video/            the demo film (Remotion): script, narration timing, scenes, ca
 | [anchor/SPEC.md](./anchor/SPEC.md) · [anchor/MAINNET_RUNBOOK.md](./anchor/MAINNET_RUNBOOK.md) | The vault program's specification and its mainnet deployment runbook |
 | [CHANGELOG.md](./CHANGELOG.md) | Release history |
 | [video/README.md](./video/README.md) | How the demo film was made, and what in it is real |
+| [Pitch deck](https://docs.google.com/presentation/d/1lI4H6Bm_Qe2yyxu10g5mdBXhCaKgdBJZof4vt-tPAwY/edit?usp=sharing) | The CLOCK IN pitch: problem, how it works, proof on mainnet, SKR, business model, roadmap |
 
 ## Roadmap
 
