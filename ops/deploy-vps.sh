@@ -32,7 +32,7 @@ ssh -o BatchMode=yes "$HOST" 'set -e; rm -rf /opt/fitr/app.new; mkdir -p /opt/fi
 echo "==> uploading"
 rsync -az --delete \
   --exclude node_modules --exclude .git --exclude '.next/cache' --exclude '.next/dev' \
-  --exclude anchor --exclude android --exclude ops --exclude docs --exclude '__tests__' \
+  --exclude anchor --exclude android --exclude ops --exclude docs --exclude video --exclude '__tests__' \
   --exclude .env --exclude '.env.local' --exclude '.env.production' \
   ./ "$HOST:/opt/fitr/app.new/"
 

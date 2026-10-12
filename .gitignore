@@ -54,3 +54,11 @@ next-env.d.ts
 /android/**/build/
 /android/**/.gradle/
 /android/**/local.properties
+
+# demo film (video/): renders, caches, raw device footage
+/video/node_modules/
+/video/out/
+/video/.cache/
+/video/public/footage/
+/video/public/stills/
+/video/public/device/

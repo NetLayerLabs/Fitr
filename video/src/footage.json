@@ -1,0 +1,50 @@
+{
+ "commit": {
+  "file": "footage/commit.mp4",
+  "width": 1170,
+  "height": 2532,
+  "durationFrames": 245,
+  "marks": {}
+ },
+ "setup": {
+  "file": "footage/setup.mp4",
+  "width": 1170,
+  "height": 2532,
+  "durationFrames": 438,
+  "marks": {
+   "setup_continue": 222
+  }
+ },
+ "today": {
+  "file": "footage/today.mp4",
+  "width": 1170,
+  "height": 2532,
+  "durationFrames": 216,
+  "marks": {}
+ },
+ "workouts": {
+  "file": "footage/workouts.mp4",
+  "width": 1170,
+  "height": 2532,
+  "durationFrames": 414,
+  "marks": {
+   "workouts_pro": 204
+  }
+ },
+ "you": {
+  "file": "footage/you.mp4",
+  "width": 1170,
+  "height": 2532,
+  "durationFrames": 234,
+  "marks": {}
+ },
+ "landing": {
+  "file": "footage/landing.mp4",
+  "width": 3200,
+  "height": 1800,
+  "durationFrames": 512,
+  "marks": {
+   "landing_install": 234
+  }
+ }
+}

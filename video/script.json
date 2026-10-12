@@ -1,0 +1,182 @@
+{
+  "title": "Fitr: put your word on the line",
+  "model": "eleven_multilingual_v2",
+  "voices": {
+    "narrator": {
+      "name": "Brian",
+      "id": "nPczCjzI2devNBz1zQrb",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.2,
+        "use_speaker_boost": true
+      }
+    }
+  },
+  "scenes": [
+    {
+      "id": "open",
+      "seconds": 12,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Gym members on monthly plans went four point three times a month. They paid over seventeen dollars a visit."
+        }
+      ]
+    },
+    {
+      "id": "problem",
+      "seconds": 13,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "We don't lack plans. We lack consequences. Skipping a workout costs nothing."
+        },
+        {
+          "voice": "narrator",
+          "text": "And nobody checks the reps. A half rep counts the same as a real one."
+        }
+      ]
+    },
+    {
+      "id": "turn",
+      "seconds": 7,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "So we built Fitr. Put your word on the line."
+        }
+      ]
+    },
+    {
+      "id": "install",
+      "seconds": 11,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Get it at Fitr dot day. It's not on the Play Store yet: download the APK, open it, and allow the install."
+        }
+      ]
+    },
+    {
+      "id": "commit",
+      "seconds": 16,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Pick a goal. Fifteen squats. Stake your own SKR on it, and sign in Seed Vault. One transaction, on Solana mainnet."
+        }
+      ]
+    },
+    {
+      "id": "workout",
+      "seconds": 10.4,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Your video never leaves the phone. Fitr's pose AI tracks you right on the device."
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "seconds": 8.5,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Then a live check, at random. A recording can't raise its hand on cue."
+        }
+      ]
+    },
+    {
+      "id": "reps",
+      "seconds": 10.6667,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Every rep is held to a joint angle standard. Half reps don't count."
+        }
+      ]
+    },
+    {
+      "id": "goal",
+      "seconds": 9,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Fifteen. Goal reached. One tap, and it's verified onchain."
+        }
+      ]
+    },
+    {
+      "id": "verified",
+      "seconds": 12,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "The server replays the pose points, never video, and records the day onchain. Our first verified day: sixteen squats on a goal of fifteen."
+        }
+      ]
+    },
+    {
+      "id": "claim",
+      "seconds": 14,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Next morning the day settles. Show up, and you claim your stake back, plus a share of what the no shows forfeited."
+        }
+      ]
+    },
+    {
+      "id": "crew",
+      "seconds": 13,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Or bring your crew. Share an invite link and stake together, in your own onchain pool. Whoever skips pays the ones who show up. And if nobody does, the pot rolls over to the next day."
+        }
+      ]
+    },
+    {
+      "id": "trust",
+      "seconds": 16,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "No single key holds the money. A Squads two of three multisig owns the program and the pool. The build is verifiable, and Fitr takes five percent of forfeits. Nothing else."
+        }
+      ]
+    },
+    {
+      "id": "seeker",
+      "seconds": 12,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Built for Seeker. One Genesis Token, one stake. Every signature in Seed Vault. Sponsored days and Blinks, in nine languages."
+        }
+      ]
+    },
+    {
+      "id": "next",
+      "seconds": 9,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Next: Fitr Pro, paid monthly in SKR. A gym pilot. And the dApp Store."
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "seconds": 9,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Fitr. Put your word on the line."
+        }
+      ]
+    }
+  ]
+}

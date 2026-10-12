@@ -1,0 +1,20 @@
+{
+  "commit": {
+    "file": "device/commit.mp4",
+    "segments": "2-14.75@2,15.15-19@2,19-25.5@1",
+    "speedLabel": "parts at 2× speed",
+    "seconds": 16
+  },
+  "workout": {
+    "file": "device/workout.mp4",
+    "segments": "3.6-14@1,14-22.5@1,22.5-54.5@3,54.5-61.5@1,64-66@1",
+    "speedLabel": "reps at 3× speed",
+    "seconds": 39.57
+  },
+  "claim": {
+    "file": "device/claim.mp4",
+    "segments": "14-17.5@1,21-31@2,31-35@1",
+    "speedLabel": "parts at 2× speed",
+    "seconds": 14
+  }
+}
